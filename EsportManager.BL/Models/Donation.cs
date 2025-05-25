@@ -1,8 +1,13 @@
-// Placeholder: Implementation not provided in the document
 namespace EsportManager.Models
 {
     public class Donation
     {
-        // TODO: Implement Donation model
+        public int Id { get; set; }
+        public int UserId { get; set; }
+        public int TeamId { get; set; }
+        public decimal Amount { get; set; }
+        public DateTime DonatedAt { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public DateTime UpdatedAt { get; set; }
     }
 }

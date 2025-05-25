@@ -1,8 +1,15 @@
-// Placeholder: Implementation not provided in the document
 namespace EsportManager.Models
 {
     public class Tournament
     {
-        // TODO: Implement Tournament model
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public DateTime StartDate { get; set; }
+        public DateTime EndDate { get; set; }
+        public int GameId { get; set; }
+        public decimal PrizePool { get; set; }
+        public string Location { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public DateTime UpdatedAt { get; set; }
     }
 }

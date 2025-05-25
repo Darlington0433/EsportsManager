@@ -1,8 +1,13 @@
-// Placeholder: Implementation not provided in the document
 namespace EsportManager.Models
 {
     public class Vote
     {
-        // TODO: Implement Vote model
+        public int Id { get; set; }
+        public int UserId { get; set; }
+        public int MatchId { get; set; }
+        public decimal Amount { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public DateTime UpdatedAt { get; set; }
     }
+
 }

@@ -1,8 +1,11 @@
-// Placeholder: Implementation not provided in the document
 namespace EsportManager.Models
 {
     public class Wallet
     {
-        // TODO: Implement Wallet model
+        public int Id { get; set; }
+        public int UserId { get; set; }
+        public decimal Balance { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public DateTime UpdatedAt { get; set; }
     }
 }

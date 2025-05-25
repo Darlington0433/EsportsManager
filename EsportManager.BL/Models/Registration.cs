@@ -1,8 +1,12 @@
-// Placeholder: Implementation not provided in the document
 namespace EsportManager.Models
 {
     public class Registration
     {
-        // TODO: Implement Registration model
+        public int Id { get; set; }
+        public int TeamId { get; set; }
+        public int TournamentId { get; set; }
+        public DateTime RegisteredAt { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public DateTime UpdatedAt { get; set; }
     }
 }
