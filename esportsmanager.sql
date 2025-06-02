@@ -93,7 +93,6 @@ CREATE TABLE IF NOT EXISTS TournamentResults (
     ResultID INT AUTO_INCREMENT PRIMARY KEY,
     TournamentID INT,
     TeamID INT,
-    Position INT,
     PrizeMoney DECIMAL(18,2),
     Notes TEXT,
     FOREIGN KEY (TournamentID) REFERENCES Tournaments(TournamentID),
@@ -134,17 +133,17 @@ CREATE TABLE IF NOT EXISTS Wallets (
     FOREIGN KEY (UserID) REFERENCES Users(UserID)
 ) ENGINE=InnoDB;
 
--- Bảng WalletTransactions (Thêm mới để theo dõi lịch sử giao dịch)
-CREATE TABLE IF NOT EXISTS WalletTransactions (
-    TransactionID INT AUTO_INCREMENT PRIMARY KEY,
+-- Bảng WalletHistory
+CREATE TABLE IF NOT EXISTS WalletHistory (
+    HistoryID INT AUTO_INCREMENT PRIMARY KEY,
     WalletID INT,
     Amount DECIMAL(18,2) NOT NULL,
-    TransactionType ENUM('TopUp', 'Donation', 'Withdrawal', 'Prize', 'Refund') NOT NULL,
-    ReferenceID INT, -- ID của đơn hàng/transaction liên quan
-    Description TEXT,
-    Status ENUM('Pending', 'Completed', 'Failed', 'Refunded') DEFAULT 'Pending',
-    CreatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    ProcessedAt DATETIME,
+    Type ENUM('TopUp', 'Donation', 'Withdrawal', 'Prize', 'Refund') NOT NULL,
+    Reference INT, -- ID của đơn hàng/transaction liên quan
+    Note TEXT,
+    State ENUM('Pending', 'Completed', 'Failed', 'Refunded') DEFAULT 'Pending',
+    CreatedTime TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    ProcessedTime DATETIME,
     FOREIGN KEY (WalletID) REFERENCES Wallets(WalletID)
 ) ENGINE=InnoDB;
 
@@ -157,10 +156,10 @@ CREATE TABLE IF NOT EXISTS Donations (
     Message TEXT,
     DonationDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     Status ENUM('Pending', 'Completed', 'Failed', 'Refunded') DEFAULT 'Completed',
-    TransactionID INT,
+    HistoryID INT,
     FOREIGN KEY (FromUserID) REFERENCES Users(UserID),
     FOREIGN KEY (ToUserID) REFERENCES Users(UserID),
-    FOREIGN KEY (TransactionID) REFERENCES WalletTransactions(TransactionID)
+    FOREIGN KEY (HistoryID) REFERENCES WalletHistory(HistoryID)
 ) ENGINE=InnoDB;
 
 -- Bảng Withdrawals
@@ -176,10 +175,10 @@ CREATE TABLE IF NOT EXISTS Withdrawals (
     ProcessedBy INT,
     ProcessedAt DATETIME,
     Notes TEXT,
-    TransactionID INT,
+    HistoryID INT,
     FOREIGN KEY (UserID) REFERENCES Users(UserID),
     FOREIGN KEY (ProcessedBy) REFERENCES Users(UserID),
-    FOREIGN KEY (TransactionID) REFERENCES WalletTransactions(TransactionID)
+    FOREIGN KEY (HistoryID) REFERENCES WalletHistory(HistoryID)
 ) ENGINE=InnoDB;
 
 -- Bảng RoleChangeRequests
@@ -215,4 +214,4 @@ CREATE INDEX IF NOT EXISTS idx_users_username ON Users(Username);
 CREATE INDEX IF NOT EXISTS idx_teams_gamename ON Teams(TeamName);
 CREATE INDEX IF NOT EXISTS idx_tournaments_gamedate ON Tournaments(GameID, StartDate);
 CREATE INDEX IF NOT EXISTS idx_registrations_status ON Registrations(Status);
-CREATE INDEX IF NOT EXISTS idx_wallet_transactions ON WalletTransactions(WalletID, TransactionType, Status);
+CREATE INDEX IF NOT EXISTS idx_wallet_history ON WalletHistory(WalletID, Type, State);
