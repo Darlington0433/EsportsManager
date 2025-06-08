@@ -1,4 +1,0 @@
-E:\EsportsManager\EsportManager\EsportManager.UI\obj\Debug\net9.0\EsportManager.UI.GeneratedMSBuildEditorConfig.editorconfig
-E:\EsportsManager\EsportManager\EsportManager.UI\obj\Debug\net9.0\EsportManager.UI.AssemblyInfoInputs.cache
-E:\EsportsManager\EsportManager\EsportManager.UI\obj\Debug\net9.0\EsportManager.UI.AssemblyInfo.cs
-E:\EsportsManager\EsportManager\EsportManager.UI\obj\Debug\net9.0\EsportManager.UI.csproj.CoreCompileInputs.cache
