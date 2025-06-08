@@ -7,19 +7,33 @@ namespace EsportManager.UI.Menus
 {
     public static class AdminMenu
     {
+        private static readonly string TitleArt = @"
+███████╗███████╗██████╗  ██████╗ ██████╗ ████████╗███████╗    ███╗   ███╗ █████╗ ███╗   ██╗ █████╗  ██████╗ ███████╗██████╗ 
+██╔════╝██╔════╝██╔══██╗██╔═══██╗██╔══██╗╚══██╔══╝██╔════╝    ████╗ ████║██╔══██╗████╗  ██║██╔══██╗██╔════╝ ██╔════╝██╔══██╗
+█████╗  ███████╗██████╔╝██║   ██║██████╔╝   ██║   ███████╗    ██╔████╔██║███████║██╔██╗ ██║███████║██║  ███╗█████╗  ██████╔╝
+██╔══╝  ╚════██║██╔═══╝ ██║   ██║██╔══██╗   ██║   ╚════██║    ██║╚██╔╝██║██╔══██║██║╚██╗██║██╔══██║██║   ██║██╔══╝  ██╔══██╗
+███████╗███████║██║     ╚██████╔╝██║  ██║   ██║   ███████║    ██║ ╚═╝ ██║██║  ██║██║ ╚████║██║  ██║╚██████╔╝███████╗██║  ██║
+╚══════╝╚══════╝╚═╝      ╚═════╝ ╚═╝  ╚═╝   ╚═╝   ╚══════╝    ╚═╝     ╚═╝╚═╝  ╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝╚═╝  ╚═╝";
+
+        private static readonly Color[] TitleGradient = new[]
+        {
+            ColorTranslator.FromHtml("#87CEEB"),  // Sky Blue
+            ColorTranslator.FromHtml("#98FB98"),  // Pale Green
+            ColorTranslator.FromHtml("#DDA0DD"),  // Plum
+            ColorTranslator.FromHtml("#FFB6C1")   // Light Pink
+        };
+
         public static void Show()
         {
             System.Console.Clear();
 
-            // FIGlet title
-            var figlet = FigletFont.Default;
-            var figletText = new Figlet(figlet).ToAscii("ESPORTS MANAGER");
-            int maxFigletWidth = 0;
-            foreach (var line in figletText.ToString().Split('\n'))
-                if (line.Length > maxFigletWidth) maxFigletWidth = line.Length;
+            string[] artLines = TitleArt.Split('\n');
+            int maxArtWidth = 0;
+            foreach (var line in artLines)
+                if (line.Length > maxArtWidth) maxArtWidth = line.Length;
 
             string menuTitle = "[MENU ADMIN]";
-            int contentWidth = Math.Max(50, Math.Max(maxFigletWidth, menuTitle.Length + 4));
+            int contentWidth = Math.Max(50, Math.Max(maxArtWidth, menuTitle.Length + 4));
             string horizontal = new string('═', contentWidth);
 
             string[] options = {
@@ -39,17 +53,18 @@ namespace EsportManager.UI.Menus
                 // Empty line
                 System.Console.WriteLine("║" + new string(' ', contentWidth) + "║");
 
-                // FIGlet title centered với màu #8AFFEF
-                Color figletColor = ColorTranslator.FromHtml("#8AFFEF");
-                foreach (var line in figletText.ToString().Split('\n'))
+                // Title Art với gradient màu
+                int currentLine = Console.CursorTop;
+                foreach (var line in artLines)
                 {
-                    string trimmed = line.TrimEnd('\r');
-                    int pad = Math.Max(0, (contentWidth - trimmed.Length) / 2);
-                    if (trimmed.Length > 0)
+                    if (!string.IsNullOrEmpty(line))
                     {
-                        System.Console.Write("║" + new string(' ', pad));
-                        Console.Write(trimmed, figletColor);
-                        System.Console.WriteLine(new string(' ', contentWidth - pad - trimmed.Length) + "║");
+                        System.Console.Write("║");
+                        int pad = (contentWidth - line.Length) / 2;
+                        System.Console.Write(new string(' ', pad));
+                        Color gradientColor = TitleGradient[(Console.CursorTop - currentLine) % TitleGradient.Length];
+                        Console.Write(line, gradientColor);
+                        System.Console.WriteLine(new string(' ', contentWidth - pad - line.Length) + "║");
                     }
                 }
                 // Empty line
