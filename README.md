@@ -4,7 +4,7 @@
 [![Trạng Thái Build](https://img.shields.io/badge/build-passing-brightgreen.svg)](#)
 [![Giấy Phép](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/YOUR-USERNAME/esports-manager/blob/main/LICENSE)
 [![C#](https://img.shields.io/badge/C%23-11.0-purple.svg)](https://docs.microsoft.com/en-us/dotnet/csharp/)
-[![GitHub Stars](https://img.shields.io/github/stars/YOUR-USERNAME/esports-manager?style=social)](https://github.com/YOUR-USERNAME/esports-manager/stargazers)
+[![GitHub Stars](https://img.shields.io/github/stars/YOUR-USERNAME/esports-manager?style=social)](https://github.com/Darlington0433/EsportsManager/tree/main?tab=readme-ov-file)
 
 > **Hệ thống quản lý giải đấu Esports chuyên nghiệp** được phát triển theo kiến trúc 3 tầng chuẩn và tuân thủ nguyên lý SOLID.
 
