@@ -1,0 +1,46 @@
+using System;
+using System.Threading.Tasks;
+using EsportsManager.UI.Configuration;
+using EsportsManager.UI.Menus;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+
+namespace EsportsManager.UI
+{
+    /// <summary>
+    /// Simple program entry point using dependency injection
+    /// </summary>
+    class Program
+    {
+        // Make the ServiceProvider accessible for menu classes
+        public static IServiceProvider ServiceProvider { get; private set; }
+
+        static async Task Main(string[] args)
+        {
+            try
+            {
+                // Create configuration
+                var configuration = DIContainer.CreateConfiguration();
+
+                // Configure services and build service provider
+                ServiceProvider = DIContainer.ConfigureServices(configuration);
+
+                // Get the main menu from service provider
+                var mainMenu = ServiceProvider.GetRequiredService<MainMenu>();
+
+                // Show main menu
+                await mainMenu.ShowAsync();
+            }
+            catch (Exception ex)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"Fatal error: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
+                Console.ResetColor();
+                Console.WriteLine("Press any key to exit...");
+                Console.ReadKey();
+            }
+        }
+    }
+}
