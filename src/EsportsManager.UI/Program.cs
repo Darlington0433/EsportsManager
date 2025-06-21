@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using EsportsManager.UI.ConsoleUI;
+using EsportsManager.UI.Utilities;
 using EsportsManager.BL.Interfaces;
 using EsportsManager.BL.Services;
 using EsportsManager.DAL.Interfaces;
@@ -15,11 +16,13 @@ namespace EsportsManager.UI;
 /// Entry point ứng dụng với cấu hình Dependency Injection
 /// </summary>
 class Program
-{    /// <summary>
+{
+    /// <summary>
     /// Khởi chạy ứng dụng console
     /// </summary>
     static void Main(string[] args)
     {
+        
         var services = new ServiceCollection();
         ConfigureServices(services);
         
@@ -96,13 +99,17 @@ class Program
         // - Caching Service
         // - etc.
     }
-}
+    
+    // ═══════════════════════════════════════════════════════════════
+    // CONSOLE WINDOW CONFIGURATION
+    // ═══════════════════════════════════════════════════════════════
+  }
 
 // =============================================================================
 // END OF PROGRAM.CS
 // 
 // TÍCH HỢP VỚI KIẾN TRÚC:
-// Program.cs → LegacyUIRunner → InteractiveMenuService → Forms → Services → Repositories
+// Program.cs → ConsoleAppRunner → InteractiveMenuService → Forms → Services → Repositories
 // 
 // LUỒNG DỮ LIỆU:
 // User Input → UI Forms → Business Services → Repository → Database
