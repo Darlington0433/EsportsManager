@@ -3,6 +3,8 @@
 using System;
 using EsportsManager.UI.Utilities;
 using EsportsManager.UI.ConsoleUI.Utilities;
+using EsportsManager.BL.Interfaces;
+using EsportsManager.BL.DTOs;
 
 namespace EsportsManager.UI.Forms
 {    /// <summary>
@@ -11,6 +13,8 @@ namespace EsportsManager.UI.Forms
     public class PasswordRecoveryForm
     {
         #region Private Fields
+        
+        private readonly IUserService _userService;
         
         // Các field cần nhập trong form quên mật khẩu
         private readonly string[] _fieldLabels = {
@@ -26,6 +30,15 @@ namespace EsportsManager.UI.Forms
         
         // Câu hỏi bảo mật cố định
         private readonly string _securityQuestion = "Tên trường tiểu học đầu tiên của bạn là gì?";
+        
+        #endregion
+
+        #region Constructor
+        
+        public PasswordRecoveryForm(IUserService userService)
+        {
+            _userService = userService ?? throw new ArgumentNullException(nameof(userService));
+        }
         
         #endregion
         

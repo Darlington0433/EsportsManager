@@ -53,17 +53,18 @@ public class BusinessResult<T>
 
 /// <summary>
 /// BusinessResult - Lớp wrapper cho kết quả xử lý business logic không có dữ liệu trả về
-/// Kế thừa từ BusinessResult<object> để tái sử dụng code
+/// Standalone class để tránh circular dependency
 /// Sử dụng cho các operation chỉ cần biết thành công/thất bại
 /// </summary>
-public class BusinessResult : BusinessResult<object>
+public class BusinessResult
 {
-    
+    public bool IsSuccess { get; set; }
+    public string? ErrorMessage { get; set; }
+    public List<string> Errors { get; set; } = new();
     
     /// <summary>
     /// Tạo kết quả thành công không có dữ liệu
     /// </summary>
-
     public static BusinessResult Success()
     {
         return new BusinessResult
@@ -73,33 +74,29 @@ public class BusinessResult : BusinessResult<object>
     }
 
     /// <summary>
-    /// Tạo kết quả thất bại với một thông báo lỗi
-    /// Sử dụng 'new' để hide method từ base class
+    /// Tạo kết quả thất bại không có dữ liệu
     /// </summary>
-    public new static BusinessResult Failure(string errorMessage)
+    public static BusinessResult Failure(string errorMessage)
     {
         return new BusinessResult
         {
             IsSuccess = false,
-            ErrorMessage = errorMessage
+            ErrorMessage = errorMessage,
+            Errors = new List<string> { errorMessage }
         };
     }
 
-    /// <summary>
-    /// Tạo kết quả thất bại với danh sách các lỗi
-    /// Sử dụng 'new' để hide method từ base class
+    /// <summary>    /// Tạo kết quả thất bại với danh sách các lỗi
     /// </summary>
-    public new static BusinessResult Failure(List<string> errors)
+    public static BusinessResult Failure(List<string> errors)
     {
         return new BusinessResult
         {
             IsSuccess = false,
             Errors = errors,
-            ErrorMessage = string.Join("; ", errors) // Gộp tất cả lỗi thành một chuỗi
+            ErrorMessage = string.Join("; ", errors)
         };
     }
-    
-    
 }
 
 /// <summary>

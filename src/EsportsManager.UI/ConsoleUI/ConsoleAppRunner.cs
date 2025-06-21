@@ -1,20 +1,28 @@
 // Điều khiển ứng dụng console chính
 using System;
+using Microsoft.Extensions.DependencyInjection;
 using EsportsManager.UI.Forms;
 using EsportsManager.UI.ConsoleUI.Utilities;
-using EsportsManager.UI.Controllers;
+using EsportsManager.UI.MenuServices;
+using EsportsManager.UI.Services;
+using EsportsManager.BL.Controllers;
 using EsportsManager.BL.Models;
+using EsportsManager.BL.DTOs;
 
 namespace EsportsManager.UI.ConsoleUI
 {    /// <summary>
     /// Điều khiển giao diện console
     /// </summary>
     public static class ConsoleAppRunner
-    {        /// <summary>
-        /// Chạy ứng dụng console
+    {
+        private static ServiceProvider? _serviceProvider;
+        
+        /// <summary>
+        /// Chạy ứng dụng console với DI container
         /// </summary>
-        public static void RunApplication()
+        public static void RunApplication(ServiceProvider serviceProvider)
         {
+            _serviceProvider = serviceProvider;
             Run(); // Delegate sang method Run() chính
         }
         
@@ -88,8 +96,17 @@ namespace EsportsManager.UI.ConsoleUI
         {
             try
             {
-                // Tạo và hiển thị form đăng nhập
-                var loginForm = new UserAuthenticationForm();
+                if (_serviceProvider == null)
+                {
+                    ConsoleRenderingService.ShowMessageBox("Lỗi hệ thống: ServiceProvider chưa được khởi tạo", true, 3000);
+                    return;
+                }
+
+                // Lấy UserService từ DI container
+                var userService = _serviceProvider.GetRequiredService<EsportsManager.BL.Interfaces.IUserService>();
+                
+                // Tạo và hiển thị form đăng nhập với UserService
+                var loginForm = new UserAuthenticationForm(userService);
                 bool isCompleted = loginForm.Show(); // Nhận kết quả từ form
                 
                 if (isCompleted)
@@ -104,36 +121,45 @@ namespace EsportsManager.UI.ConsoleUI
                 // Xử lý lỗi riêng cho process đăng nhập - im lặng, không hiển thị gì
                 // Log lỗi nếu cần thiết nhưng không làm phiền user
             }
-        }
-        
-        /// <summary>
+        }        /// <summary>
         /// Hiển thị menu tương ứng với role của user
         /// </summary>
         private static void ShowUserMenu(string role)
         {
             try
             {
-                // Tạo user mẫu đơn giản
-                var sampleUser = new
+                if (_serviceProvider == null)
                 {
+                    ConsoleRenderingService.ShowMessageBox("Lỗi hệ thống: ServiceProvider chưa được khởi tạo", true, 3000);
+                    return;
+                }
+
+                // Lấy ServiceManager từ DI container
+                var serviceManager = _serviceProvider.GetRequiredService<ServiceManager>();
+                
+                // Tạo user profile mẫu
+                var sampleUser = new UserProfileDto
+                {
+                    Id = 1,
                     Username = "demo_user",
                     Email = "demo@example.com",
-                    FullName = "Demo User"
+                    FullName = "Demo User",
+                    Role = role
                 };
                 
                 switch (role.ToLower())
                 {
                     case "player":
-                        ShowPlayerMenu(sampleUser.Username);
+                        ShowPlayerMenu(serviceManager, sampleUser);
                         break;
                         
                     case "admin":
-                        ShowAdminMenu(sampleUser.Username);
+                        ShowAdminMenu(serviceManager, sampleUser);
                         break;
                         
                     case "viewer":
                     default:
-                        ShowViewerMenu(sampleUser.Username);
+                        ShowViewerMenu(serviceManager, sampleUser);
                         break;
                 }
             }
@@ -141,7 +167,7 @@ namespace EsportsManager.UI.ConsoleUI
             {
                 // Xử lý lỗi menu - quay về menu chính
             }
-        }/// <summary>
+        }        /// <summary>
         /// Xử lý quy trình đăng ký tài khoản mới
         /// Hiển thị form đăng ký và xử lý logic tạo account
         /// </summary>
@@ -149,8 +175,17 @@ namespace EsportsManager.UI.ConsoleUI
         {
             try
             {
-                // Tạo và hiển thị form đăng ký
-                var registerForm = new UserRegistrationForm();
+                if (_serviceProvider == null)
+                {
+                    ConsoleRenderingService.ShowMessageBox("Lỗi hệ thống: ServiceProvider chưa được khởi tạo", true, 3000);
+                    return;
+                }
+
+                // Lấy UserService từ DI container
+                var userService = _serviceProvider.GetRequiredService<EsportsManager.BL.Interfaces.IUserService>();
+                
+                // Tạo và hiển thị form đăng ký với UserService
+                var registerForm = new UserRegistrationForm(userService);
                 bool isCompleted = registerForm.Show(); // Nhận kết quả từ form                  if (isCompleted)
                 {
                     // User hoàn thành form - đăng ký thành công, quay lại menu
@@ -170,8 +205,17 @@ namespace EsportsManager.UI.ConsoleUI
         {
             try
             {
-                // Tạo và hiển thị form khôi phục mật khẩu
-                var forgotPasswordForm = new PasswordRecoveryForm();                bool isCompleted = forgotPasswordForm.Show(); // Nhận kết quả từ form
+                if (_serviceProvider == null)
+                {
+                    ConsoleRenderingService.ShowMessageBox("Lỗi hệ thống: ServiceProvider chưa được khởi tạo", true, 3000);
+                    return;
+                }
+
+                // Lấy UserService từ DI container
+                var userService = _serviceProvider.GetRequiredService<EsportsManager.BL.Interfaces.IUserService>();
+                
+                // Tạo và hiển thị form khôi phục mật khẩu với UserService
+                var forgotPasswordForm = new PasswordRecoveryForm(userService);                bool isCompleted = forgotPasswordForm.Show(); // Nhận kết quả từ form
                 
                 if (isCompleted)
                 {
@@ -205,166 +249,47 @@ namespace EsportsManager.UI.ConsoleUI
             Console.WriteLine("\t- Thống kê và báo cáo");
             Console.WriteLine("\n\tNhấn phím bất kỳ để quay lại menu chính...");
             Console.ReadKey();
-        }
-
-        /// <summary>
-        /// Hiển thị menu Player
+        }        /// <summary>
+        /// Hiển thị menu Player với ServiceManager
         /// </summary>
-        private static void ShowPlayerMenu(string username)
+        private static void ShowPlayerMenu(ServiceManager serviceManager, UserProfileDto playerUser)
         {
-            while (true)
+            try
             {
-                var menuOptions = new[]
-                {
-                    "Đăng ký tham gia giải đấu",
-                    "Quản lý team",
-                    "Xem thông tin cá nhân",
-                    "Cập nhật thông tin cá nhân", 
-                    "Xem danh sách giải đấu",
-                    "Gửi feedback giải đấu",
-                    "Quản lý ví điện tử",
-                    "Thành tích cá nhân",
-                    "Đăng xuất"
-                };
-
-                int selection = InteractiveMenuService.DisplayInteractiveMenu($"MENU PLAYER - {username}", menuOptions);
-
-                switch (selection)
-                {
-                    case 0:
-                        ConsoleRenderingService.ShowMessageBox("Chức năng đăng ký giải đấu đang được phát triển", false, 2000);
-                        break;
-                    case 1:
-                        ConsoleRenderingService.ShowMessageBox("Chức năng quản lý team đang được phát triển", false, 2000);
-                        break;
-                    case 2:
-                        ConsoleRenderingService.ShowMessageBox("Chức năng xem thông tin cá nhân đang được phát triển", false, 2000);
-                        break;
-                    case 3:
-                        ConsoleRenderingService.ShowMessageBox("Chức năng cập nhật thông tin đang được phát triển", false, 2000);
-                        break;
-                    case 4:
-                        ConsoleRenderingService.ShowMessageBox("Chức năng xem danh sách giải đấu đang được phát triển", false, 2000);
-                        break;
-                    case 5:
-                        ConsoleRenderingService.ShowMessageBox("Chức năng gửi feedback đang được phát triển", false, 2000);
-                        break;
-                    case 6:
-                        ConsoleRenderingService.ShowMessageBox("Chức năng quản lý ví điện tử đang được phát triển", false, 2000);
-                        break;
-                    case 7:
-                        ConsoleRenderingService.ShowMessageBox("Chức năng thành tích cá nhân đang được phát triển", false, 2000);
-                        break;
-                    case 8:
-                    case -1:
-                        return; // Đăng xuất
-                }
+                var playerMenuService = serviceManager.CreatePlayerMenuService(playerUser);
+                playerMenuService.ShowPlayerMenu();
             }
-        }
-
-        /// <summary>
-        /// Hiển thị menu Admin
-        /// </summary>
-        private static void ShowAdminMenu(string username)
-        {
-            while (true)
+            catch (Exception ex)
             {
-                var menuOptions = new[]
-                {
-                    "Quản lý người dùng",
-                    "Quản lý giải đấu/trận đấu",
-                    "Xem thống kê hệ thống",
-                    "Xem báo cáo donation",
-                    "Xem kết quả voting",
-                    "Quản lý feedback",
-                    "Cài đặt hệ thống",
-                    "Xóa người dùng",
-                    "Đăng xuất"
-                };
-
-                int selection = InteractiveMenuService.DisplayInteractiveMenu($"MENU ADMIN - {username}", menuOptions);
-
-                switch (selection)
-                {
-                    case 0:
-                        ConsoleRenderingService.ShowMessageBox("Chức năng quản lý người dùng đang được phát triển", false, 2000);
-                        break;
-                    case 1:
-                        ConsoleRenderingService.ShowMessageBox("Chức năng quản lý giải đấu đang được phát triển", false, 2000);
-                        break;
-                    case 2:
-                        ConsoleRenderingService.ShowMessageBox("Chức năng thống kê hệ thống đang được phát triển", false, 2000);
-                        break;
-                    case 3:
-                        ConsoleRenderingService.ShowMessageBox("Chức năng báo cáo donation đang được phát triển", false, 2000);
-                        break;
-                    case 4:
-                        ConsoleRenderingService.ShowMessageBox("Chức năng kết quả voting đang được phát triển", false, 2000);
-                        break;
-                    case 5:
-                        ConsoleRenderingService.ShowMessageBox("Chức năng quản lý feedback đang được phát triển", false, 2000);
-                        break;
-                    case 6:
-                        ConsoleRenderingService.ShowMessageBox("Chức năng cài đặt hệ thống đang được phát triển", false, 2000);
-                        break;
-                    case 7:
-                        ConsoleRenderingService.ShowMessageBox("Chức năng xóa người dùng đang được phát triển", false, 2000);
-                        break;
-                    case 8:
-                    case -1:
-                        return; // Đăng xuất
-                }
+                ConsoleRenderingService.ShowMessageBox($"Lỗi khi hiển thị menu Player: {ex.Message}", false, 3000);
             }
-        }
-
-        /// <summary>
-        /// Hiển thị menu Viewer
+        }        /// <summary>
+        /// Hiển thị menu Admin với ServiceManager
         /// </summary>
-        private static void ShowViewerMenu(string username)
+        private static void ShowAdminMenu(ServiceManager serviceManager, UserProfileDto adminUser)
         {
-            while (true)
+            try
             {
-                var menuOptions = new[]
-                {
-                    "Xem danh sách giải đấu",
-                    "Xem bảng xếp hạng giải đấu",
-                    "Vote cho Player/Tournament/Sport",
-                    "Donate cho Player",
-                    "Xem thông tin cá nhân",
-                    "Cập nhật thông tin cá nhân",
-                    "Quên mật khẩu",
-                    "Đăng xuất"
-                };
-
-                int selection = InteractiveMenuService.DisplayInteractiveMenu($"MENU VIEWER - {username}", menuOptions);
-
-                switch (selection)
-                {
-                    case 0:
-                        ConsoleRenderingService.ShowMessageBox("Chức năng xem danh sách giải đấu đang được phát triển", false, 2000);
-                        break;
-                    case 1:
-                        ConsoleRenderingService.ShowMessageBox("Chức năng xem bảng xếp hạng đang được phát triển", false, 2000);
-                        break;
-                    case 2:
-                        ConsoleRenderingService.ShowMessageBox("Chức năng voting đang được phát triển", false, 2000);
-                        break;
-                    case 3:
-                        ConsoleRenderingService.ShowMessageBox("Chức năng donate đang được phát triển", false, 2000);
-                        break;
-                    case 4:
-                        ConsoleRenderingService.ShowMessageBox("Chức năng xem thông tin cá nhân đang được phát triển", false, 2000);
-                        break;
-                    case 5:
-                        ConsoleRenderingService.ShowMessageBox("Chức năng cập nhật thông tin đang được phát triển", false, 2000);
-                        break;
-                    case 6:
-                        ConsoleRenderingService.ShowMessageBox("Chức năng quên mật khẩu đang được phát triển", false, 2000);
-                        break;
-                    case 7:
-                    case -1:
-                        return; // Đăng xuất
-                }
+                var adminMenuService = serviceManager.CreateAdminMenuService(adminUser);
+                adminMenuService.ShowAdminMenu();
+            }
+            catch (Exception ex)
+            {
+                ConsoleRenderingService.ShowMessageBox($"Lỗi khi hiển thị menu Admin: {ex.Message}", false, 3000);
+            }
+        }        /// <summary>
+        /// Hiển thị menu Viewer với ServiceManager
+        /// </summary>
+        private static void ShowViewerMenu(ServiceManager serviceManager, UserProfileDto viewerUser)
+        {
+            try
+            {
+                var viewerMenuService = serviceManager.CreateViewerMenuService(viewerUser);
+                viewerMenuService.ShowViewerMenu();
+            }
+            catch (Exception ex)
+            {
+                ConsoleRenderingService.ShowMessageBox($"Lỗi khi hiển thị menu Viewer: {ex.Message}", false, 3000);
             }
         }
     }

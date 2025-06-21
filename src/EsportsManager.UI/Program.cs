@@ -16,8 +16,7 @@ namespace EsportsManager.UI;
 /// Entry point ứng dụng với cấu hình Dependency Injection
 /// </summary>
 class Program
-{
-    /// <summary>
+{    /// <summary>
     /// Khởi chạy ứng dụng console
     /// </summary>
     static void Main(string[] args)
@@ -30,7 +29,8 @@ class Program
         
         try
         {
-            ConsoleAppRunner.RunApplication();
+            // Truyền serviceProvider vào ConsoleAppRunner
+            ConsoleAppRunner.RunApplication(serviceProvider);
         }
         catch (Exception ex)
         {
@@ -68,12 +68,14 @@ class Program
             builder.AddConsole();      // Log ra console
             builder.SetMinimumLevel(LogLevel.Information); // Minimum log level
         });
-        
-        // ═══════════════════════════════════════════════════════════════
+          // ═══════════════════════════════════════════════════════════════
         // BUSINESS LOGIC LAYER SERVICES
         // ═══════════════════════════════════════════════════════════════
           // Business Services - Scoped lifetime để tránh state conflicts
         services.AddScoped<IUserService, UserService>();
+        
+        // ServiceManager để tích hợp UI và BL
+        services.AddScoped<EsportsManager.UI.Services.ServiceManager>();
         
         // Business Utilities - Static classes, không cần register trong DI
         // PasswordHasher và InputValidator là static utilities

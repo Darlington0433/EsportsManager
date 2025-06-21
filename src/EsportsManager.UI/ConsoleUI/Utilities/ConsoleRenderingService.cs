@@ -304,5 +304,44 @@ namespace EsportsManager.UI.ConsoleUI.Utilities
             // PadRight: thêm space vào sau để đủ width
             return text.PadLeft((width + text.Length) / 2).PadRight(width);
         }
+
+        /// <summary>
+        /// Hiển thị loading message với animation
+        /// </summary>
+        public static void ShowLoadingMessage(string message)
+        {
+            Console.Clear();
+            Console.WriteLine();
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.Write($"⚡ {message}");
+            
+            for (int i = 0; i < 3; i++)
+            {
+                Thread.Sleep(300);
+                Console.Write(".");
+            }
+            
+            Console.ResetColor();
+            Console.WriteLine();
+        }
+
+        /// <summary>
+        /// Pause với message và chờ user nhấn phím
+        /// </summary>
+        public static void PauseWithMessage(string message = "\nNhấn phím bất kỳ để tiếp tục...")
+        {
+            Console.ForegroundColor = ConsoleColor.Gray;
+            Console.Write(message);
+            Console.ResetColor();
+            Console.ReadKey(true);
+        }        /// <summary>
+        /// Vẽ border đơn giản với title (overload cho compatibility)
+        /// </summary>
+        public static void DrawBorder(string title, int width, int height)
+        {
+            int left = (Console.WindowWidth - width) / 2;
+            int top = (Console.WindowHeight - height) / 2;
+            DrawBorder(left, top, width, height, title, true); // true = use double border
+        }
     }
 }

@@ -3,16 +3,20 @@
 using System;
 using EsportsManager.UI.Utilities;
 using EsportsManager.UI.ConsoleUI.Utilities;
+using EsportsManager.BL.Interfaces;
+using EsportsManager.BL.DTOs;
+using EsportsManager.BL.Models;
 
 namespace EsportsManager.UI.Forms
-{
-    /// <summary>
+{    /// <summary>
     /// UserAuthenticationForm - Form đăng nhập với giao diện giống hệt ảnh mẫu
     /// Bao gồm: border xanh lá, label căn trái, input field highlight, hướng dẫn phím
     /// </summary>
     public class UserAuthenticationForm
     {
         #region Private Fields
+        
+        private readonly IUserService _userService;
         
         // Các field cần nhập trong form đăng nhập
         private readonly string[] _fieldLabels = {
@@ -25,6 +29,15 @@ namespace EsportsManager.UI.Forms
         
         // Index của field đang được chọn
         private int _selectedFieldIndex = 0;
+        
+        #endregion
+
+        #region Constructor
+        
+        public UserAuthenticationForm(IUserService userService)
+        {
+            _userService = userService ?? throw new ArgumentNullException(nameof(userService));
+        }
         
         #endregion
         
@@ -223,20 +236,35 @@ namespace EsportsManager.UI.Forms
         private bool ValidateForm()
         {
             return ValidationService.ValidateRequiredFields(_fieldValues, _fieldLabels, ShowMessage);
-        }
-        
-        /// <summary>
-        /// Xử lý submit form đăng nhập        /// </summary>
-        private void HandleSubmit()
+        }        /// <summary>
+        /// Xử lý submit form đăng nhập với UserService
+        /// </summary>
+        private async void HandleSubmit()
         {
-            // Kiểm tra thông tin đăng nhập (giả lập)
-            if (_fieldValues[0] == "admin" && _fieldValues[1] == "admin")
+            try
             {
-                ShowMessage("Đăng nhập thành công!", false);
+                // Tạo LoginDto từ input
+                var loginDto = new LoginDto
+                {
+                    Username = _fieldValues[0],
+                    Password = _fieldValues[1]
+                };
+
+                // Gọi UserService để authenticate
+                var result = await _userService.AuthenticateAsync(loginDto);
+
+                if (result.IsAuthenticated)
+                {
+                    ShowMessage($"Đăng nhập thành công! Chào mừng {result.Username}", false);
+                }
+                else
+                {
+                    ShowMessage(result.ErrorMessage ?? "Tên đăng nhập hoặc mật khẩu không đúng!", true);
+                }
             }
-            else
+            catch (Exception ex)
             {
-                ShowMessage("Tên đăng nhập hoặc mật khẩu không đúng!", true);
+                ShowMessage($"Lỗi đăng nhập: {ex.Message}", true);
             }
         }
         
