@@ -257,13 +257,13 @@ namespace EsportsManager.UI.ConsoleUI
             try
             {
                 var playerMenuService = serviceManager.CreatePlayerMenuService(playerUser);
-                playerMenuService.ShowPlayerMenu();
+                playerMenuService.ShowPlayerMenuAsync().GetAwaiter().GetResult();
             }
             catch (Exception ex)
             {
                 ConsoleRenderingService.ShowMessageBox($"Lỗi khi hiển thị menu Player: {ex.Message}", false, 3000);
             }
-        }        /// <summary>
+        }/// <summary>
         /// Hiển thị menu Admin với ServiceManager
         /// </summary>
         private static void ShowAdminMenu(ServiceManager serviceManager, UserProfileDto adminUser)

@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using EsportsManager.BL.Controllers;
 using EsportsManager.BL.DTOs;
 using EsportsManager.UI.ConsoleUI.Utilities;
@@ -15,18 +16,20 @@ public class PlayerMenuService
     public PlayerMenuService(PlayerController playerController)
     {
         _playerController = playerController ?? throw new ArgumentNullException(nameof(playerController));
-    }    /// <summary>
+    }
+
+    /// <summary>
     /// Hiển thị menu Player
     /// </summary>
-    public void ShowPlayerMenu()
+    public async Task ShowPlayerMenuAsync()
     {
-        ShowMainMenu();
+        await ShowMainMenuAsync();
     }
 
     /// <summary>
     /// Hiển thị menu chính của Player
     /// </summary>
-    public void ShowMainMenu()
+    public async Task ShowMainMenuAsync()
     {
         while (true)
         {
@@ -47,13 +50,13 @@ public class PlayerMenuService
             switch (selection)
             {
                 case 0:
-                    ShowTournamentRegistration();
+                    await ShowTournamentRegistrationAsync();
                     break;
                 case 1:
-                    ShowTeamManagement();
+                    await ShowTeamManagementAsync();
                     break;
                 case 2:
-                    ShowPersonalInfo();
+                    await ShowPersonalInfoAsync();
                     break;
                 case 3:
                     ShowUpdatePersonalInfo();
@@ -76,7 +79,8 @@ public class PlayerMenuService
 
     /// <summary>
     /// Hiển thị thông tin cá nhân
-    /// </summary>    private async Task ShowPersonalInfoAsync()
+    /// </summary>
+    private async Task ShowPersonalInfoAsync()
     {
         try
         {
@@ -106,7 +110,8 @@ public class PlayerMenuService
 
     /// <summary>
     /// Đăng ký tham gia giải đấu
-    /// </summary>    private async Task ShowTournamentRegistrationAsync()
+    /// </summary>
+    private async Task ShowTournamentRegistrationAsync()
     {
         try
         {
@@ -136,7 +141,8 @@ public class PlayerMenuService
                 Console.WriteLine($"   👥 Đã đăng ký: {tournament.CurrentParticipants}/{tournament.MaxParticipants}");
                 Console.WriteLine();
             }
-              Console.Write("Nhập số thứ tự giải đấu muốn đăng ký (0 để hủy): ");
+            
+            Console.Write("Nhập số thứ tự giải đấu muốn đăng ký (0 để hủy): ");
             if (int.TryParse(Console.ReadLine(), out int choice) && choice > 0 && choice <= tournaments.Count)
             {
                 var selectedTournament = tournaments[choice - 1];
@@ -161,7 +167,8 @@ public class PlayerMenuService
     }
 
     /// <summary>
-    /// Quản lý team    /// </summary>
+    /// Quản lý team
+    /// </summary>
     private async Task ShowTeamManagementAsync()
     {
         try
@@ -206,7 +213,8 @@ public class PlayerMenuService
         }
 
         try
-        {            var teamDto = new TeamCreateDto
+        {
+            var teamDto = new TeamCreateDto
             {
                 Name = teamName,
                 Description = description
@@ -254,7 +262,9 @@ public class PlayerMenuService
         }
         
         ConsoleRenderingService.PauseWithMessage();
-    }    /// <summary>
+    }
+
+    /// <summary>
     /// Cập nhật thông tin cá nhân
     /// </summary>
     private void ShowUpdatePersonalInfo()

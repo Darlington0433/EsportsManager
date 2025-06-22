@@ -478,14 +478,13 @@ public class AdminMenuService
               string input = Console.ReadLine() ?? "";
             
             if (TryGetValidUserId(input, out int userId, out string errorMessage))
-            {
-                try
+            {                try
                 {
-                    bool success = await ExecuteWithTimeoutAsync(
+                    var result = await ExecuteWithTimeoutAsync(
                         _adminController.ToggleUserStatusAsync(userId),
                         "Đang cập nhật trạng thái...");
                     
-                    if (success)
+                    if (result.Success)
                     {
                         ConsoleRenderingService.ShowMessageBox("Thay đổi trạng thái thành công!", false, 2000);
                         
@@ -544,17 +543,16 @@ public class AdminMenuService
               string input = Console.ReadLine() ?? "";
             
             if (TryGetValidUserId(input, out int userId, out string errorMessage))
-            {
-                try
+            {                try
                 {
-                    string newPassword = await ExecuteWithTimeoutAsync(
+                    var result = await ExecuteWithTimeoutAsync(
                         _adminController.ResetUserPasswordAsync(userId),
                         "Đang reset mật khẩu...");
                     
                     // Invalidate cache sau khi reset password
                     InvalidateUserCache();
                     
-                    ConsoleRenderingService.ShowMessageBox($"Reset thành công! Mật khẩu mới: {newPassword}", false, 5000);
+                    ConsoleRenderingService.ShowMessageBox($"Reset thành công! Mật khẩu mới: {result.NewPassword}", false, 5000);
                 }
                 catch (TimeoutException ex)
                 {
@@ -602,13 +600,12 @@ public class AdminMenuService
               if (TryGetValidUserId(input, out int userId, out string errorMessage))
             {
                 try
-                {
-                    // Sử dụng GetAllUsersAsync và tìm theo ID vì GetUserByIdAsync chưa có
-                    var allUsers = await ExecuteWithTimeoutAsync(
+                {                    // Sử dụng GetAllUsersAsync và tìm theo ID vì GetUserByIdAsync chưa có
+                    var allUsersResult = await ExecuteWithTimeoutAsync(
                         _adminController.GetAllUsersAsync(),
                         "🔍 Đang tải thông tin chi tiết...");
                     
-                    var userDetails = allUsers.FirstOrDefault(u => u.Id == userId);
+                    var userDetails = allUsersResult.Items.FirstOrDefault(u => u.Id == userId);
                     
                     if (userDetails != null)
                     {
@@ -1092,12 +1089,12 @@ public class AdminMenuService
     /// Lấy danh sách người dùng với caching để tối ưu hiệu suất
     /// </summary>
     private async Task<List<UserProfileDto>> GetUsersWithCacheAsync(bool forceRefresh = false)
-    {
-        if (forceRefresh || _cachedUsers == null || DateTime.Now - _lastUsersCacheTime > _cacheExpiration)
+    {        if (forceRefresh || _cachedUsers == null || DateTime.Now - _lastUsersCacheTime > _cacheExpiration)
         {
             try
             {
-                _cachedUsers = await _adminController.GetAllUsersAsync();
+                var result = await _adminController.GetAllUsersAsync();
+                _cachedUsers = result.Items.ToList();
                 _lastUsersCacheTime = DateTime.Now;
             }
             catch (Exception ex)

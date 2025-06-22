@@ -28,25 +28,22 @@ public class PlayerController
 
     // ═══════════════════════════════════════════════════════════════
     // PLAYER PROFILE MANAGEMENT
-    // ═══════════════════════════════════════════════════════════════
-
-    /// <summary>
+    // ═══════════════════════════════════════════════════════════════    /// <summary>
     /// Lấy thông tin cá nhân của player
     /// </summary>
     public async Task<UserProfileDto> GetPersonalInfoAsync()
     {
         try
-        {            // TODO: Implement get updated user info from database
+        {
+            // TODO: Implement get updated user info from database
             // return await _userService.GetUserByIdAsync(_currentPlayer.Id);
-            return _currentPlayer;
+            return await Task.FromResult(_currentPlayer);
         }
         catch (Exception ex)
         {
             throw new InvalidOperationException($"Lỗi khi lấy thông tin cá nhân: {ex.Message}", ex);
         }
-    }
-
-    /// <summary>
+    }    /// <summary>
     /// Cập nhật thông tin cá nhân
     /// </summary>
     public async Task<bool> UpdatePersonalInfoAsync(UserUpdateDto updateDto)
@@ -55,9 +52,10 @@ public class PlayerController
             throw new ArgumentNullException(nameof(updateDto));
 
         try
-        {            // TODO: Implement user info update
+        {
+            // TODO: Implement user info update
             // return await _userService.UpdateUserInfoAsync(_currentPlayer.Id, updateDto);
-            return true; // Mock success
+            return await Task.FromResult(true); // Mock success
         }
         catch (Exception ex)
         {
@@ -77,9 +75,10 @@ public class PlayerController
             throw new ArgumentException("Mật khẩu mới không được rỗng", nameof(newPassword));
 
         try
-        {            // TODO: Implement password change
+        {
+            // TODO: Implement password change
             // return await _userService.ChangePasswordAsync(_currentPlayer.Id, currentPassword, newPassword);
-            return true; // Mock success
+            return await Task.FromResult(true); // Mock success
         }
         catch (Exception ex)
         {
@@ -89,9 +88,7 @@ public class PlayerController
 
     // ═══════════════════════════════════════════════════════════════
     // TOURNAMENT PARTICIPATION
-    // ═══════════════════════════════════════════════════════════════
-
-    /// <summary>
+    // ═══════════════════════════════════════════════════════════════    /// <summary>
     /// Lấy danh sách giải đấu có thể tham gia
     /// </summary>
     public async Task<List<TournamentInfoDto>> GetAvailableTournamentsAsync()
@@ -99,7 +96,7 @@ public class PlayerController
         try
         {
             // TODO: Implement get available tournaments
-            return new List<TournamentInfoDto>
+            var mockTournaments = new List<TournamentInfoDto>
             {
                 new TournamentInfoDto 
                 { 
@@ -112,6 +109,7 @@ public class PlayerController
                     CurrentParticipants = 25
                 }
             };
+            return await Task.FromResult(mockTournaments);
         }
         catch (Exception ex)
         {
@@ -130,7 +128,7 @@ public class PlayerController
         try
         {
             // TODO: Implement tournament registration
-            return true; // Mock success
+            return await Task.FromResult(true); // Mock success
         }
         catch (Exception ex)
         {
@@ -146,7 +144,7 @@ public class PlayerController
         try
         {
             // TODO: Implement get player's tournaments
-            return new List<TournamentInfoDto>();
+            return await Task.FromResult(new List<TournamentInfoDto>());
         }
         catch (Exception ex)
         {
@@ -156,9 +154,7 @@ public class PlayerController
 
     // ═══════════════════════════════════════════════════════════════
     // TEAM MANAGEMENT
-    // ═══════════════════════════════════════════════════════════════
-
-    /// <summary>
+    // ═══════════════════════════════════════════════════════════════    /// <summary>
     /// Tạo team mới
     /// </summary>
     public async Task<bool> CreateTeamAsync(TeamCreateDto teamDto)
@@ -169,7 +165,7 @@ public class PlayerController
         try
         {
             // TODO: Implement team creation
-            return true; // Mock success
+            return await Task.FromResult(true); // Mock success
         }
         catch (Exception ex)
         {
@@ -185,7 +181,7 @@ public class PlayerController
         try
         {
             // TODO: Implement get player's team
-            return null; // Mock - player chưa có team
+            return await Task.FromResult<TeamInfoDto?>(null); // Mock - player chưa có team
         }
         catch (Exception ex)
         {
@@ -203,91 +199,14 @@ public class PlayerController
     public async Task<bool> SendFeedbackAsync(FeedbackDto feedbackDto)
     {
         if (feedbackDto == null)
-            throw new ArgumentNullException(nameof(feedbackDto));
-
-        try
+            throw new ArgumentNullException(nameof(feedbackDto));        try
         {
             // TODO: Implement feedback submission
-            return true; // Mock success
+            return await Task.FromResult(true); // Mock success
         }
         catch (Exception ex)
         {
             throw new InvalidOperationException($"Lỗi khi gửi feedback: {ex.Message}", ex);
         }
     }
-}
-
-// ═══════════════════════════════════════════════════════════════
-// SUPPORTING DTOs
-// ═══════════════════════════════════════════════════════════════
-
-/// <summary>
-/// DTO cho cập nhật thông tin user
-/// </summary>
-public class UserUpdateDto
-{
-    public string? Email { get; set; }
-    public string? FullName { get; set; }
-    public string? PhoneNumber { get; set; }
-}
-
-/// <summary>
-/// DTO thông tin giải đấu
-/// </summary>
-public class TournamentInfoDto
-{
-    public int Id { get; set; }
-    public required string Name { get; set; }
-    public required string Description { get; set; }
-    public DateTime StartDate { get; set; }
-    public DateTime EndDate { get; set; }
-    public decimal EntryFee { get; set; }
-    public int MaxParticipants { get; set; }
-    public int CurrentParticipants { get; set; }
-    public bool IsRegistrationOpen { get; set; }
-}
-
-/// <summary>
-/// DTO cho tạo team
-/// </summary>
-public class TeamCreateDto
-{
-    public required string Name { get; set; }
-    public required string Description { get; set; }
-    public string? LogoUrl { get; set; }
-}
-
-/// <summary>
-/// DTO thông tin team
-/// </summary>
-public class TeamInfoDto
-{
-    public int Id { get; set; }
-    public required string Name { get; set; }
-    public required string Description { get; set; }
-    public string? LogoUrl { get; set; }
-    public DateTime CreatedAt { get; set; }
-    public List<TeamMemberDto> Members { get; set; } = new();
-}
-
-/// <summary>
-/// DTO thành viên team
-/// </summary>
-public class TeamMemberDto
-{
-    public int UserId { get; set; }
-    public required string Username { get; set; }
-    public required string Role { get; set; }
-    public DateTime JoinedAt { get; set; }
-}
-
-/// <summary>
-/// DTO cho feedback
-/// </summary>
-public class FeedbackDto
-{
-    public int TournamentId { get; set; }
-    public required string Subject { get; set; }
-    public required string Content { get; set; }
-    public int Rating { get; set; } // 1-5 stars
 }

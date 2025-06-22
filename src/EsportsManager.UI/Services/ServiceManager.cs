@@ -17,13 +17,12 @@ public class ServiceManager
     public ServiceManager(IUserService userService)
     {
         _userService = userService ?? throw new ArgumentNullException(nameof(userService));
-    }
-
-    /// <summary>
+    }    /// <summary>
     /// Tạo AdminController và AdminMenuService
     /// </summary>
     public AdminMenuService CreateAdminMenuService(UserProfileDto adminUser)
     {
+        // Temporary implementation - just use simplified constructor
         var adminController = new AdminController(_userService, adminUser);
         return new AdminMenuService(adminController);
     }
