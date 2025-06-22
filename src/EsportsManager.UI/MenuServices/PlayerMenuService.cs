@@ -259,14 +259,61 @@ public class PlayerMenuService
         }
         
         ConsoleRenderingService.PauseWithMessage();
-    }
-
-    /// <summary>
+    }    /// <summary>
     /// Cập nhật thông tin cá nhân
     /// </summary>
     private void ShowUpdatePersonalInfo()
     {
-        ConsoleRenderingService.ShowMessageBox("Chức năng cập nhật thông tin đang được phát triển", false, 2000);
+        Console.Clear();
+        
+        const int frameWidth = 80;
+        const int frameHeight = 12;
+        
+        // Tính vị trí khung
+        int frameLeft = (Console.WindowWidth - frameWidth) / 2;
+        int frameTop = (Console.WindowHeight - frameHeight) / 2;
+        
+        // Tính vị trí nội dung
+        int contentLeft = frameLeft + 3;
+        int contentTop = frameTop + 3;
+        
+        // Vẽ khung
+        ConsoleRenderingService.DrawBorder("CẬP NHẬT THÔNG TIN CÁ NHÂN", frameWidth, frameHeight);
+        
+        Console.SetCursorPosition(contentLeft, contentTop);
+        Console.ForegroundColor = ConsoleColor.Cyan;
+        Console.Write("👤 PLAYER PROFILE UPDATE");
+        Console.ResetColor();
+        
+        Console.SetCursorPosition(contentLeft, contentTop + 2);
+        Console.ForegroundColor = ConsoleColor.Red;
+        Console.Write("⚠️ Chức năng đang được phát triển");
+        Console.ResetColor();
+        
+        Console.SetCursorPosition(contentLeft, contentTop + 4);
+        Console.Write("Tính năng sẽ bao gồm:");
+        Console.SetCursorPosition(contentLeft, contentTop + 5);
+        Console.Write("• Cập nhật thông tin game ID");
+        Console.SetCursorPosition(contentLeft, contentTop + 6);
+        Console.Write("• Thay đổi ảnh đại diện");
+        Console.SetCursorPosition(contentLeft, contentTop + 7);
+        Console.Write("• Cập nhật game preferences");
+        Console.SetCursorPosition(contentLeft, contentTop + 8);
+        Console.Write("• Thiết lập thông tin liên hệ");
+        
+        // Hiển thị phím điều hướng ở cuối khung
+        Console.SetCursorPosition(contentLeft, frameTop + frameHeight - 2);
+        Console.ForegroundColor = ConsoleColor.Cyan;
+        Console.Write("ESC: Quay lại   🎮 Gaming Profile Manager");
+        Console.ResetColor();
+        
+        // Chờ phím ESC
+        ConsoleKeyInfo key;
+        do
+        {
+            key = Console.ReadKey(true);
+        }
+        while (key.Key != ConsoleKey.Escape);
     }
 
     /// <summary>
@@ -274,7 +321,56 @@ public class PlayerMenuService
     /// </summary>
     private void ShowChangePassword()
     {
-        ConsoleRenderingService.ShowMessageBox("Chức năng thay đổi mật khẩu đang được phát triển", false, 2000);
+        Console.Clear();
+        
+        const int frameWidth = 80;
+        const int frameHeight = 12;
+        
+        // Tính vị trí khung
+        int frameLeft = (Console.WindowWidth - frameWidth) / 2;
+        int frameTop = (Console.WindowHeight - frameHeight) / 2;
+        
+        // Tính vị trí nội dung
+        int contentLeft = frameLeft + 3;
+        int contentTop = frameTop + 3;
+        
+        // Vẽ khung
+        ConsoleRenderingService.DrawBorder("THAY ĐỔI MẬT KHẨU", frameWidth, frameHeight);
+        
+        Console.SetCursorPosition(contentLeft, contentTop);
+        Console.ForegroundColor = ConsoleColor.Yellow;
+        Console.Write("🔐 PASSWORD CHANGE SYSTEM");
+        Console.ResetColor();
+        
+        Console.SetCursorPosition(contentLeft, contentTop + 2);
+        Console.ForegroundColor = ConsoleColor.Red;
+        Console.Write("⚠️ Chức năng đang được phát triển");
+        Console.ResetColor();
+        
+        Console.SetCursorPosition(contentLeft, contentTop + 4);
+        Console.Write("Tính năng sẽ bao gồm:");
+        Console.SetCursorPosition(contentLeft, contentTop + 5);
+        Console.Write("• Xác thực mật khẩu hiện tại");
+        Console.SetCursorPosition(contentLeft, contentTop + 6);
+        Console.Write("• Kiểm tra độ mạnh mật khẩu mới");
+        Console.SetCursorPosition(contentLeft, contentTop + 7);
+        Console.Write("• Bảo mật 2FA (nếu có)");
+        Console.SetCursorPosition(contentLeft, contentTop + 8);
+        Console.Write("• Gửi email xác nhận");
+        
+        // Hiển thị phím điều hướng ở cuối khung
+        Console.SetCursorPosition(contentLeft, frameTop + frameHeight - 2);
+        Console.ForegroundColor = ConsoleColor.Cyan;
+        Console.Write("ESC: Quay lại   🛡️ Security Center");
+        Console.ResetColor();
+        
+        // Chờ phím ESC
+        ConsoleKeyInfo key;
+        do
+        {
+            key = Console.ReadKey(true);
+        }
+        while (key.Key != ConsoleKey.Escape);
     }
 
     /// <summary>
@@ -282,7 +378,56 @@ public class PlayerMenuService
     /// </summary>
     private void ShowTournamentList()
     {
-        ConsoleRenderingService.ShowMessageBox("Chức năng xem danh sách giải đấu đang được phát triển", false, 2000);
+        Console.Clear();
+        
+        const int frameWidth = 80;
+        const int frameHeight = 12;
+        
+        // Tính vị trí khung
+        int frameLeft = (Console.WindowWidth - frameWidth) / 2;
+        int frameTop = (Console.WindowHeight - frameHeight) / 2;
+        
+        // Tính vị trí nội dung
+        int contentLeft = frameLeft + 3;
+        int contentTop = frameTop + 3;
+        
+        // Vẽ khung
+        ConsoleRenderingService.DrawBorder("DANH SÁCH GIẢI ĐẤU", frameWidth, frameHeight);
+        
+        Console.SetCursorPosition(contentLeft, contentTop);
+        Console.ForegroundColor = ConsoleColor.Green;
+        Console.Write("🏆 TOURNAMENT DIRECTORY");
+        Console.ResetColor();
+        
+        Console.SetCursorPosition(contentLeft, contentTop + 2);
+        Console.ForegroundColor = ConsoleColor.Red;
+        Console.Write("⚠️ Chức năng đang được phát triển");
+        Console.ResetColor();
+        
+        Console.SetCursorPosition(contentLeft, contentTop + 4);
+        Console.Write("Tính năng sẽ bao gồm:");
+        Console.SetCursorPosition(contentLeft, contentTop + 5);
+        Console.Write("• Xem giải đấu đang diễn ra");
+        Console.SetCursorPosition(contentLeft, contentTop + 6);
+        Console.Write("• Đăng ký tham gia giải đấu");
+        Console.SetCursorPosition(contentLeft, contentTop + 7);
+        Console.Write("• Lịch trình trận đấu");
+        Console.SetCursorPosition(contentLeft, contentTop + 8);
+        Console.Write("• Bảng xếp hạng và phần thưởng");
+        
+        // Hiển thị phím điều hướng ở cuối khung
+        Console.SetCursorPosition(contentLeft, frameTop + frameHeight - 2);
+        Console.ForegroundColor = ConsoleColor.Cyan;
+        Console.Write("ESC: Quay lại   ⚔️ Tournament Hub");
+        Console.ResetColor();
+        
+        // Chờ phím ESC
+        ConsoleKeyInfo key;
+        do
+        {
+            key = Console.ReadKey(true);
+        }
+        while (key.Key != ConsoleKey.Escape);
     }
 
     /// <summary>
@@ -290,6 +435,55 @@ public class PlayerMenuService
     /// </summary>
     private void ShowSendFeedback()
     {
-        ConsoleRenderingService.ShowMessageBox("Chức năng gửi feedback đang được phát triển", false, 2000);
+        Console.Clear();
+        
+        const int frameWidth = 80;
+        const int frameHeight = 12;
+        
+        // Tính vị trí khung
+        int frameLeft = (Console.WindowWidth - frameWidth) / 2;
+        int frameTop = (Console.WindowHeight - frameHeight) / 2;
+        
+        // Tính vị trí nội dung
+        int contentLeft = frameLeft + 3;
+        int contentTop = frameTop + 3;
+        
+        // Vẽ khung
+        ConsoleRenderingService.DrawBorder("GỬI FEEDBACK", frameWidth, frameHeight);
+        
+        Console.SetCursorPosition(contentLeft, contentTop);
+        Console.ForegroundColor = ConsoleColor.Magenta;
+        Console.Write("💬 FEEDBACK SYSTEM");
+        Console.ResetColor();
+        
+        Console.SetCursorPosition(contentLeft, contentTop + 2);
+        Console.ForegroundColor = ConsoleColor.Red;
+        Console.Write("⚠️ Chức năng đang được phát triển");
+        Console.ResetColor();
+        
+        Console.SetCursorPosition(contentLeft, contentTop + 4);
+        Console.Write("Tính năng sẽ bao gồm:");
+        Console.SetCursorPosition(contentLeft, contentTop + 5);
+        Console.Write("• Gửi ý kiến về hệ thống");
+        Console.SetCursorPosition(contentLeft, contentTop + 6);
+        Console.Write("• Báo lỗi và bug");
+        Console.SetCursorPosition(contentLeft, contentTop + 7);
+        Console.Write("• Đề xuất tính năng mới");
+        Console.SetCursorPosition(contentLeft, contentTop + 8);
+        Console.Write("• Đánh giá trải nghiệm gaming");
+        
+        // Hiển thị phím điều hướng ở cuối khung
+        Console.SetCursorPosition(contentLeft, frameTop + frameHeight - 2);
+        Console.ForegroundColor = ConsoleColor.Cyan;
+        Console.Write("ESC: Quay lại   📝 Community Voice");
+        Console.ResetColor();
+        
+        // Chờ phím ESC
+        ConsoleKeyInfo key;
+        do
+        {
+            key = Console.ReadKey(true);
+        }
+        while (key.Key != ConsoleKey.Escape);
     }
 }

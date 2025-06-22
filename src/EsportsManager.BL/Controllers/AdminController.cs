@@ -34,7 +34,7 @@ public class AdminController
     /// <summary>
     /// Lấy danh sách tất cả người dùng (chỉ Admin)
     /// </summary>
-    public async Task<List<UserProfileDto>> GetAllUsersAsync()
+    public async Task<List<UserProfileDto>>     GetAllUsersAsync()
     {        try
         {
             // TODO: Implement get all users via UserService
