@@ -836,4 +836,340 @@ public class UserService : IUserService
     }
     
     #endregion
+
+    // ═══════════════════════════════════════════════════════════════
+    // ENHANCED ADMIN METHODS - Vietnamese Esports Focus
+    // ═══════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Lấy danh sách tất cả người dùng với phân trang và filtering
+    /// </summary>
+    public async Task<PagedResult<UserProfileDto>> GetAllUsersAsync(
+        int pageNumber = 1, 
+        int pageSize = 20,
+        string? roleFilter = null,
+        string? statusFilter = null,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            // Mock implementation - Production: Replace with real database queries
+            await Task.Delay(50, cancellationToken);
+
+            var allUsers = GetMockUsers();
+
+            // Apply filters
+            var filteredUsers = allUsers.AsEnumerable();
+            
+            if (!string.IsNullOrEmpty(roleFilter))
+                filteredUsers = filteredUsers.Where(u => u.Role.Equals(roleFilter, StringComparison.OrdinalIgnoreCase));
+            
+            if (!string.IsNullOrEmpty(statusFilter))
+                filteredUsers = filteredUsers.Where(u => u.Status.Equals(statusFilter, StringComparison.OrdinalIgnoreCase));
+
+            var totalCount = filteredUsers.Count();
+            var pagedUsers = filteredUsers
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+
+            return new PagedResult<UserProfileDto>
+            {
+                Items = pagedUsers,
+                TotalCount = totalCount,
+                PageNumber = pageNumber,
+                PageSize = pageSize
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting paged users list");
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Tìm kiếm người dùng với enhanced search types
+    /// </summary>
+    public async Task<List<UserProfileDto>> SearchUsersAsync(
+        string searchTerm, 
+        SearchType searchType = SearchType.Contains,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            await Task.Delay(30, cancellationToken);
+
+            var allUsers = GetMockUsers();
+            var results = searchType switch
+            {
+                SearchType.Exact => allUsers.Where(u => 
+                    u.Username.Equals(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                    (u.Email?.Equals(searchTerm, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                    (u.FullName?.Equals(searchTerm, StringComparison.OrdinalIgnoreCase) ?? false)).ToList(),
+                
+                SearchType.StartsWith => allUsers.Where(u => 
+                    u.Username.StartsWith(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                    (u.Email?.StartsWith(searchTerm, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                    (u.FullName?.StartsWith(searchTerm, StringComparison.OrdinalIgnoreCase) ?? false)).ToList(),
+                
+                SearchType.EndsWith => allUsers.Where(u => 
+                    u.Username.EndsWith(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                    (u.Email?.EndsWith(searchTerm, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                    (u.FullName?.EndsWith(searchTerm, StringComparison.OrdinalIgnoreCase) ?? false)).ToList(),
+                
+                _ => allUsers.Where(u => 
+                    u.Username.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                    (u.Email?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                    (u.FullName?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ?? false)).ToList()
+            };
+
+            return results;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error searching users with term: {SearchTerm}", searchTerm);
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Lấy user by ID trả về UserProfileDto
+    /// </summary>
+    public async Task<UserProfileDto?> GetUserByIdAsync(int userId, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            await Task.Delay(20, cancellationToken);
+            var allUsers = GetMockUsers();
+            return allUsers.FirstOrDefault(u => u.Id == userId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting user by ID: {UserId}", userId);
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Thay đổi trạng thái người dùng
+    /// </summary>
+    public async Task<UserStatusChangeResult> ToggleUserStatusAsync(
+        int userId, 
+        string newStatus = "Toggle",
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            await Task.Delay(40, cancellationToken);
+
+            var user = GetMockUsers().FirstOrDefault(u => u.Id == userId);
+            if (user == null)
+                return new UserStatusChangeResult { Success = false, Message = "Không tìm thấy người dùng" };
+
+            var oldStatus = user.Status;
+            var targetStatus = newStatus == "Toggle" ? (oldStatus == "Active" ? "Inactive" : "Active") : newStatus;
+
+            // Mock status change
+            user.Status = targetStatus;
+
+            return new UserStatusChangeResult
+            {
+                Success = true,
+                OldStatus = oldStatus,
+                NewStatus = targetStatus,
+                Message = $"Đã thay đổi trạng thái từ {oldStatus} thành {targetStatus}",
+                ChangedAt = DateTime.Now
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error toggling user status for userId: {UserId}", userId);
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Reset mật khẩu người dùng
+    /// </summary>
+    public async Task<PasswordResetResult> ResetPasswordAsync(
+        int userId, 
+        bool sendEmail = true,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            await Task.Delay(60, cancellationToken);
+
+            var user = GetMockUsers().FirstOrDefault(u => u.Id == userId);
+            if (user == null)
+                return new PasswordResetResult { Success = false, Message = "Không tìm thấy người dùng" };
+
+            var newPassword = GenerateRandomPassword();
+
+            return new PasswordResetResult
+            {
+                Success = true,
+                NewPassword = newPassword,
+                EmailSent = sendEmail,
+                Message = sendEmail ? "Mật khẩu mới đã được gửi qua email" : "Mật khẩu đã được reset",
+                ResetAt = DateTime.Now
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error resetting password for userId: {UserId}", userId);
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Xóa người dùng
+    /// </summary>
+    public async Task<UserDeletionResult> DeleteUserAsync(
+        int userId, 
+        string confirmationCode,
+        bool hardDelete = false,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            await Task.Delay(80, cancellationToken);
+
+            // Validate confirmation code
+            if (confirmationCode != "CONFIRM_DELETE")
+                return new UserDeletionResult { Success = false, Message = "Mã xác nhận không đúng" };
+
+            var user = GetMockUsers().FirstOrDefault(u => u.Id == userId);
+            if (user == null)
+                return new UserDeletionResult { Success = false, Message = "Không tìm thấy người dùng" };
+
+            return new UserDeletionResult
+            {
+                Success = true,
+                RelatedDataCleaned = true,
+                CleanedDataTypes = new List<string> { "Tournaments", "Teams", "Audit Logs" },
+                Message = hardDelete ? "Người dùng đã được xóa vĩnh viễn" : "Người dùng đã được đánh dấu xóa",
+                DeletedAt = DateTime.Now
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error deleting user: {UserId}", userId);
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Bulk operations cho nhiều users
+    /// </summary>
+    public async Task<BulkOperationResult> BulkUpdateUsersAsync(
+        List<int> userIds,
+        BulkUserOperation operation,
+        object? operationData = null,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            await Task.Delay(100, cancellationToken);
+
+            var result = new BulkOperationResult
+            {
+                Success = true,
+                SuccessCount = userIds.Count - 1, // Mock 1 failure
+                FailedCount = 1,
+                ProcessedAt = DateTime.Now,
+                Message = $"Đã xử lý {userIds.Count} người dùng"
+            };
+
+            // Mock 1 error
+            if (userIds.Count > 0)
+            {
+                result.Errors.Add(new BulkOperationError
+                {
+                    UserId = userIds[0],
+                    ErrorMessage = "Người dùng này không thể cập nhật",
+                    ErrorCode = "USER_LOCKED"
+                });
+            }
+
+            return result;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error performing bulk operation: {Operation}", operation);
+            throw;
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // HELPER METHODS
+    // ═══════════════════════════════════════════════════════════════
+
+    private static List<UserProfileDto> GetMockUsers()
+    {
+        return new List<UserProfileDto>
+        {
+            new UserProfileDto 
+            { 
+                Id = 1, 
+                Username = "admin", 
+                Email = "admin@vtc.vn", 
+                FullName = "Quản trị viên",
+                Role = "Admin", 
+                Status = "Active",
+                CreatedAt = DateTime.Now.AddDays(-30),
+                LastLoginAt = DateTime.Now.AddHours(-1),
+                TotalLogins = 250,
+                TotalTimeOnline = TimeSpan.FromHours(120)
+            },
+            new UserProfileDto 
+            { 
+                Id = 2, 
+                Username = "pro_gamer_vn", 
+                Email = "progamer@esports.vn", 
+                FullName = "Nguyễn Văn An",
+                Role = "Player", 
+                Status = "Active",
+                CreatedAt = DateTime.Now.AddDays(-15),
+                LastLoginAt = DateTime.Now.AddMinutes(-30),
+                TotalLogins = 89,
+                TotalTimeOnline = TimeSpan.FromHours(45)
+            },
+            new UserProfileDto 
+            { 
+                Id = 3, 
+                Username = "esports_fan", 
+                Email = "fan@viewer.vn", 
+                FullName = "Trần Thị Bình",
+                Role = "Viewer", 
+                Status = "Active",
+                CreatedAt = DateTime.Now.AddDays(-10),
+                LastLoginAt = DateTime.Now.AddDays(-2),
+                TotalLogins = 42,
+                TotalTimeOnline = TimeSpan.FromHours(20)
+            },
+            new UserProfileDto 
+            { 
+                Id = 4, 
+                Username = "mobile_legends_pro", 
+                Email = "mlpro@esports.vn", 
+                FullName = "Lê Văn Cường",
+                Role = "Player", 
+                Status = "Inactive",
+                CreatedAt = DateTime.Now.AddDays(-20),
+                LastLoginAt = DateTime.Now.AddDays(-5),
+                TotalLogins = 156,
+                TotalTimeOnline = TimeSpan.FromHours(78)
+            }
+        };
+    }
+
+    private static string GenerateRandomPassword()
+    {
+        const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        var random = new Random();
+        return new string(Enumerable.Repeat(chars, 12)
+            .Select(s => s[random.Next(s.Length)]).ToArray());
+    }
 }

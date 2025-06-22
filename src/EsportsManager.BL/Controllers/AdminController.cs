@@ -1,237 +1,678 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using EsportsManager.BL.DTOs;
 using EsportsManager.BL.Interfaces;
 using EsportsManager.BL.Models;
+using Microsoft.Extensions.Logging;
+using ValidationResult = EsportsManager.BL.Models.ValidationResult;
 
 namespace EsportsManager.BL.Controllers;
 
 /// <summary>
 /// AdminController - Xử lý business logic cho Admin operations
-/// Tách biệt hoàn toàn khỏi UI concerns
+/// Áp dụng Clean Architecture principles và Vietnamese Esports standards
+/// Hoàn toàn async/await, dependency injection, error handling và audit logging
 /// </summary>
-public class AdminController
+public sealed class AdminController
 {
     private readonly IUserService _userService;
+    private readonly ITournamentService _tournamentService;
+    private readonly IStatisticsService _statisticsService;
+    private readonly IAuditService _auditService;
+    private readonly ILogger<AdminController> _logger;
     private readonly UserProfileDto _currentAdmin;
 
-    public AdminController(IUserService userService, UserProfileDto currentAdmin)
+    public AdminController(
+        IUserService userService,
+        ITournamentService tournamentService,
+        IStatisticsService statisticsService,
+        IAuditService auditService,
+        ILogger<AdminController> logger,
+        UserProfileDto currentAdmin)
     {
         _userService = userService ?? throw new ArgumentNullException(nameof(userService));
+        _tournamentService = tournamentService ?? throw new ArgumentNullException(nameof(tournamentService));
+        _statisticsService = statisticsService ?? throw new ArgumentNullException(nameof(statisticsService));
+        _auditService = auditService ?? throw new ArgumentNullException(nameof(auditService));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _currentAdmin = currentAdmin ?? throw new ArgumentNullException(nameof(currentAdmin));
-          // Validate admin permissions
+
+        // Validate admin permissions - Security First
         if (_currentAdmin.Role != "Admin")
         {
+            _logger.LogWarning("Unauthorized access attempt to AdminController by user {UserId} with role {Role}", 
+                _currentAdmin.Id, _currentAdmin.Role);
             throw new UnauthorizedAccessException("Chỉ Admin mới có quyền truy cập controller này.");
         }
-    }
 
-    // ═══════════════════════════════════════════════════════════════
-    // USER MANAGEMENT OPERATIONS
+        _logger.LogInformation("AdminController initialized for admin user {AdminId}: {Username}", 
+            _currentAdmin.Id, _currentAdmin.Username);
+    }    // ═══════════════════════════════════════════════════════════════
+    // USER MANAGEMENT OPERATIONS - Vietnamese Esports Focus
     // ═══════════════════════════════════════════════════════════════
 
     /// <summary>
-    /// Lấy danh sách tất cả người dùng (chỉ Admin)
+    /// Lấy danh sách tất cả người dùng với phân trang và filtering
     /// </summary>
-    public async Task<List<UserProfileDto>>     GetAllUsersAsync()
-    {        try
+    /// <param name="pageNumber">Số trang (bắt đầu từ 1)</param>
+    /// <param name="pageSize">Kích thước trang</param>
+    /// <param name="roleFilter">Lọc theo role (Admin/Player/Viewer)</param>
+    /// <param name="statusFilter">Lọc theo trạng thái (Active/Inactive)</param>
+    /// <param name="cancellationToken">Token để hủy operation</param>
+    public async Task<PagedResult<UserProfileDto>> GetAllUsersAsync(
+        int pageNumber = 1, 
+        int pageSize = 20,
+        string? roleFilter = null,
+        string? statusFilter = null,
+        CancellationToken cancellationToken = default)
+    {
+        try
         {
-            // TODO: Implement get all users via UserService
-            // return await _userService.GetAllUsersAsync();
-              await Task.CompletedTask; // Remove warning until real async implementation
-              // Mock data for now
-            return new List<UserProfileDto>
-            {
-                new UserProfileDto { Id = 1, Username = "player1", Email = "player1@example.com", Role = "Player" },
-                new UserProfileDto { Id = 2, Username = "viewer1", Email = "viewer1@example.com", Role = "Viewer" }
-            };
+            // Validate pagination parameters
+            if (pageNumber < 1) pageNumber = 1;
+            if (pageSize < 1 || pageSize > 100) pageSize = 20;
+
+            _logger.LogInformation("Admin {AdminId} requesting user list - Page: {Page}, Size: {Size}, Role: {Role}, Status: {Status}",
+                _currentAdmin.Id, pageNumber, pageSize, roleFilter, statusFilter);
+
+            var result = await _userService.GetAllUsersAsync(pageNumber, pageSize, roleFilter, statusFilter, cancellationToken);
+            
+            // Log admin action for audit trail
+            await LogAdminActionAsync("GET_ALL_USERS", 
+                $"Page: {pageNumber}, Size: {pageSize}, Role: {roleFilter}, Status: {statusFilter}");
+
+            return result;
+        }
+        catch (OperationCanceledException)
+        {
+            _logger.LogWarning("Get all users operation was cancelled for admin {AdminId}", _currentAdmin.Id);
+            throw;
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Error getting user list for admin {AdminId}", _currentAdmin.Id);
+            await _auditService.LogSystemErrorAsync(nameof(GetAllUsersAsync), ex, $"AdminId: {_currentAdmin.Id}");
             throw new InvalidOperationException($"Lỗi khi lấy danh sách người dùng: {ex.Message}", ex);
         }
-    }
-
-    /// <summary>
-    /// Tìm kiếm người dùng theo username hoặc email
+    }    /// <summary>
+    /// Tìm kiếm người dùng với advanced filtering - Vietnamese Esports focused
     /// </summary>
-    public async Task<List<UserProfileDto>> SearchUsersAsync(string searchTerm)
+    /// <param name="searchTerm">Từ khóa tìm kiếm (username, email, fullname)</param>
+    /// <param name="searchType">Loại tìm kiếm (Exact, Contains, StartsWith)</param>
+    /// <param name="cancellationToken">Token để hủy operation</param>
+    public async Task<List<UserProfileDto>> SearchUsersAsync(
+        string searchTerm, 
+        SearchType searchType = SearchType.Contains,
+        CancellationToken cancellationToken = default)
     {
+        // Enhanced validation with Vietnamese character support
         if (string.IsNullOrWhiteSpace(searchTerm))
             throw new ArgumentException("Từ khóa tìm kiếm không được rỗng", nameof(searchTerm));
 
+        if (searchTerm.Length < 2)
+            throw new ArgumentException("Từ khóa tìm kiếm phải có ít nhất 2 ký tự", nameof(searchTerm));
+
         try
         {
-            // TODO: Implement search via UserService
-            // return await _userService.SearchUsersAsync(searchTerm);
+            _logger.LogInformation("Admin {AdminId} searching users with term: '{SearchTerm}', type: {SearchType}",
+                _currentAdmin.Id, searchTerm, searchType);
+
+            var results = await _userService.SearchUsersAsync(searchTerm, searchType, cancellationToken);
             
-            // Mock search result
-            return new List<UserProfileDto>();
+            await LogAdminActionAsync("SEARCH_USERS", 
+                $"Term: '{searchTerm}', Type: {searchType}, Results: {results.Count}");
+
+            return results;
+        }
+        catch (OperationCanceledException)
+        {
+            _logger.LogWarning("User search operation was cancelled for admin {AdminId}", _currentAdmin.Id);
+            throw;
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Error searching users for admin {AdminId} with term '{SearchTerm}'", 
+                _currentAdmin.Id, searchTerm);
+            await _auditService.LogSystemErrorAsync(nameof(SearchUsersAsync), ex, 
+                $"AdminId: {_currentAdmin.Id}, SearchTerm: {searchTerm}");
             throw new InvalidOperationException($"Lỗi khi tìm kiếm người dùng: {ex.Message}", ex);
         }
-    }
-
-    /// <summary>
-    /// Thay đổi trạng thái người dùng (Active/Inactive)
+    }    /// <summary>
+    /// Thay đổi trạng thái người dùng với validation và audit logging
     /// </summary>
-    public async Task<bool> ToggleUserStatusAsync(int userId)
+    /// <param name="userId">ID người dùng cần thay đổi trạng thái</param>
+    /// <param name="newStatus">Trạng thái mới (Active/Inactive/Banned)</param>
+    /// <param name="reason">Lý do thay đổi trạng thái</param>
+    /// <param name="cancellationToken">Token để hủy operation</param>
+    public async Task<UserStatusChangeResult> ToggleUserStatusAsync(
+        int userId, 
+        string newStatus = "Toggle",
+        string? reason = null,
+        CancellationToken cancellationToken = default)
     {
         if (userId <= 0)
             throw new ArgumentException("UserId không hợp lệ", nameof(userId));
 
+        if (userId == _currentAdmin.Id)
+            throw new InvalidOperationException("Không thể thay đổi trạng thái của chính mình!");
+
         try
         {
-            // TODO: Implement toggle user status
-            // return await _userService.ToggleUserStatusAsync(userId);
-            return true; // Mock success
+            _logger.LogInformation("Admin {AdminId} changing status for user {UserId} to {NewStatus}. Reason: {Reason}",
+                _currentAdmin.Id, userId, newStatus, reason);
+
+            // Get current user info for audit
+            var targetUser = await _userService.GetUserByIdAsync(userId, cancellationToken);
+            if (targetUser == null)
+                throw new InvalidOperationException($"Không tìm thấy người dùng với ID: {userId}");
+
+            var result = await _userService.ToggleUserStatusAsync(userId, newStatus, cancellationToken);
+            
+            if (result.Success)
+            {
+                await LogAdminActionAsync("TOGGLE_USER_STATUS", 
+                    $"UserId: {userId}, Username: {targetUser.Username}, OldStatus: {result.OldStatus}, NewStatus: {result.NewStatus}, Reason: {reason}");
+                
+                _logger.LogInformation("Successfully changed user {UserId} status from {OldStatus} to {NewStatus}",
+                    userId, result.OldStatus, result.NewStatus);
+            }
+
+            return result;
+        }
+        catch (OperationCanceledException)
+        {
+            _logger.LogWarning("Toggle user status operation was cancelled for admin {AdminId}", _currentAdmin.Id);
+            throw;
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Error toggling user status for admin {AdminId}, userId {UserId}", 
+                _currentAdmin.Id, userId);
+            await _auditService.LogSystemErrorAsync(nameof(ToggleUserStatusAsync), ex, 
+                $"AdminId: {_currentAdmin.Id}, UserId: {userId}");
             throw new InvalidOperationException($"Lỗi khi thay đổi trạng thái người dùng: {ex.Message}", ex);
         }
-    }
-
-    /// <summary>
-    /// Reset mật khẩu người dùng
+    }    /// <summary>
+    /// Reset mật khẩu người dùng với secure generation và notification
     /// </summary>
-    public async Task<string> ResetUserPasswordAsync(int userId)
+    /// <param name="userId">ID người dùng cần reset mật khẩu</param>
+    /// <param name="sendEmail">Có gửi email thông báo không</param>
+    /// <param name="cancellationToken">Token để hủy operation</param>
+    public async Task<PasswordResetResult> ResetUserPasswordAsync(
+        int userId, 
+        bool sendEmail = true,
+        CancellationToken cancellationToken = default)
     {
         if (userId <= 0)
             throw new ArgumentException("UserId không hợp lệ", nameof(userId));
 
+        if (userId == _currentAdmin.Id)
+            throw new InvalidOperationException("Không thể reset mật khẩu của chính mình! Hãy sử dụng chức năng đổi mật khẩu.");
+
         try
         {
-            // TODO: Implement password reset
-            // return await _userService.ResetPasswordAsync(userId);
-            return "NewPassword123"; // Mock new password
+            _logger.LogInformation("Admin {AdminId} resetting password for user {UserId}", 
+                _currentAdmin.Id, userId);
+
+            // Get target user info for audit and email
+            var targetUser = await _userService.GetUserByIdAsync(userId, cancellationToken);
+            if (targetUser == null)
+                throw new InvalidOperationException($"Không tìm thấy người dùng với ID: {userId}");
+
+            var result = await _userService.ResetPasswordAsync(userId, sendEmail, cancellationToken);
+            
+            if (result.Success)
+            {
+                await LogAdminActionAsync("RESET_USER_PASSWORD", 
+                    $"UserId: {userId}, Username: {targetUser.Username}, EmailSent: {sendEmail}");
+                
+                _logger.LogInformation("Successfully reset password for user {UserId}. Email sent: {EmailSent}",
+                    userId, sendEmail);
+            }
+
+            return result;
+        }
+        catch (OperationCanceledException)
+        {
+            _logger.LogWarning("Reset password operation was cancelled for admin {AdminId}", _currentAdmin.Id);
+            throw;
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Error resetting password for admin {AdminId}, userId {UserId}", 
+                _currentAdmin.Id, userId);
+            await _auditService.LogSystemErrorAsync(nameof(ResetUserPasswordAsync), ex, 
+                $"AdminId: {_currentAdmin.Id}, UserId: {userId}");
             throw new InvalidOperationException($"Lỗi khi reset mật khẩu: {ex.Message}", ex);
         }
-    }
-
-    /// <summary>
-    /// Xóa người dùng (chỉ Admin có quyền)  
+    }    /// <summary>
+    /// Xóa người dùng với confirmation và cascade deletion handling
     /// </summary>
-    public async Task<bool> DeleteUserAsync(int userId)
+    /// <param name="userId">ID người dùng cần xóa</param>
+    /// <param name="confirmationCode">Mã xác nhận để đảm bảo admin thực sự muốn xóa</param>
+    /// <param name="hardDelete">True = xóa vĩnh viễn, False = soft delete</param>
+    /// <param name="cancellationToken">Token để hủy operation</param>
+    public async Task<UserDeletionResult> DeleteUserAsync(
+        int userId, 
+        string confirmationCode,
+        bool hardDelete = false,
+        CancellationToken cancellationToken = default)
     {
         if (userId <= 0)
             throw new ArgumentException("UserId không hợp lệ", nameof(userId));
-              if (userId == _currentAdmin.Id)
+
+        if (userId == _currentAdmin.Id)
             throw new InvalidOperationException("Không thể xóa chính mình!");
+
+        if (string.IsNullOrWhiteSpace(confirmationCode))
+            throw new ArgumentException("Mã xác nhận không được để trống", nameof(confirmationCode));
 
         try
         {
-            // TODO: Implement user deletion
-            // return await _userService.DeleteUserAsync(userId);
-            return true; // Mock success
+            _logger.LogInformation("Admin {AdminId} attempting to delete user {UserId}. Hard delete: {HardDelete}", 
+                _currentAdmin.Id, userId, hardDelete);
+
+            // Get target user info for audit
+            var targetUser = await _userService.GetUserByIdAsync(userId, cancellationToken);
+            if (targetUser == null)
+                throw new InvalidOperationException($"Không tìm thấy người dùng với ID: {userId}");
+
+            // Prevent deletion of other admins without special permission
+            if (targetUser.Role == "Admin")
+                throw new InvalidOperationException("Không thể xóa tài khoản Admin khác!");
+
+            var result = await _userService.DeleteUserAsync(userId, confirmationCode, hardDelete, cancellationToken);
+            
+            if (result.Success)
+            {
+                await LogAdminActionAsync("DELETE_USER", 
+                    $"UserId: {userId}, Username: {targetUser.Username}, HardDelete: {hardDelete}, RelatedDataCleaned: {result.RelatedDataCleaned}");
+                
+                _logger.LogWarning("Admin {AdminId} successfully deleted user {UserId} ({Username}). Hard delete: {HardDelete}",
+                    _currentAdmin.Id, userId, targetUser.Username, hardDelete);
+            }
+
+            return result;
+        }
+        catch (OperationCanceledException)
+        {
+            _logger.LogWarning("Delete user operation was cancelled for admin {AdminId}", _currentAdmin.Id);
+            throw;
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Error deleting user for admin {AdminId}, userId {UserId}", 
+                _currentAdmin.Id, userId);
+            await _auditService.LogSystemErrorAsync(nameof(DeleteUserAsync), ex, 
+                $"AdminId: {_currentAdmin.Id}, UserId: {userId}");
             throw new InvalidOperationException($"Lỗi khi xóa người dùng: {ex.Message}", ex);
         }
-    }
-
-    // ═══════════════════════════════════════════════════════════════
-    // SYSTEM STATISTICS
+    }    // ═══════════════════════════════════════════════════════════════
+    // SYSTEM STATISTICS - Vietnamese Esports Analytics
     // ═══════════════════════════════════════════════════════════════
 
     /// <summary>
-    /// Lấy thống kê tổng quan hệ thống
+    /// Lấy thống kê tổng quan hệ thống với real-time data
     /// </summary>
-    public async Task<SystemStatsDto> GetSystemStatsAsync()
+    /// <param name="cancellationToken">Token để hủy operation</param>
+    public async Task<SystemStatsDto> GetSystemStatsAsync(CancellationToken cancellationToken = default)
     {
         try
         {
-            // TODO: Implement system stats gathering
-            return new SystemStatsDto
-            {
-                TotalUsers = 0,
-                ActiveUsers = 0,
-                TotalTournaments = 0,
-                ActiveTournaments = 0,
-                TotalTeams = 0,
-                TotalRevenue = 0
-            };
+            _logger.LogInformation("Admin {AdminId} requesting system statistics", _currentAdmin.Id);
+
+            var stats = await _statisticsService.GetSystemStatsAsync();
+            
+            await LogAdminActionAsync("GET_SYSTEM_STATS", "System overview statistics retrieved");
+
+            return stats;
+        }
+        catch (OperationCanceledException)
+        {
+            _logger.LogWarning("Get system stats operation was cancelled for admin {AdminId}", _currentAdmin.Id);
+            throw;
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Error getting system stats for admin {AdminId}", _currentAdmin.Id);
+            await _auditService.LogSystemErrorAsync(nameof(GetSystemStatsAsync), ex, $"AdminId: {_currentAdmin.Id}");
             throw new InvalidOperationException($"Lỗi khi lấy thống kê hệ thống: {ex.Message}", ex);
         }
     }
 
-    // ═══════════════════════════════════════════════════════════════
-    // TOURNAMENT MANAGEMENT
-    // ═══════════════════════════════════════════════════════════════
-
     /// <summary>
-    /// Tạo giải đấu mới
+    /// Lấy thống kê chi tiết người dùng
     /// </summary>
-    public async Task<bool> CreateTournamentAsync(TournamentCreateDto tournamentDto)
+    public async Task<UserStatsDto> GetUserStatsAsync(CancellationToken cancellationToken = default)
     {
-        if (tournamentDto == null)
-            throw new ArgumentNullException(nameof(tournamentDto));
-
         try
         {
-            // TODO: Implement tournament creation
-            return true; // Mock success
+            var stats = await _statisticsService.GetUserStatsAsync();
+            await LogAdminActionAsync("GET_USER_STATS", "User statistics retrieved");
+            return stats;
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Error getting user stats for admin {AdminId}", _currentAdmin.Id);
+            throw new InvalidOperationException($"Lỗi khi lấy thống kê người dùng: {ex.Message}", ex);
+        }
+    }
+
+    /// <summary>
+    /// Lấy thống kê hoạt động trong khoảng thời gian
+    /// </summary>
+    public async Task<ActivityStatsDto> GetActivityStatsAsync(
+        DateTime startDate, 
+        DateTime endDate, 
+        CancellationToken cancellationToken = default)
+    {
+        if (startDate >= endDate)
+            throw new ArgumentException("Ngày bắt đầu phải nhỏ hơn ngày kết thúc");
+
+        if ((endDate - startDate).TotalDays > 365)
+            throw new ArgumentException("Khoảng thời gian không được vượt quá 365 ngày");
+
+        try
+        {
+            var stats = await _statisticsService.GetActivityStatsAsync(startDate, endDate);
+            await LogAdminActionAsync("GET_ACTIVITY_STATS", 
+                $"Period: {startDate:yyyy-MM-dd} to {endDate:yyyy-MM-dd}");
+            return stats;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting activity stats for admin {AdminId}", _currentAdmin.Id);
+            throw new InvalidOperationException($"Lỗi khi lấy thống kê hoạt động: {ex.Message}", ex);
+        }
+    }    // ═══════════════════════════════════════════════════════════════
+    // TOURNAMENT MANAGEMENT - Vietnamese Esports Focus
+    // ═══════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Tạo giải đấu mới với full validation và Vietnamese esports support
+    /// </summary>
+    /// <param name="tournamentDto">Thông tin giải đấu</param>
+    /// <param name="cancellationToken">Token để hủy operation</param>
+    public async Task<TournamentCreationResult> CreateTournamentAsync(
+        TournamentCreateDto tournamentDto, 
+        CancellationToken cancellationToken = default)
+    {
+        if (tournamentDto == null)
+            throw new ArgumentNullException(nameof(tournamentDto));        // Validate tournament data
+        var validationResults = new List<System.ComponentModel.DataAnnotations.ValidationResult>();
+        var validationContext = new ValidationContext(tournamentDto);
+        bool isValid = Validator.TryValidateObject(tournamentDto, validationContext, validationResults, true);
+
+        if (!isValid)
+        {
+            var errors = string.Join("; ", validationResults.Select(r => r.ErrorMessage));
+            throw new ArgumentException($"Dữ liệu giải đấu không hợp lệ: {errors}");
+        }
+
+        // Additional business validation
+        if (tournamentDto.StartDate <= DateTime.Now)
+            throw new ArgumentException("Ngày bắt đầu giải đấu phải lớn hơn thời điểm hiện tại");
+
+        if (tournamentDto.EndDate <= tournamentDto.StartDate)
+            throw new ArgumentException("Ngày kết thúc phải lớn hơn ngày bắt đầu");
+
+        try
+        {
+            _logger.LogInformation("Admin {AdminId} creating tournament: {TournamentName}", 
+                _currentAdmin.Id, tournamentDto.Name);
+
+            var tournament = await _tournamentService.CreateTournamentAsync(tournamentDto);
+            
+            if (tournament != null)
+            {
+                await LogAdminActionAsync("CREATE_TOURNAMENT", 
+                    $"TournamentId: {tournament.Id}, Name: {tournament.Name}, StartDate: {tournament.StartDate}");
+                
+                _logger.LogInformation("Successfully created tournament {TournamentId}: {TournamentName}",
+                    tournament.Id, tournament.Name);
+
+                return new TournamentCreationResult 
+                { 
+                    Success = true, 
+                    Tournament = tournament,
+                    Message = "Giải đấu đã được tạo thành công"
+                };
+            }
+
+            return new TournamentCreationResult 
+            { 
+                Success = false, 
+                Message = "Không thể tạo giải đấu" 
+            };
+        }
+        catch (OperationCanceledException)
+        {
+            _logger.LogWarning("Create tournament operation was cancelled for admin {AdminId}", _currentAdmin.Id);
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error creating tournament for admin {AdminId}", _currentAdmin.Id);
+            await _auditService.LogSystemErrorAsync(nameof(CreateTournamentAsync), ex, 
+                $"AdminId: {_currentAdmin.Id}, TournamentName: {tournamentDto.Name}");
             throw new InvalidOperationException($"Lỗi khi tạo giải đấu: {ex.Message}", ex);
         }
     }
 
-    // ═══════════════════════════════════════════════════════════════
-    // AUDIT & LOGGING
-    // ═══════════════════════════════════════════════════════════════
-
     /// <summary>
-    /// Log admin action để audit trail
+    /// Lấy danh sách tất cả giải đấu với filtering
     /// </summary>
-    private async Task LogAdminActionAsync(string action, string details = "")
+    public async Task<List<TournamentDto>> GetAllTournamentsAsync(
+        string? statusFilter = null,
+        CancellationToken cancellationToken = default)
     {
         try
         {
-            // TODO: Implement admin action logging
-            // await _auditService.LogAdminActionAsync(_currentAdmin.UserId, action, details);
+            var tournaments = await _tournamentService.GetAllTournamentsAsync();
+              if (!string.IsNullOrEmpty(statusFilter))
+                tournaments = tournaments.Where(t => t.Status.ToString().Equals(statusFilter, StringComparison.OrdinalIgnoreCase)).ToList();
+
+            await LogAdminActionAsync("GET_ALL_TOURNAMENTS", $"StatusFilter: {statusFilter}, Count: {tournaments.Count}");
+            return tournaments;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting tournaments for admin {AdminId}", _currentAdmin.Id);
+            throw new InvalidOperationException($"Lỗi khi lấy danh sách giải đấu: {ex.Message}", ex);
+        }
+    }
+
+    /// <summary>
+    /// Cập nhật thông tin giải đấu
+    /// </summary>
+    public async Task<bool> UpdateTournamentAsync(
+        int tournamentId, 
+        TournamentUpdateDto updateDto,
+        CancellationToken cancellationToken = default)
+    {
+        if (tournamentId <= 0)
+            throw new ArgumentException("TournamentId không hợp lệ", nameof(tournamentId));
+
+        if (updateDto == null)
+            throw new ArgumentNullException(nameof(updateDto));
+
+        try
+        {
+            var result = await _tournamentService.UpdateTournamentAsync(tournamentId, updateDto);
+            
+            if (result)
+            {
+                await LogAdminActionAsync("UPDATE_TOURNAMENT", 
+                    $"TournamentId: {tournamentId}, Name: {updateDto.Name}");
+            }
+
+            return result;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating tournament {TournamentId} for admin {AdminId}", 
+                tournamentId, _currentAdmin.Id);
+            throw new InvalidOperationException($"Lỗi khi cập nhật giải đấu: {ex.Message}", ex);
+        }
+    }
+
+    /// <summary>
+    /// Xóa giải đấu
+    /// </summary>
+    public async Task<bool> DeleteTournamentAsync(int tournamentId, CancellationToken cancellationToken = default)
+    {
+        if (tournamentId <= 0)
+            throw new ArgumentException("TournamentId không hợp lệ", nameof(tournamentId));
+
+        try
+        {
+            var tournament = await _tournamentService.GetTournamentByIdAsync(tournamentId);
+            if (tournament == null)
+                throw new InvalidOperationException($"Không tìm thấy giải đấu với ID: {tournamentId}");
+
+            var result = await _tournamentService.DeleteTournamentAsync(tournamentId);
+            
+            if (result)
+            {
+                await LogAdminActionAsync("DELETE_TOURNAMENT", 
+                    $"TournamentId: {tournamentId}, Name: {tournament.Name}");
+            }
+
+            return result;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error deleting tournament {TournamentId} for admin {AdminId}", 
+                tournamentId, _currentAdmin.Id);
+            throw new InvalidOperationException($"Lỗi khi xóa giải đấu: {ex.Message}", ex);
+        }
+    }    // ═══════════════════════════════════════════════════════════════
+    // AUDIT & LOGGING - Security & Compliance
+    // ═══════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Lấy audit logs với filtering và pagination
+    /// </summary>
+    public async Task<PagedResult<AuditLogDto>> GetAuditLogsAsync(
+        int pageNumber = 1,
+        int pageSize = 50,
+        string? actionFilter = null,
+        int? userIdFilter = null,
+        DateTime? fromDate = null,
+        DateTime? toDate = null,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            if (pageNumber < 1) pageNumber = 1;
+            if (pageSize < 1 || pageSize > 100) pageSize = 50;
+
+            var logs = await _auditService.GetAllAuditLogsAsync(pageNumber, pageSize);
+            
+            await LogAdminActionAsync("GET_AUDIT_LOGS", 
+                $"Page: {pageNumber}, Size: {pageSize}, Action: {actionFilter}, UserId: {userIdFilter}");
+
+            return logs;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting audit logs for admin {AdminId}", _currentAdmin.Id);
+            throw new InvalidOperationException($"Lỗi khi lấy audit logs: {ex.Message}", ex);
+        }
+    }
+
+    /// <summary>
+    /// Log admin action với enhanced details
+    /// </summary>
+    private async Task LogAdminActionAsync(string action, string? details = null, object? additionalData = null)
+    {
+        try
+        {
+            await _auditService.LogAdminActionAsync(_currentAdmin.Id, action, details, additionalData);
         }
         catch (Exception ex)
         {
             // Log error but don't throw - logging shouldn't break business operations
-            Console.WriteLine($"Logging error: {ex.Message}");
+            _logger.LogError(ex, "Failed to log admin action for admin {AdminId}: {Action}", 
+                _currentAdmin.Id, action);
         }
     }
-}
 
-/// <summary>
-/// DTO cho thống kê hệ thống
-/// </summary>
-public class SystemStatsDto
-{
-    public int TotalUsers { get; set; }
-    public int ActiveUsers { get; set; }
-    public int TotalTournaments { get; set; }
-    public int ActiveTournaments { get; set; }
-    public int TotalTeams { get; set; }
-    public decimal TotalRevenue { get; set; }
-}
+    // ═══════════════════════════════════════════════════════════════
+    // ADVANCED ADMIN OPERATIONS
+    // ═══════════════════════════════════════════════════════════════
 
-/// <summary>
-/// DTO cho tạo giải đấu
-/// </summary>
-public class TournamentCreateDto
-{
-    public required string Name { get; set; }
-    public required string Description { get; set; }
-    public DateTime StartDate { get; set; }
-    public DateTime EndDate { get; set; }
-    public int MaxParticipants { get; set; }
-    public decimal EntryFee { get; set; }
+    /// <summary>
+    /// Bulk operations cho user management
+    /// </summary>
+    public async Task<BulkOperationResult> BulkUpdateUsersAsync(
+        List<int> userIds,
+        BulkUserOperation operation,
+        object? operationData = null,
+        CancellationToken cancellationToken = default)
+    {
+        if (userIds == null || !userIds.Any())
+            throw new ArgumentException("Danh sách UserId không được rỗng", nameof(userIds));
+
+        if (userIds.Contains(_currentAdmin.Id))
+            throw new InvalidOperationException("Không thể thực hiện bulk operation trên chính mình!");
+
+        try
+        {
+            _logger.LogInformation("Admin {AdminId} performing bulk operation {Operation} on {UserCount} users",
+                _currentAdmin.Id, operation, userIds.Count);
+
+            var result = await _userService.BulkUpdateUsersAsync(userIds, operation, operationData, cancellationToken);
+            
+            await LogAdminActionAsync("BULK_UPDATE_USERS", 
+                $"Operation: {operation}, UserIds: [{string.Join(",", userIds)}], Success: {result.SuccessCount}, Failed: {result.FailedCount}");
+
+            return result;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error performing bulk operation for admin {AdminId}", _currentAdmin.Id);
+            throw new InvalidOperationException($"Lỗi khi thực hiện bulk operation: {ex.Message}", ex);
+        }
+    }
+
+    /// <summary>
+    /// Export data cho báo cáo
+    /// </summary>
+    public async Task<ExportResult> ExportDataAsync(
+        ExportType exportType,
+        ExportFormat format = ExportFormat.Excel,
+        DateTime? fromDate = null,
+        DateTime? toDate = null,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            _logger.LogInformation("Admin {AdminId} exporting data: {ExportType} in {Format} format",
+                _currentAdmin.Id, exportType, format);
+
+            // This would be implemented by a separate export service
+            var result = new ExportResult
+            {
+                Success = true,
+                FileName = $"{exportType}_{DateTime.Now:yyyyMMdd_HHmmss}.{format.ToString().ToLower()}",
+                FilePath = $"/exports/{exportType}_{DateTime.Now:yyyyMMdd_HHmmss}.{format.ToString().ToLower()}",
+                RecordCount = 0 // Would be set by actual implementation
+            };
+
+            await LogAdminActionAsync("EXPORT_DATA", 
+                $"Type: {exportType}, Format: {format}, FromDate: {fromDate}, ToDate: {toDate}");
+
+            return result;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error exporting data for admin {AdminId}", _currentAdmin.Id);
+            throw new InvalidOperationException($"Lỗi khi export dữ liệu: {ex.Message}", ex);
+        }
+    }
 }

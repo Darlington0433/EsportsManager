@@ -76,14 +76,13 @@ public class PlayerMenuService
 
     /// <summary>
     /// Hiển thị thông tin cá nhân
-    /// </summary>
-    private void ShowPersonalInfo()
+    /// </summary>    private async Task ShowPersonalInfoAsync()
     {
         try
         {
             ConsoleRenderingService.ShowLoadingMessage("Đang tải thông tin cá nhân...");
             
-            var userInfo = _playerController.GetPersonalInfoAsync().GetAwaiter().GetResult();
+            var userInfo = await _playerController.GetPersonalInfoAsync();
             
             Console.Clear();
             ConsoleRenderingService.DrawBorder("THÔNG TIN CÁ NHÂN", 80, 15);
@@ -107,14 +106,13 @@ public class PlayerMenuService
 
     /// <summary>
     /// Đăng ký tham gia giải đấu
-    /// </summary>
-    private void ShowTournamentRegistration()
+    /// </summary>    private async Task ShowTournamentRegistrationAsync()
     {
         try
         {
             ConsoleRenderingService.ShowLoadingMessage("Đang tải danh sách giải đấu...");
             
-            var tournaments = _playerController.GetAvailableTournamentsAsync().GetAwaiter().GetResult();
+            var tournaments = await _playerController.GetAvailableTournamentsAsync();
             
             Console.Clear();
             ConsoleRenderingService.DrawBorder("ĐĂNG KÝ THAM GIA GIẢI ĐẤU", 100, 20);
@@ -138,14 +136,13 @@ public class PlayerMenuService
                 Console.WriteLine($"   👥 Đã đăng ký: {tournament.CurrentParticipants}/{tournament.MaxParticipants}");
                 Console.WriteLine();
             }
-            
-            Console.Write("Nhập số thứ tự giải đấu muốn đăng ký (0 để hủy): ");
+              Console.Write("Nhập số thứ tự giải đấu muốn đăng ký (0 để hủy): ");
             if (int.TryParse(Console.ReadLine(), out int choice) && choice > 0 && choice <= tournaments.Count)
             {
                 var selectedTournament = tournaments[choice - 1];
                 ConsoleRenderingService.ShowLoadingMessage("Đang đăng ký...");
                 
-                bool success = _playerController.RegisterForTournamentAsync(selectedTournament.Id).GetAwaiter().GetResult();
+                bool success = await _playerController.RegisterForTournamentAsync(selectedTournament.Id);
                 
                 if (success)
                 {
@@ -164,18 +161,17 @@ public class PlayerMenuService
     }
 
     /// <summary>
-    /// Quản lý team
-    /// </summary>
-    private void ShowTeamManagement()
+    /// Quản lý team    /// </summary>
+    private async Task ShowTeamManagementAsync()
     {
         try
         {
-            var myTeam = _playerController.GetMyTeamAsync().GetAwaiter().GetResult();
+            var myTeam = await _playerController.GetMyTeamAsync();
             
             if (myTeam == null)
             {
                 // Player chưa có team - hiển thị option tạo team
-                ShowCreateTeam();
+                await ShowCreateTeamAsync();
             }
             else
             {
@@ -192,7 +188,7 @@ public class PlayerMenuService
     /// <summary>
     /// Tạo team mới
     /// </summary>
-    private void ShowCreateTeam()
+    private async Task ShowCreateTeamAsync()
     {
         Console.Clear();
         ConsoleRenderingService.DrawBorder("TẠO TEAM MỚI", 80, 12);
@@ -210,8 +206,7 @@ public class PlayerMenuService
         }
 
         try
-        {
-            var teamDto = new TeamCreateDto
+        {            var teamDto = new TeamCreateDto
             {
                 Name = teamName,
                 Description = description
@@ -219,7 +214,7 @@ public class PlayerMenuService
             
             ConsoleRenderingService.ShowLoadingMessage("Đang tạo team...");
             
-            bool success = _playerController.CreateTeamAsync(teamDto).GetAwaiter().GetResult();
+            bool success = await _playerController.CreateTeamAsync(teamDto);
             
             if (success)
             {
