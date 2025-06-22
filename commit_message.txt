@@ -1,0 +1,49 @@
+NHỮNG GÌ ĐÃ ĐƯỢC CẬP NHẬT
+
+1. CHUẨN HÓA TÊN GỌI (User → Users)
+- Models: User.cs → Users.cs
+- Services: UserService.cs → UsersService.cs
+- Repositories: UserRepository.cs → UsersRepository.cs
+- Interfaces: IUserService.cs → IUsersService.cs, IUserRepository.cs → IUsersRepository.cs
+- DTOs: Tất cả DTO liên quan đến User đã được đổi tên
+- Enums: UserRole → UsersRole, UserStatus → UsersStatus
+
+2. SỬA LỖI BIÊN DỊCH
+- Duplicate Interface: Loại bỏ các interface trùng lặp
+- Namespace Conflicts: Sửa lỗi xung đột namespace
+- Missing References: Cập nhật tất cả using statements và references
+- DTO Structure: Sửa cấu trúc DTO để khớp với business requirements
+
+3. HOÀN THIỆN SERVICE IMPLEMENTATION
+- WalletService: Mock implementation với các method cơ bản
+- TournamentService: Mock implementation cho quản lý giải đấu
+- TeamService: Mock implementation cho quản lý đội
+- FeedbackService: Mock implementation cho phản hồi
+- UsersService: Cập nhật các method theo chuẩn mới
+
+4. CẬP NHẬT DTO STRUCTURE
+- TournamentResultsDto: Chuẩn hóa theo business document (ResultId, TournamentId, PlayerId, TeamId, Rank, PrizeMoney, CreatedAt, Notes)
+- FeedbacksDto: Mở rộng với đầy đủ properties (Id, UserId, Username, TargetType, TargetId, TargetName, SubmittedDate, Status)
+- DonationsDto: Sửa property names (Date → DonationDate, thêm ToUsername)
+- TeamsInfoDto: Cập nhật cấu trúc theo CommonDTOs
+
+5. SỬA LỖI INTERFACE METHODS
+- ITeamService: Implement đầy đủ các methods (CreateTeamAsync, IsPlayerInTeamAsync, IsTeamLeaderAsync, DisbandTeamAsync, RemoveMemberAsync, RequestToJoinTeamAsync)
+- IFeedbackService: Implement HasPlayerSubmittedFeedbackAsync
+- ITournamentService: Cập nhật tournament results methods
+
+6. CẬP NHẬT DEPENDENCY INJECTION
+- Program.cs: Cập nhật DI container với services mới
+- ServiceManager.cs: Truyền các service implementations thực tế thay vì null
+- Controllers: Cập nhật để sử dụng đúng service interfaces
+
+7. BUILD STATUS
+- BUILD SUCCESSFUL
+- Tất cả compilation errors đã được fix
+- Chỉ còn warnings không ảnh hưởng chức năng
+- Cả 3 projects (DAL, BL, UI) đều compile thành công
+
+8. FILE STRUCTURE
+- .gitignore: Đã có file gitignore hoàn chỉnh
+- Solution Structure: Duy trì cấu trúc 3-layer architecture
+- Naming Convention: Đồng bộ với business document
