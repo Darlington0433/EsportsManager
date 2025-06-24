@@ -1,6 +1,6 @@
 using System;
 
-namespace EsportsManager.BL.DTOs;
+namespace EsportsManager.BL.DTOs {
 
 /// <summary>
 /// DTO cho việc tạo user mới (bởi Admin)
@@ -46,4 +46,7 @@ public class CreateUserDto
     /// Câu trả lời bảo mật
     /// </summary>
     public string? SecurityAnswer { get; set; }
+}
+
+
 }

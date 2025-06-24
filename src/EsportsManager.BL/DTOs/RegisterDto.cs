@@ -1,6 +1,6 @@
 using System;
 
-namespace EsportsManager.BL.DTOs;
+namespace EsportsManager.BL.DTOs {
 
 /// <summary>
 /// DTO cho đăng ký
@@ -51,4 +51,7 @@ public class RegisterDto
     /// Câu trả lời bảo mật
     /// </summary>
     public string? SecurityAnswer { get; set; }
+}
+
+
 }

@@ -1,6 +1,6 @@
 using System;
 
-namespace EsportsManager.BL.DTOs;
+namespace EsportsManager.BL.DTOs {
 
 /// <summary>
 /// DTO cho việc cập nhật mật khẩu
@@ -26,4 +26,7 @@ public class UpdatePasswordDto
     /// Xác nhận mật khẩu mới
     /// </summary>
     public string ConfirmNewPassword { get; set; } = string.Empty;
+}
+
+
 }

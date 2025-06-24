@@ -1,6 +1,6 @@
 using System;
 
-namespace EsportsManager.BL.DTOs;
+namespace EsportsManager.BL.DTOs {
 
 /// <summary>
 /// DTO cho việc reset mật khẩu
@@ -36,4 +36,7 @@ public class ResetPasswordDto
     /// Token xác thực reset mật khẩu
     /// </summary>
     public string? Token { get; set; }
+}
+
+
 }

@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace EsportsManager.BL.DTOs;
+namespace EsportsManager.BL.DTOs {
 
 /// <summary>
 /// User Data Transfer Object - áp dụng Single Responsibility Principle
@@ -22,6 +22,8 @@ public class UserDto
     public string? Bio { get; set; }
     public bool IsEmailVerified { get; set; }
     public string? EmailVerificationToken { get; set; }
+    public int TotalLogins { get; set; }
+    public TimeSpan TotalTimeOnline { get; set; }
 }
 
 /// <summary>
@@ -64,4 +66,7 @@ public class ValidationResult
 {
     public bool IsValid { get; set; }
     public List<string> Errors { get; set; } = new();
+}
+
+
 }

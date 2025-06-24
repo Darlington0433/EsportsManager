@@ -1,6 +1,6 @@
 using System;
 
-namespace EsportsManager.BL.DTOs;
+namespace EsportsManager.BL.DTOs {
 
 /// <summary>
 /// DTO cho đăng nhập
@@ -21,4 +21,7 @@ public class LoginDto
     /// Ghi nhớ đăng nhập
     /// </summary>
     public bool RememberMe { get; set; } = false;
+}
+
+
 }

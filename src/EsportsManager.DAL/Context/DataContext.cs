@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using EsportsManager.DAL.Configuration;
+using MySql.Data.MySqlClient;
 
 namespace EsportsManager.DAL.Context;
 
@@ -18,10 +19,12 @@ namespace EsportsManager.DAL.Context;
 /// - Cung cấp connection string cho database
 /// - Quản lý lifecycle của database context
 /// - Implement IDisposable pattern để release resources
+/// - Support cả SQL Server và MySQL
 /// 
 /// DESIGN PATTERNS:
 /// - Disposable Pattern: Implement IDisposable để cleanup resources
 /// - Dependency Injection: Inject IConfiguration và ILogger
+/// - Factory Method: Tạo connection phù hợp với loại database
 /// 
 /// LƯU Ý: 
 /// - Đây là phiên bản đơn giản để đảm bảo build compatibility
@@ -77,21 +80,27 @@ public class DataContext : IDisposable
     /// <returns>Connection string để kết nối database</returns>
     public string GetConnectionString()
     {
-        // Đọc connection string từ appsettings.json
-        var connectionString = _configuration.GetConnectionString("DefaultConnection");
-
-        // Nếu không có thì dùng default từ DatabaseConfig
-        if (string.IsNullOrEmpty(connectionString))
-        {
-            connectionString = DatabaseConfig.GetConnectionString();
-            _logger.LogWarning("Using default connection string from DatabaseConfig");
-        }
-
+        // Đọc connection string từ ConfigurationManager
+        var connectionString = DatabaseConfig.GetConnectionString();
+        _logger.LogDebug("Using connection string from configuration");
         return connectionString;
     }
 
     /// <summary>
-    /// Tạo database connection mới
+    /// Xác định loại database đang sử dụng
+    /// </summary>
+    /// <returns>Loại database (mysql hoặc sqlserver)</returns>
+    public string GetDatabaseType()
+    {
+        var dbType = Environment.GetEnvironmentVariable("ESPORTS_DB_TYPE")?.ToLower() ??
+                     _configuration.GetValue<string>("Database:Type")?.ToLower() ??
+                     "mysql"; // Default to MySQL for our EsportsManager application
+
+        return dbType;
+    }
+
+    /// <summary>
+    /// Tạo database connection mới dựa trên loại database đã cấu hình
     /// </summary>
     /// <returns>IDbConnection đã được configure</returns>
     public IDbConnection CreateConnection()
@@ -99,7 +108,20 @@ public class DataContext : IDisposable
         try
         {
             var connectionString = GetConnectionString();
-            var connection = new SqlConnection(connectionString);
+            var dbType = GetDatabaseType();
+
+            IDbConnection connection;
+
+            if (dbType == "mysql")
+            {
+                connection = new MySqlConnection(connectionString);
+                _logger.LogDebug("MySQL database connection created");
+            }
+            else
+            {
+                connection = new SqlConnection(connectionString);
+                _logger.LogDebug("SQL Server database connection created");
+            }
 
             _logger.LogDebug("Database connection created successfully");
             return connection;
@@ -109,10 +131,12 @@ public class DataContext : IDisposable
             _logger.LogError(ex, "Failed to create database connection");
             throw new InvalidOperationException("Cannot create database connection", ex);
         }
-    }    /// <summary>
-         /// Kiểm tra kết nối database
-         /// </summary>
-         /// <returns>True nếu kết nối thành công</returns>
+    }
+
+    /// <summary>
+    /// Kiểm tra kết nối database
+    /// </summary>
+    /// <returns>True nếu kết nối thành công</returns>
     public async Task<bool> TestConnectionAsync()
     {
         try
@@ -133,6 +157,154 @@ public class DataContext : IDisposable
         {
             _logger.LogError(ex, "Database connection test failed");
             return false;
+        }
+    }
+
+    /// <summary>
+    /// Thực thi stored procedure với parameters và trả về DataTable
+    /// </summary>
+    /// <param name="procedureName">Tên stored procedure</param>
+    /// <param name="parameters">Tham số cho stored procedure</param>
+    /// <returns>DataTable chứa kết quả</returns>
+    public DataTable ExecuteStoredProcedure(string procedureName, params IDbDataParameter[] parameters)
+    {
+        DataTable dataTable = new DataTable();
+
+        try
+        {
+            using var connection = CreateConnection();
+            connection.Open();
+
+            using var command = connection.CreateCommand();
+            command.CommandText = procedureName;
+            command.CommandType = CommandType.StoredProcedure;
+            command.CommandTimeout = DatabaseConfig.GetCommandTimeout(); if (parameters != null)
+            {
+                foreach (var parameter in parameters)
+                {
+                    command.Parameters.Add(parameter);
+                }
+            }
+            var adapter = GetDataAdapter(command);
+
+            if (adapter is MySqlDataAdapter mysqlAdapter)
+            {
+                using (mysqlAdapter)
+                {
+                    mysqlAdapter.Fill(dataTable);
+                }
+            }
+            else if (adapter is SqlDataAdapter sqlAdapter)
+            {
+                using (sqlAdapter)
+                {
+                    sqlAdapter.Fill(dataTable);
+                }
+            }
+            else
+            {
+                throw new InvalidOperationException("Unsupported data adapter type");
+            }
+
+            _logger.LogDebug($"Successfully executed stored procedure: {procedureName}");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Error executing stored procedure: {procedureName}");
+            throw new InvalidOperationException($"Error executing stored procedure: {procedureName}", ex);
+        }
+
+        return dataTable;
+    }
+
+    /// <summary>
+    /// Thực thi stored procedure với parameters và trả về số hàng bị ảnh hưởng
+    /// </summary>
+    /// <param name="procedureName">Tên stored procedure</param>
+    /// <param name="parameters">Tham số cho stored procedure</param>
+    /// <returns>Số hàng bị ảnh hưởng</returns>
+    public int ExecuteNonQueryStoredProcedure(string procedureName, params IDbDataParameter[] parameters)
+    {
+        try
+        {
+            using var connection = CreateConnection();
+            connection.Open();
+
+            using var command = connection.CreateCommand();
+            command.CommandText = procedureName;
+            command.CommandType = CommandType.StoredProcedure;
+            command.CommandTimeout = DatabaseConfig.GetCommandTimeout();
+
+            if (parameters != null)
+            {
+                foreach (var parameter in parameters)
+                {
+                    command.Parameters.Add(parameter);
+                }
+            }
+
+            int result = command.ExecuteNonQuery();
+            _logger.LogDebug($"Successfully executed non-query procedure: {procedureName}, Affected rows: {result}");
+            return result;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Error executing non-query procedure: {procedureName}");
+            throw new InvalidOperationException($"Error executing non-query procedure: {procedureName}", ex);
+        }
+    }
+
+    /// <summary>
+    /// Tạo tham số cho stored procedure tùy theo loại database
+    /// </summary>
+    /// <param name="name">Tên tham số</param>
+    /// <param name="value">Giá trị của tham số</param>
+    /// <param name="direction">Hướng tham số (Input, Output, etc)</param>
+    /// <returns>IDbDataParameter phù hợp với loại database</returns>
+    public IDbDataParameter CreateParameter(string name, object value, ParameterDirection direction = ParameterDirection.Input)
+    {
+        var dbType = GetDatabaseType();
+
+        if (dbType == "mysql")
+        {
+            var param = new MySqlParameter(name, value ?? DBNull.Value)
+            {
+                Direction = direction
+            };
+            return param;
+        }
+        else
+        {
+            var param = new SqlParameter(name, value ?? DBNull.Value)
+            {
+                Direction = direction
+            };
+            return param;
+        }
+    }    /// <summary>
+         /// Tạo DataAdapter phù hợp với loại database
+         /// </summary>
+         /// <param name="command">Command để tạo adapter</param>
+         /// <returns>IDataAdapter phù hợp</returns>
+    private IDbDataAdapter GetDataAdapter(IDbCommand command)
+    {
+        var dbType = GetDatabaseType();
+
+        if (dbType == "mysql")
+        {
+            if (command is not MySqlCommand mysqlCommand)
+            {
+                throw new ArgumentException("Expected MySqlCommand for MySQL database");
+            }
+            return new MySqlDataAdapter(mysqlCommand);
+        }
+        else
+        {
+            if (command is not SqlCommand sqlCommand)
+            {
+                throw new ArgumentException("Expected SqlCommand for SQL Server database");
+            }
+            return new SqlDataAdapter(sqlCommand);
         }
     }
 
