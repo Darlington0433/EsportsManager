@@ -24,13 +24,11 @@ namespace EsportsManager.UI.ConsoleUI
         {
             _serviceProvider = serviceProvider;
             Run(); // Delegate sang method Run() chính
-        }
-
-        /// <summary>
-        /// Method chính điều khiển flow của ứng dụng
-        /// Hiển thị welcome screen, sau đó vào vòng lặp main menu
-        /// UPDATED: Sử dụng EnhancedMenuService cho giao diện đẹp hơn
-        /// </summary>
+        }        /// <summary>
+                 /// Method chính điều khiển flow của ứng dụng
+                 /// Hiển thị welcome screen, sau đó vào vòng lặp main menu
+                 /// UPDATED: Sử dụng EnhancedMenuService cho giao diện đẹp hơn
+                 /// </summary>
         public static void Run()
         {
             try
@@ -44,6 +42,25 @@ namespace EsportsManager.UI.ConsoleUI
                 catch
                 {
                     // Bỏ qua lỗi nếu không thể thiết lập màu nền
+                }
+                // Kiểm tra toàn vẹn hệ thống trước khi bắt đầu ứng dụng
+                var systemIntegrityService = _serviceProvider?.GetService<EsportsManager.UI.Services.SystemIntegrityService>();
+                if (systemIntegrityService != null)
+                {
+                    bool databaseValid = systemIntegrityService.ValidateDatabaseSetupAsync().GetAwaiter().GetResult();
+                    if (!databaseValid)
+                    {
+                        return; // Thoát ứng dụng nếu database không hợp lệ
+                    }
+                }
+                else
+                {
+                    // Fallback nếu không tìm thấy service
+                    bool databaseConnectionOk = TestDatabaseConnection().GetAwaiter().GetResult();
+                    if (!databaseConnectionOk)
+                    {
+                        return; // Thoát ứng dụng nếu không kết nối được database
+                    }
                 }
 
                 // Vòng lặp chính của ứng dụng - chạy cho đến khi user thoát
@@ -293,6 +310,44 @@ namespace EsportsManager.UI.ConsoleUI
             catch (Exception ex)
             {
                 ConsoleRenderingService.ShowMessageBox($"Lỗi khi hiển thị menu Viewer: {ex.Message}", false, 3000);
+            }
+        }
+
+        /// <summary>
+        /// Phương thức kiểm tra kết nối database
+        /// </summary>
+        /// <returns>True nếu kết nối thành công</returns>
+        private static async Task<bool> TestDatabaseConnection()
+        {
+            try
+            {
+                if (_serviceProvider == null)
+                {
+                    ConsoleRenderingService.ShowMessageBox("Lỗi hệ thống: ServiceProvider chưa được khởi tạo", true, 3000);
+                    return false;
+                }
+
+                var dataContext = _serviceProvider.GetRequiredService<EsportsManager.DAL.Context.DataContext>();
+                return await dataContext.TestConnectionAsync();
+            }
+            catch (Exception ex)
+            {
+                Console.Clear();
+                ConsoleRenderingService.DrawBorder("❌ LỖI KẾT NỐI CƠ SỞ DỮ LIỆU", 80, 16);
+                Console.WriteLine("\nKhông thể kết nối đến MySQL Server. Vui lòng kiểm tra:");
+                Console.WriteLine("  1. MySQL Server đã được khởi động chưa?");
+                Console.WriteLine("  2. Connection string trong appsettings.json đã đúng chưa?");
+                Console.WriteLine("  3. Database 'EsportsManager' đã được tạo chưa?");
+                Console.WriteLine("  4. Username/password kết nối database đã chính xác chưa?");
+                Console.WriteLine("\nChi tiết lỗi:");
+                Console.WriteLine($"  {ex.Message}");
+                Console.WriteLine("\n👉 HƯỚNG DẪN KHẮC PHỤC:");
+                Console.WriteLine("  • Khởi động MySQL/MariaDB Server trên máy của bạn");
+                Console.WriteLine("  • Import database từ file SQL trong thư mục database/");
+                Console.WriteLine("  • Kiểm tra file appsettings.json và cập nhật connection string");
+                Console.WriteLine("\nNhấn phím bất kỳ để thoát...");
+                Console.ReadKey(true);
+                return false;
             }
         }
     }

@@ -6,12 +6,13 @@ Database EsportsManager đã được chia thành nhiều file SQL nhỏ để d
 
 ## Thứ tự chạy các file SQL
 
-Hãy chạy các file theo thứ tự sau trong MySQL Workbench:
+Hãy chạy các file theo thứ tự sau trong MySQL Workbench hoặc MySQL Command Line:
 
-1. **01_create_database.sql**: Tạo database và các bảng cơ bản
+1. **01_create_database_and_tables.sql**: Tạo database và các bảng cơ bản (bao gồm Users, Teams, Tournaments, Wallets, WalletTransactions, ...)
 2. **02_create_indexes.sql**: Tạo các indexes để tối ưu hiệu năng truy vấn
 3. **03_create_views.sql**: Tạo các views để đơn giản hóa các truy vấn phức tạp
-4. **03_create_feedback_table.sql**: Tạo bảng Feedback cho chức năng đánh giá giải đấu
+
+QUAN TRỌNG: Phải đảm bảo thực hiện theo đúng thứ tự trên. Nếu không các view và trigger sẽ gặp lỗi do thiếu bảng hoặc cấu trúc bảng không đúng.
 5. **04_create_triggers.sql**: Tạo các triggers tự động hóa nghiệp vụ
 6. **05_create_procedures.sql**: Tạo các stored procedures cơ bản
 7. **06_add_constraints.sql**: Thêm các ràng buộc dữ liệu

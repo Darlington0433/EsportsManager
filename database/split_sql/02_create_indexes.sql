@@ -2,7 +2,7 @@
 -- CREATE INDEXES FOR PERFORMANCE
 -- =====================================================
 
-USE EsportManager;
+USE EsportsManager;
 
 -- Indexes for Users
 CREATE INDEX idx_users_role ON Users(Role);

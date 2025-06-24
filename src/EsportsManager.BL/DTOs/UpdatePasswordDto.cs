@@ -1,32 +1,33 @@
 using System;
 
-namespace EsportsManager.BL.DTOs {
-
-/// <summary>
-/// DTO cho việc cập nhật mật khẩu
-/// </summary>
-public class UpdatePasswordDto
+namespace EsportsManager.BL.DTOs
 {
-    /// <summary>
-    /// ID người dùng
-    /// </summary>
-    public int UserId { get; set; }
 
     /// <summary>
-    /// Mật khẩu hiện tại
+    /// DTO cho việc cập nhật mật khẩu
     /// </summary>
-    public string CurrentPassword { get; set; } = string.Empty;
+    public class UpdatePasswordDto
+    {
+        /// <summary>
+        /// ID người dùng
+        /// </summary>
+        public int UserId { get; set; }
 
-    /// <summary>
-    /// Mật khẩu mới
-    /// </summary>
-    public string NewPassword { get; set; } = string.Empty;
+        /// <summary>
+        /// Mật khẩu hiện tại
+        /// </summary>
+        public string CurrentPassword { get; set; } = string.Empty;
 
-    /// <summary>
-    /// Xác nhận mật khẩu mới
-    /// </summary>
-    public string ConfirmNewPassword { get; set; } = string.Empty;
-}
+        /// <summary>
+        /// Mật khẩu mới
+        /// </summary>
+        public string NewPassword { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Xác nhận mật khẩu mới
+        /// </summary>
+        public string ConfirmNewPassword { get; set; } = string.Empty;
+    }
 
 
 }

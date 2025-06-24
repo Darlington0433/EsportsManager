@@ -12,6 +12,8 @@ public class BusinessResult<T>
     public T? Data { get; set; }
     public string? ErrorMessage { get; set; }
     public List<string> Errors { get; set; } = new();
+    public string? ErrorCode { get; set; }
+    public Exception? Exception { get; set; }
 
     public static BusinessResult<T> Success(T data)
     {
@@ -47,8 +49,59 @@ public class BusinessResult<T>
             ErrorMessage = string.Join("; ", errors) // Gộp tất cả lỗi thành một chuỗi
         };
     }
-    
-    
+
+    /// <summary>
+    /// Tạo kết quả thất bại với exception
+    /// </summary>
+    public static BusinessResult<T> Failure(string errorMessage, Exception exception)
+    {
+        return new BusinessResult<T>
+        {
+            IsSuccess = false,
+            ErrorMessage = errorMessage,
+            Exception = exception,
+            ErrorCode = exception.GetType().Name
+        };
+    }
+
+    /// <summary>
+    /// Thêm chi tiết database error cho kết quả lỗi
+    /// </summary>
+    public BusinessResult<T> WithDatabaseError(string details)
+    {
+        if (!IsSuccess)
+        {
+            ErrorMessage = $"Database Error: {ErrorMessage}. Details: {details}";
+            ErrorCode = "DB_ERROR";
+        }
+        return this;
+    }
+
+    /// <summary>
+    /// Thêm chi tiết validation error cho kết quả lỗi
+    /// </summary>
+    public BusinessResult<T> WithValidationError(string field, string details)
+    {
+        if (!IsSuccess)
+        {
+            ErrorMessage = $"Validation Error in {field}: {details}";
+            ErrorCode = "VALIDATION_ERROR";
+        }
+        return this;
+    }
+
+    /// <summary>
+    /// Thêm chi tiết security error cho kết quả lỗi
+    /// </summary> 
+    public BusinessResult<T> WithSecurityError()
+    {
+        if (!IsSuccess)
+        {
+            ErrorMessage = $"Security Error: {ErrorMessage}";
+            ErrorCode = "SECURITY_ERROR";
+        }
+        return this;
+    }
 }
 
 /// <summary>
@@ -61,7 +114,7 @@ public class BusinessResult
     public bool IsSuccess { get; set; }
     public string? ErrorMessage { get; set; }
     public List<string> Errors { get; set; } = new();
-    
+
     /// <summary>
     /// Tạo kết quả thành công không có dữ liệu
     /// </summary>
@@ -106,37 +159,37 @@ public class BusinessResult
 /// </summary>
 public class AuthenticationResult
 {
-    
-    
+
+
     /// <summary>
     /// Cho biết có xác thực thành công hay không
     /// </summary>
     public bool IsAuthenticated { get; set; }
-    
+
     /// <summary>
     /// ID của user nếu xác thực thành công
     /// </summary>
     public int? UserId { get; set; }
-    
+
     /// <summary>
     /// Tên đăng nhập nếu xác thực thành công
     /// </summary>
     public string? Username { get; set; }
-    
+
     /// <summary>
     /// Vai trò của user nếu xác thực thành công
     /// </summary>
     public string? Role { get; set; }
-    
+
     /// <summary>
     /// Thông báo lỗi nếu xác thực thất bại
     /// </summary>
     public string? ErrorMessage { get; set; }
-    
-    
-    
-    
-    
+
+
+
+
+
     /// <summary>
     /// Tạo kết quả xác thực thành công
     /// </summary>
@@ -162,8 +215,8 @@ public class AuthenticationResult
             ErrorMessage = errorMessage
         };
     }
-    
-    
+
+
 }
 
 /// <summary>
@@ -173,22 +226,22 @@ public class AuthenticationResult
 /// </summary>
 public class ValidationResult
 {
-    
-    
+
+
     /// <summary>
     /// Cho biết dữ liệu có hợp lệ hay không
     /// </summary>
     public bool IsValid { get; set; }
-    
+
     /// <summary>
     /// Danh sách các lỗi validation
     /// </summary>
     public List<string> Errors { get; set; } = new();
-    
-    
-    
-    
-    
+
+
+
+
+
     /// <summary>
     /// Tạo kết quả validation thành công
     /// </summary>
@@ -222,6 +275,6 @@ public class ValidationResult
             Errors = errors
         };
     }
-    
-    
+
+
 }

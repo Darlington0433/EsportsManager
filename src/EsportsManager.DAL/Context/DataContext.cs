@@ -84,23 +84,23 @@ public class DataContext : IDisposable
         _logger.LogDebug("Using connection string from configuration");
         return connectionString;
     }    /// <summary>
-    /// Xác định loại database đang sử dụng - chỉ hỗ trợ MySQL
-    /// </summary>
-    /// <returns>Luôn trả về "mysql"</returns>
+         /// Xác định loại database đang sử dụng - chỉ hỗ trợ MySQL
+         /// </summary>
+         /// <returns>Luôn trả về "mysql"</returns>
     public string GetDatabaseType()
     {
         return "mysql"; // Chỉ hỗ trợ MySQL
     }/// <summary>
-    /// Tạo database connection mới - chỉ hỗ trợ MySQL
-    /// </summary>
-    /// <returns>MySqlConnection đã được configure</returns>
+     /// Tạo database connection mới - chỉ hỗ trợ MySQL
+     /// </summary>
+     /// <returns>MySqlConnection đã được configure</returns>
     public IDbConnection CreateConnection()
     {
         try
         {
             var connectionString = GetConnectionString();
             _logger.LogDebug("Creating MySQL database connection...");
-            
+
             var connection = new MySqlConnection(connectionString);
             _logger.LogDebug("MySQL database connection created successfully");
             return connection;
@@ -111,9 +111,9 @@ public class DataContext : IDisposable
             throw new InvalidOperationException("❌ Lỗi kết nối cơ sở dữ liệu MySQL. Vui lòng kiểm tra cấu hình và đảm bảo MySQL Server đang chạy.", ex);
         }
     }    /// <summary>
-    /// Kiểm tra kết nối database MySQL
-    /// </summary>
-    /// <returns>True nếu kết nối thành công</returns>
+         /// Kiểm tra kết nối database MySQL
+         /// </summary>
+         /// <returns>True nếu kết nối thành công</returns>
     public async Task<bool> TestConnectionAsync()
     {
         try
@@ -161,7 +161,8 @@ public class DataContext : IDisposable
                 {
                     command.Parameters.Add(parameter);
                 }
-            }            var adapter = GetDataAdapter(command);
+            }
+            var adapter = GetDataAdapter(command);
 
             using (adapter as MySqlDataAdapter)
             {
@@ -215,12 +216,12 @@ public class DataContext : IDisposable
             throw new InvalidOperationException($"Error executing non-query procedure: {procedureName}", ex);
         }
     }    /// <summary>
-    /// Tạo tham số cho stored procedure MySQL
-    /// </summary>
-    /// <param name="name">Tên tham số</param>
-    /// <param name="value">Giá trị của tham số</param>
-    /// <param name="direction">Hướng tham số (Input, Output, etc)</param>
-    /// <returns>MySqlParameter cho MySQL</returns>
+         /// Tạo tham số cho stored procedure MySQL
+         /// </summary>
+         /// <param name="name">Tên tham số</param>
+         /// <param name="value">Giá trị của tham số</param>
+         /// <param name="direction">Hướng tham số (Input, Output, etc)</param>
+         /// <returns>MySqlParameter cho MySQL</returns>
     public IDbDataParameter CreateParameter(string name, object value, ParameterDirection direction = ParameterDirection.Input)
     {
         var param = new MySqlParameter(name, value ?? DBNull.Value)
@@ -229,10 +230,10 @@ public class DataContext : IDisposable
         };
         return param;
     }    /// <summary>
-    /// Tạo DataAdapter cho MySQL
-    /// </summary>
-    /// <param name="command">MySqlCommand để tạo adapter</param>
-    /// <returns>MySqlDataAdapter</returns>
+         /// Tạo DataAdapter cho MySQL
+         /// </summary>
+         /// <param name="command">MySqlCommand để tạo adapter</param>
+         /// <returns>MySqlDataAdapter</returns>
     private IDbDataAdapter GetDataAdapter(IDbCommand command)
     {
         if (command is not MySqlCommand mysqlCommand)

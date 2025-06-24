@@ -27,7 +27,7 @@ public static class ValidationService
         }
         return true;
     }
-    
+
     /// <summary>
     /// Validate password confirmation match
     /// </summary>
@@ -44,7 +44,7 @@ public static class ValidationService
         }
         return true;
     }
-    
+
     /// <summary>
     /// Validate email format
     /// </summary>
@@ -60,7 +60,7 @@ public static class ValidationService
         }
         return true;
     }
-    
+
     /// <summary>
     /// Validate username format (chỉ chữ, số, _)
     /// </summary>
@@ -74,7 +74,7 @@ public static class ValidationService
             messageCallback("Tên đăng nhập không được để trống", true);
             return false;
         }
-        
+
         foreach (char c in username)
         {
             if (!char.IsLetterOrDigit(c) && c != '_')
@@ -83,10 +83,10 @@ public static class ValidationService
                 return false;
             }
         }
-        
+
         return true;
     }
-    
+
     /// <summary>
     /// Validate password strength
     /// </summary>
@@ -100,13 +100,52 @@ public static class ValidationService
             messageCallback("Mật khẩu không được để trống", true);
             return false;
         }
-        
+
         if (password.Length < 6)
         {
             messageCallback("Mật khẩu phải có ít nhất 6 ký tự", true);
             return false;
         }
-        
+
+        return true;
+    }
+
+    /// <summary>
+    /// Kiểm tra tính hợp lệ của input để phòng chống SQL injection
+    /// </summary>
+    /// <param name="input">Chuỗi input cần kiểm tra</param>
+    /// <returns>true nếu input không chứa ký tự đáng ngờ</returns>
+    public static bool ValidateAgainstSqlInjection(string input)
+    {
+        if (string.IsNullOrEmpty(input))
+            return true;
+
+        // Kiểm tra các ký tự đáng ngờ có thể dùng để SQL injection
+        string[] suspiciousPatterns = {
+            "DROP TABLE",
+            "DELETE FROM",
+            "INSERT INTO",
+            "UPDATE",
+            "ALTER TABLE",
+            "EXEC(",
+            "EXECUTE(",
+            "--",
+            "/*",
+            "*/",
+            ";",
+            "' OR '1'='1",
+            "' OR 1=1",
+            "1=1;--",
+            "' OR ''='",
+            "OR 1=1"
+        };
+
+        foreach (string pattern in suspiciousPatterns)
+        {
+            if (input.ToUpper().Contains(pattern.ToUpper()))
+                return false;
+        }
+
         return true;
     }
 }

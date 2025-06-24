@@ -1,6 +1,7 @@
 using System;
 
-namespace EsportsManager.BL.DTOs {
+namespace EsportsManager.BL.DTOs
+{
     /// <summary>
     /// DTO feedback c?a viewer
     /// </summary>

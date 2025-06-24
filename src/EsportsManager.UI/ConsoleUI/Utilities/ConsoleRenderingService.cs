@@ -337,7 +337,7 @@ namespace EsportsManager.UI.ConsoleUI.Utilities
         }        /// <summary>
                  /// Vẽ border đơn giản với title (overload cho compatibility)
                  /// </summary>
-        public static void DrawBorder(string title, int width, int height)
+        private static void DrawBorderOld(string title, int width, int height)
         {
             int left = (Console.WindowWidth - width) / 2;
             int top = (Console.WindowHeight - height) / 2;

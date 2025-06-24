@@ -44,7 +44,7 @@ public class ViewerMenuService
                 "🚪 Đăng xuất"
             };
 
-            int selection = InteractiveMenuService.DisplayInteractiveMenu("VIEWER CONTROL PANEL", menuOptions);            switch (selection)
+            int selection = InteractiveMenuService.DisplayInteractiveMenu("VIEWER CONTROL PANEL", menuOptions); switch (selection)
             {
                 case 0:
                     ShowTournamentList();
@@ -71,7 +71,7 @@ public class ViewerMenuService
                     ShowPersonalInfo();
                     break;
                 case 8:
-                    ShowUpdatePersonalInfo();                    break;
+                    ShowUpdatePersonalInfo(); break;
                 case 9:
                 case -1:
                     return; // Đăng xuất
@@ -81,8 +81,8 @@ public class ViewerMenuService
             }
         }
     }    /// <summary>
-    /// Xem danh sách giải đấu
-    /// </summary>
+         /// Xem danh sách giải đấu
+         /// </summary>
     private void ShowTournamentList()
     {
         Console.Clear();
@@ -180,8 +180,8 @@ public class ViewerMenuService
             ConsoleRenderingService.ShowMessageBox($"Lỗi: {ex.Message}", true, 3000);
         }
     }    /// <summary>
-    /// Xem kết quả trận đấu
-    /// </summary>
+         /// Xem kết quả trận đấu
+         /// </summary>
     private void ShowMatchResults()
     {
         Console.Clear();
@@ -192,8 +192,8 @@ public class ViewerMenuService
         Console.WriteLine("🎯 Thống kê chi tiết về team performance và rankings");
         ConsoleRenderingService.PauseWithMessage();
     }    /// <summary>
-    /// Xem danh sách team
-    /// </summary>
+         /// Xem danh sách team
+         /// </summary>
     private void ShowTeamList()
     {
         Console.Clear();
@@ -233,8 +233,8 @@ public class ViewerMenuService
             ConsoleRenderingService.ShowMessageBox($"Lỗi: {ex.Message}", true, 3000);
         }
     }    /// <summary>
-    /// Donate
-    /// </summary>
+         /// Donate
+         /// </summary>
     private void ShowDonation()
     {
         try
@@ -274,7 +274,8 @@ public class ViewerMenuService
         {
             ConsoleRenderingService.ShowMessageBox($"Lỗi: {ex.Message}", true, 3000);
         }
-    }    private void ShowDonateToPlayer()
+    }
+    private void ShowDonateToPlayer()
     {
         Console.Clear();
         ConsoleRenderingService.DrawBorder("DONATE CHO PLAYER", 80, 10);
@@ -282,7 +283,8 @@ public class ViewerMenuService
         Console.WriteLine("📊 Dữ liệu player và donation history sẽ được lấy từ MySQL");
         Console.WriteLine("💡 UI form nhập số tiền và chọn player sẽ được triển khai");
         ConsoleRenderingService.PauseWithMessage();
-    }    private void ShowDonateToTeam()
+    }
+    private void ShowDonateToTeam()
     {
         Console.Clear();
         ConsoleRenderingService.DrawBorder("DONATE CHO TEAM", 80, 10);
@@ -290,7 +292,8 @@ public class ViewerMenuService
         Console.WriteLine("📊 Dữ liệu team và donation history sẽ được lấy từ MySQL");
         Console.WriteLine("💡 UI form nhập số tiền và chọn team sẽ được triển khai");
         ConsoleRenderingService.PauseWithMessage();
-    }    private void ShowDonateToTournament()
+    }
+    private void ShowDonateToTournament()
     {
         Console.Clear();
         ConsoleRenderingService.DrawBorder("DONATE CHO GIẢI ĐẤU", 80, 10);
@@ -299,8 +302,8 @@ public class ViewerMenuService
         Console.WriteLine("💡 UI form nhập số tiền và chọn tournament sẽ được triển khai");
         ConsoleRenderingService.PauseWithMessage();
     }/// <summary>
-    /// Gửi feedback
-    /// </summary>
+     /// Gửi feedback
+     /// </summary>
     private void ShowSendFeedback()
     {
         try
@@ -385,8 +388,8 @@ public class ViewerMenuService
             ConsoleRenderingService.ShowMessageBox($"Lỗi: {ex.Message}", true, 3000);
         }
     }    /// <summary>
-    /// Cập nhật thông tin cá nhân
-    /// </summary>
+         /// Cập nhật thông tin cá nhân
+         /// </summary>
     private void ShowUpdatePersonalInfo()
     {
         try

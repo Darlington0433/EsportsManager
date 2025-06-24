@@ -3,9 +3,9 @@
 -- =====================================================
 
 -- Create database
-CREATE DATABASE IF NOT EXISTS EsportManager 
+CREATE DATABASE IF NOT EXISTS EsportsManager 
 CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE EsportManager;
+USE EsportsManager;
 
 -- Disable foreign key checks temporarily
 SET FOREIGN_KEY_CHECKS = 0;

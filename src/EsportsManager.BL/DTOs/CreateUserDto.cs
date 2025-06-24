@@ -1,52 +1,53 @@
 using System;
 
-namespace EsportsManager.BL.DTOs {
-
-/// <summary>
-/// DTO cho việc tạo user mới (bởi Admin)
-/// </summary>
-public class CreateUserDto
+namespace EsportsManager.BL.DTOs
 {
-    /// <summary>
-    /// Tên đăng nhập
-    /// </summary>
-    public string Username { get; set; } = string.Empty;
 
     /// <summary>
-    /// Email
+    /// DTO cho việc tạo user mới (bởi Admin)
     /// </summary>
-    public string Email { get; set; } = string.Empty;
+    public class CreateUserDto
+    {
+        /// <summary>
+        /// Tên đăng nhập
+        /// </summary>
+        public string Username { get; set; } = string.Empty;
 
-    /// <summary>
-    /// Mật khẩu
-    /// </summary>
-    public string Password { get; set; } = string.Empty;
+        /// <summary>
+        /// Email
+        /// </summary>
+        public string Email { get; set; } = string.Empty;
 
-    /// <summary>
-    /// Họ tên đầy đủ
-    /// </summary>
-    public string FullName { get; set; } = string.Empty;
+        /// <summary>
+        /// Mật khẩu
+        /// </summary>
+        public string Password { get; set; } = string.Empty;
 
-    /// <summary>
-    /// Số điện thoại
-    /// </summary>
-    public string? PhoneNumber { get; set; }
+        /// <summary>
+        /// Họ tên đầy đủ
+        /// </summary>
+        public string FullName { get; set; } = string.Empty;
 
-    /// <summary>
-    /// Vai trò
-    /// </summary>
-    public string Role { get; set; } = "Viewer";
+        /// <summary>
+        /// Số điện thoại
+        /// </summary>
+        public string? PhoneNumber { get; set; }
 
-    /// <summary>
-    /// Trạng thái
-    /// </summary>
-    public string Status { get; set; } = "Active";
+        /// <summary>
+        /// Vai trò
+        /// </summary>
+        public string Role { get; set; } = "Viewer";
 
-    /// <summary>
-    /// Câu trả lời bảo mật
-    /// </summary>
-    public string? SecurityAnswer { get; set; }
-}
+        /// <summary>
+        /// Trạng thái
+        /// </summary>
+        public string Status { get; set; } = "Active";
+
+        /// <summary>
+        /// Câu trả lời bảo mật
+        /// </summary>
+        public string? SecurityAnswer { get; set; }
+    }
 
 
 }

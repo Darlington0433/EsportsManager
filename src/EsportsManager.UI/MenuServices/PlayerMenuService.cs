@@ -42,7 +42,7 @@ public class PlayerMenuService
                 "🚪 Đăng xuất"
             };
 
-            int selection = InteractiveMenuService.DisplayInteractiveMenu("PLAYER CONTROL PANEL", menuOptions);            switch (selection)
+            int selection = InteractiveMenuService.DisplayInteractiveMenu("PLAYER CONTROL PANEL", menuOptions); switch (selection)
             {
                 case 0:
                     ShowTournamentRegistration();
@@ -253,8 +253,8 @@ public class PlayerMenuService
         Console.WriteLine("\nPress any key to continue...");
         Console.ReadKey(true);
     }    /// <summary>
-    /// Cập nhật thông tin cá nhân
-    /// </summary>
+         /// Cập nhật thông tin cá nhân
+         /// </summary>
     private void ShowUpdatePersonalInfo()
     {
         try
@@ -305,8 +305,8 @@ public class PlayerMenuService
             ConsoleRenderingService.ShowMessageBox($"Lỗi: {ex.Message}", true, 3000);
         }
     }    /// <summary>
-    /// Thay đổi mật khẩu
-    /// </summary>
+         /// Thay đổi mật khẩu
+         /// </summary>
     private void ShowChangePassword()
     {
         try
@@ -386,8 +386,8 @@ public class PlayerMenuService
         while (key.Key != ConsoleKey.Enter);
         return password;
     }    /// <summary>
-    /// Xem danh sách giải đấu
-    /// </summary>
+         /// Xem danh sách giải đấu
+         /// </summary>
     private void ShowTournamentList()
     {
         try
@@ -445,7 +445,7 @@ public class PlayerMenuService
         Console.WriteLine($"🏆 Tổng giải thưởng: {tournament.PrizePool:N0} VND");
         Console.WriteLine($"👥 Số người tham gia: {tournament.CurrentParticipants}/{tournament.MaxParticipants}");
         Console.WriteLine($"📍 Địa điểm: {tournament.Location}");
-        
+
         if (!string.IsNullOrEmpty(tournament.Rules))
         {
             Console.WriteLine($"\n📋 Luật thi đấu:\n{tournament.Rules}");
@@ -454,8 +454,8 @@ public class PlayerMenuService
         Console.WriteLine("\nNhấn phím bất kỳ để tiếp tục...");
         Console.ReadKey(true);
     }    /// <summary>
-    /// Gửi feedback
-    /// </summary>
+         /// Gửi feedback
+         /// </summary>
     private void ShowSendFeedback()
     {
         try
@@ -496,7 +496,8 @@ public class PlayerMenuService
             {
                 ConsoleRenderingService.ShowMessageBox("Nội dung không được để trống!", true, 2000);
                 return;
-            }            var feedbackDto = new FeedbackDto();
+            }
+            var feedbackDto = new FeedbackDto();
             // TODO: Assign properties when FeedbackDto is fully compiled
             // feedbackDto.Title = title;
             // feedbackDto.Content = content.Trim();
@@ -507,7 +508,7 @@ public class PlayerMenuService
             //     3 => "General",
             //     _ => "General"
             // };
-            
+
             Console.WriteLine($"📝 Gửi feedback: {title} - {content.Trim()}");
 
             ConsoleRenderingService.ShowLoadingMessage("Đang gửi feedback...");

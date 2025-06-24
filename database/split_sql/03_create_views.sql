@@ -2,7 +2,7 @@
 -- VIEWS FOR COMMON QUERIES
 -- =====================================================
 
-USE EsportManager;
+USE EsportsManager;
 
 -- View: Team statistics
 DROP VIEW IF EXISTS v_team_stats;

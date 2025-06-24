@@ -125,9 +125,11 @@ namespace EsportsManager.BL.DTOs
         public Dictionary<string, decimal> ExpenseByCategory { get; set; } = new();
         public List<MonthlyTransactionDto> MonthlyStats { get; set; } = new();
         public List<TransactionDto> RecentTransactions { get; set; } = new();
-    }    /// <summary>
-         /// DTO cho thống kê giao dịch theo tháng
-         /// </summary>
+    }
+
+    /// <summary>
+    /// DTO cho thống kê giao dịch theo tháng
+    /// </summary>
     public class MonthlyTransactionDto
     {
         public int Year { get; set; }

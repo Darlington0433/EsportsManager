@@ -47,7 +47,7 @@ namespace EsportsManager.UI.Forms
         #endregion
 
         #region Public Methods
-        
+
         /// <summary>
         /// Hiển thị form đăng nhập với giao diện giống hệt ảnh mẫu
         /// </summary>
@@ -85,7 +85,7 @@ namespace EsportsManager.UI.Forms
                     case ConsoleKey.Enter:
                         HandleFieldInput();
                         break;
-                        
+
                     case ConsoleKey.Escape:
                         return false; // User hủy bỏ
 
@@ -120,7 +120,7 @@ namespace EsportsManager.UI.Forms
         {
             Console.Clear();
             Console.BackgroundColor = ConsoleColor.Black;
-            
+
             // Kích thước và vị trí an toàn, không bao giờ lòi ra ngoài màn hình
             int windowWidth = Console.WindowWidth;
             int windowHeight = Console.WindowHeight;
@@ -138,7 +138,7 @@ namespace EsportsManager.UI.Forms
             for (int i = 0; i < _fieldLabels.Length; i++)
             {
                 int fieldY = top + 3 + (i * 3);
-                
+
                 // Vẽ label field
                 SafeConsole.SetCursorPosition(left + 2, fieldY);
                 Console.ForegroundColor = ConsoleColor.White;
@@ -159,7 +159,7 @@ namespace EsportsManager.UI.Forms
                     Console.BackgroundColor = ConsoleColor.DarkGray;
                     Console.ForegroundColor = ConsoleColor.White;
                 }
-                
+
                 // Hiển thị value (password thì hiển thị *)
                 string displayValue = "";
                 if (!string.IsNullOrEmpty(_fieldValues[i]))
@@ -183,7 +183,7 @@ namespace EsportsManager.UI.Forms
                 Console.ResetColor();
                 Console.BackgroundColor = ConsoleColor.Black;
             }
-            
+
             // Vẽ hướng dẫn phím ở cuối form - căn giữa và cắt nếu quá dài
             string helpText = "↑↓/Tab: Chọn   Enter: Nhập   F1: Đăng nhập   Esc: Thoát";
             int maxHelpWidth = formWidth - 4; // Để trong khung border
@@ -193,7 +193,7 @@ namespace EsportsManager.UI.Forms
             {
                 helpText = "↑↓: Chọn   Enter: Nhập   F1: OK   Esc: Thoát";
             }
-            
+
             // Tính vị trí căn giữa
             int helpX = left + ((formWidth - helpText.Length) / 2);
             SafeConsole.SetCursorPosition(helpX, top + formHeight - 2);
@@ -215,12 +215,12 @@ namespace EsportsManager.UI.Forms
             int left = Math.Max(0, (windowWidth - formWidth) / 2);
             int top = Math.Max(0, (windowHeight - formHeight) / 2);
             int fieldY = top + 3 + (_selectedFieldIndex * 3);
-            
+
             // Đặt cursor vào vị trí input
             SafeConsole.SetCursorPosition(left + 18, fieldY);
             Console.BackgroundColor = ConsoleColor.Green;
             Console.ForegroundColor = ConsoleColor.Black;
-            
+
             // Clear field hiện tại
             int fieldWidth = Math.Min(25, formWidth - 25);
             Console.Write(new string(' ', fieldWidth));
@@ -239,7 +239,7 @@ namespace EsportsManager.UI.Forms
             Console.ResetColor();
             Console.BackgroundColor = ConsoleColor.Black;
         }
-        
+
         /// <summary>
         /// Đọc password input (hiển thị dấu *)
         /// </summary>
@@ -247,7 +247,7 @@ namespace EsportsManager.UI.Forms
         {
             return UnifiedInputService.ReadPassword() ?? "";
         }
-        
+
         /// <summary>
         /// Đọc text input thông thường
         /// </summary>
@@ -255,7 +255,7 @@ namespace EsportsManager.UI.Forms
         {
             return UnifiedInputService.ReadUsername() ?? "";
         }
-        
+
         /// <summary>
         /// Validate form trước khi submit
         /// </summary>
@@ -263,7 +263,7 @@ namespace EsportsManager.UI.Forms
         {
             return ValidationService.ValidateRequiredFields(_fieldValues, _fieldLabels, ShowMessage);
         }
-        
+
         /// <summary>
         /// Xử lý submit form đăng nhập với UserService
         /// </summary>
@@ -287,11 +287,11 @@ namespace EsportsManager.UI.Forms
                     ShowMessage($"Đăng nhập thành công! Chào mừng {result.Username}", false);
 
                     // Lưu profile thực tế của người dùng (không còn dùng demo)
-                    UserSessionManager.CurrentUser = new UserProfileDto 
-                    { 
-                        Id = result.UserId ?? 0, 
-                        Username = result.Username ?? string.Empty, 
-                        Role = result.Role ?? "Viewer", 
+                    UserSessionManager.CurrentUser = new UserProfileDto
+                    {
+                        Id = result.UserId ?? 0,
+                        Username = result.Username ?? string.Empty,
+                        Role = result.Role ?? "Viewer",
                         Status = "Active",
                         CreatedAt = DateTime.Now
                     };
@@ -300,13 +300,48 @@ namespace EsportsManager.UI.Forms
                 }
                 else
                 {
-                    ShowMessage(result.ErrorMessage ?? "Tên đăng nhập hoặc mật khẩu không đúng!", true);
+                    // Hiển thị thông báo chi tiết dựa trên loại lỗi
+                    string errorMessage = result.ErrorMessage ?? "Tên đăng nhập hoặc mật khẩu không đúng!";
+
+                    if (errorMessage.Contains("Account is not active"))
+                    {
+                        ShowMessage("❌ Tài khoản của bạn đã bị vô hiệu hóa. Vui lòng liên hệ quản trị viên để được hỗ trợ.", true);
+                    }
+                    else if (errorMessage.Contains("banned") || errorMessage.Contains("suspended"))
+                    {
+                        ShowMessage("❌ Tài khoản của bạn đã bị tạm khóa. Vui lòng liên hệ quản trị viên để biết thêm chi tiết.", true);
+                    }
+                    else
+                    {
+                        ShowMessage(errorMessage, true);
+                    }
                     UserSessionManager.IsLoggedIn = false;
                 }
             }
+            catch (MySql.Data.MySqlClient.MySqlException ex)
+            {
+                // Xử lý lỗi cụ thể cho MySQL
+                if (ex.Number == 1042) // Unable to connect to MySQL server
+                {
+                    ShowMessage("❌ Không thể kết nối đến MySQL Server. Vui lòng kiểm tra cấu hình database và đảm bảo MySQL Server đang chạy.", true);
+                }
+                else if (ex.Number == 1045) // Access denied (wrong username/password)
+                {
+                    ShowMessage("❌ Không thể đăng nhập vào MySQL Server. Tên đăng nhập/mật khẩu kết nối database không đúng.", true);
+                }
+                else if (ex.Number == 1049) // Database does not exist
+                {
+                    ShowMessage("❌ Database EsportsManager không tồn tại. Vui lòng import database từ file SQL trong thư mục database/.", true);
+                }
+                else
+                {
+                    ShowMessage($"❌ Lỗi MySQL: {ex.Message}", true);
+                }
+                UserSessionManager.IsLoggedIn = false;
+            }
             catch (Exception ex)
             {
-                ShowMessage($"Lỗi đăng nhập: {ex.Message}", true);
+                ShowMessage($"❌ Lỗi đăng nhập: {ex.Message}", true);
                 UserSessionManager.IsLoggedIn = false;
             }
         }

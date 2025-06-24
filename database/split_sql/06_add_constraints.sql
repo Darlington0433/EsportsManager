@@ -2,7 +2,7 @@
 -- DATA INTEGRITY ENHANCEMENTS
 -- =====================================================
 
-USE EsportManager;
+USE EsportsManager;
 
 -- Add constraints to ensure data integrity based on ERD
 ALTER TABLE Teams ADD CONSTRAINT chk_max_members CHECK (MaxMembers > 0 AND MaxMembers <= 10);

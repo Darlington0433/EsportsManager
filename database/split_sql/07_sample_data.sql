@@ -2,7 +2,7 @@
 -- SAMPLE DATA
 -- =====================================================
 
-USE EsportManager;
+USE EsportsManager;
 
 -- Insert sample games
 INSERT INTO Games (GameName, Description, Genre) VALUES

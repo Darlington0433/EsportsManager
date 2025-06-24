@@ -21,14 +21,12 @@ public class ServiceManager
         _userService = userService ?? throw new ArgumentNullException(nameof(userService));
         _tournamentService = tournamentService ?? throw new ArgumentNullException(nameof(tournamentService));
         _teamService = teamService ?? throw new ArgumentNullException(nameof(teamService));
-    }
-
-    /// <summary>
-    /// Tạo AdminController và AdminMenuService
-    /// </summary>
+    }    /// <summary>
+         /// Tạo AdminUIController và AdminMenuService
+         /// </summary>
     public AdminMenuService CreateAdminMenuService(UserProfileDto adminUser)
     {
-        var adminController = new AdminController(adminUser, _userService, _tournamentService, _teamService);
+        var adminController = new AdminUIController(adminUser, _userService, _tournamentService, _teamService);
         return new AdminMenuService(adminController);
     }
 

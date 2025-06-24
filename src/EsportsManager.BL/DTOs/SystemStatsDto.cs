@@ -2,8 +2,8 @@ using System;
 
 namespace EsportsManager.BL.DTOs
 {    /// <summary>
-    /// DTO cho thống kê hệ thống
-    /// </summary>
+     /// DTO cho thống kê hệ thống
+     /// </summary>
     public class SystemStatsDto
     {
         public int TotalUsers { get; set; }

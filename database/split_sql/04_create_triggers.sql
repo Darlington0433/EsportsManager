@@ -2,7 +2,7 @@
 -- AUTOMATIC TRIGGERS
 -- =====================================================
 
-USE EsportManager;
+USE EsportsManager;
 
 DELIMITER //
 

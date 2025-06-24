@@ -2,7 +2,7 @@
 -- STORED PROCEDURES
 -- =====================================================
 
-USE EsportManager;
+USE EsportsManager;
 
 DELIMITER //
 

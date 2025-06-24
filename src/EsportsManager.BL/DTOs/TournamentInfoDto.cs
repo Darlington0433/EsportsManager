@@ -19,7 +19,7 @@ namespace EsportsManager.BL.DTOs
         public int RegisteredTeams { get; set; }
         public int CreatedBy { get; set; }
         public DateTime CreatedAt { get; set; }
-        
+
         // Backward compatibility properties
         public string Name => TournamentName;
         public int Id => TournamentId;

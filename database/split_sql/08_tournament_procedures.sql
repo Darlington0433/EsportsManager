@@ -2,7 +2,7 @@
 -- TOURNAMENT-RELATED STORED PROCEDURES
 -- =====================================================
 
-USE EsportManager;
+USE EsportsManager;
 
 DELIMITER $$
 
