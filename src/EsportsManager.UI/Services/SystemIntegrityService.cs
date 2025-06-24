@@ -41,16 +41,14 @@ namespace EsportsManager.UI.Services
             {
                 return false;
             }
-        }
-
-        /// <summary>
-        /// Kiểm tra xem database có các bảng cần thiết không
-        /// </summary>
-        /// <returns>Danh sách bảng thiếu (nếu có)</returns>
+        }        /// <summary>
+                 /// Kiểm tra xem database có các bảng cần thiết không
+                 /// </summary>
+                 /// <returns>Danh sách bảng thiếu (nếu có)</returns>
         public async Task<List<string>> CheckRequiredTablesAsync()
         {
             List<string> missingTables = new List<string>();
-            string[] requiredTables = { "Users", "Teams", "Tournaments", "Games", "Matches", "Wallets", "Donations" };
+            string[] requiredTables = { "Users", "Teams", "Tournaments", "Games", "Wallets", "Donations" };
 
             try
             {

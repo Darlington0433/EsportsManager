@@ -89,7 +89,11 @@ class Program
     // BUSINESS LOGIC LAYER SERVICES
     // ═══════════════════════════════════════════════════════════════    // Business Services - Scoped lifetime để tránh state conflicts
     services.AddScoped<IUserService, UserService>();
-    // services.AddScoped<ITeamService, EsportsManager.BL.Services.TeamService>(); // TODO: Fix TeamService reference    // ServiceManager để tích hợp UI và BL
+    services.AddScoped<ITournamentService, TournamentService>();
+    services.AddScoped<ITeamService, TeamService>();
+    services.AddScoped<IWalletService, WalletService>();
+
+    // ServiceManager để tích hợp UI và BL
     services.AddScoped<EsportsManager.UI.Services.ServiceManager>();
 
     // Thêm SystemIntegrityService để kiểm tra toàn vẹn database khi khởi động

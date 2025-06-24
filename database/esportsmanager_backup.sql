@@ -905,18 +905,18 @@ INSERT INTO Users (Username, PasswordHash, Email, FullName, DisplayName, Role, I
 -- Insert sample players
 -- Password hash corresponds to 'player123' using bcrypt
 INSERT INTO Users (Username, PasswordHash, Email, FullName, DisplayName, Role, IsActive, Status, IsEmailVerified) VALUES
-('player1', '$2a$10$r6zSu0g/uWY8oVWpMT5VTeNlCCgGjgq1xM6IO2ipe.kJiCd/WEAyO', 'player1@test.com', 'Nguyen Van A', 'ProGamer1', 'Player', TRUE, 'Active', TRUE),
-('player2', '$2a$10$r6zSu0g/uWY8oVWpMT5VTeNlCCgGjgq1xM6IO2ipe.kJiCd/WEAyO', 'player2@test.com', 'Tran Thi B', 'ProGamer2', 'Player', TRUE, 'Active', TRUE),
-('player3', '$2a$10$r6zSu0g/uWY8oVWpMT5VTeNlCCgGjgq1xM6IO2ipe.kJiCd/WEAyO', 'player3@test.com', 'Le Van C', 'ProGamer3', 'Player', TRUE, 'Active', TRUE),
-('player4', '$2a$10$r6zSu0g/uWY8oVWpMT5VTeNlCCgGjgq1xM6IO2ipe.kJiCd/WEAyO', 'player4@test.com', 'Do Dinh D', 'ProGamer4', 'Player', TRUE, 'Active', TRUE),
-('player5', '$2a$10$r6zSu0g/uWY8oVWpMT5VTeNlCCgGjgq1xM6IO2ipe.kJiCd/WEAyO', 'player5@test.com', 'Pham Thi E', 'ProGamer5', 'Player', TRUE, 'Active', TRUE);
+('player1', '$2a$10$biekkN19VAMsTLml2ihbfOVAdGf0nRtOD3h92cN6J1lKvEGRcXjzW', 'player1@test.com', 'Nguyen Van A', 'ProGamer1', 'Player', TRUE, 'Active', TRUE),
+('player2', '$2a$10$biekkN19VAMsTLml2ihbfOVAdGf0nRtOD3h92cN6J1lKvEGRcXjzW', 'player2@test.com', 'Tran Thi B', 'ProGamer2', 'Player', TRUE, 'Active', TRUE),
+('player3', '$2a$10$biekkN19VAMsTLml2ihbfOVAdGf0nRtOD3h92cN6J1lKvEGRcXjzW', 'player3@test.com', 'Le Van C', 'ProGamer3', 'Player', TRUE, 'Active', TRUE),
+('player4', '$2a$10$biekkN19VAMsTLml2ihbfOVAdGf0nRtOD3h92cN6J1lKvEGRcXjzW', 'player4@test.com', 'Do Dinh D', 'ProGamer4', 'Player', TRUE, 'Active', TRUE),
+('player5', '$2a$10$biekkN19VAMsTLml2ihbfOVAdGf0nRtOD3h92cN6J1lKvEGRcXjzW', 'player5@test.com', 'Pham Thi E', 'ProGamer5', 'Player', TRUE, 'Active', TRUE);
 
 -- Insert sample viewers
 -- Password hash corresponds to 'viewer123' using bcrypt
 INSERT INTO Users (Username, PasswordHash, Email, FullName, DisplayName, Role, IsActive, Status, IsEmailVerified) VALUES
-('viewer1', '$2a$10$qvQmMu3WQhN9DnJ/OwFPL.K32cVUmrCXFOwnbFNhfYwZBX6EJsIUi', 'viewer1@test.com', 'Hoang Van F', 'EsportsFan1', 'Viewer', TRUE, 'Active', TRUE),
-('viewer2', '$2a$10$qvQmMu3WQhN9DnJ/OwFPL.K32cVUmrCXFOwnbFNhfYwZBX6EJsIUi', 'viewer2@test.com', 'Ngo Thi G', 'EsportsFan2', 'Viewer', TRUE, 'Active', TRUE),
-('viewer3', '$2a$10$qvQmMu3WQhN9DnJ/OwFPL.K32cVUmrCXFOwnbFNhfYwZBX6EJsIUi', 'viewer3@test.com', 'Vuong Van H', 'EsportsFan3', 'Viewer', TRUE, 'Active', TRUE);
+('viewer1', '$2a$10$msdkzPt9.U6vCFrNXTVbEeO1Vt0OB/BZZ7jyR9b8KY0oJz1aSpONW', 'viewer1@test.com', 'Hoang Van F', 'EsportsFan1', 'Viewer', TRUE, 'Active', TRUE),
+('viewer2', '$2a$10$msdkzPt9.U6vCFrNXTVbEeO1Vt0OB/BZZ7jyR9b8KY0oJz1aSpONW', 'viewer2@test.com', 'Ngo Thi G', 'EsportsFan2', 'Viewer', TRUE, 'Active', TRUE),
+('viewer3', '$2a$10$msdkzPt9.U6vCFrNXTVbEeO1Vt0OB/BZZ7jyR9b8KY0oJz1aSpONW', 'viewer3@test.com', 'Vuong Van H', 'EsportsFan3', 'Viewer', TRUE, 'Active', TRUE);
 
 -- Update wallets for players (they're already created by the trigger)
 UPDATE Wallets SET 

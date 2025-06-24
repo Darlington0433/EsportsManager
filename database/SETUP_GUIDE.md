@@ -1,5 +1,10 @@
 # Hướng dẫn cài đặt Database EsportsManager
 
+## Cấu trúc file
+Dự án EsportsManager sử dụng hai cấu trúc SQL chính:
+- `database/esportsmanager.sql`: File SQL tổng hợp, bao gồm tất cả các bảng, ràng buộc, procedures và dữ liệu mẫu (khuyến nghị cho người dùng mới)
+- `database/split_sql/`: Thư mục chứa các file SQL đã được tách nhỏ theo chức năng (dành cho nhà phát triển muốn tùy chỉnh từng phần)
+
 ## Yêu cầu
 - MySQL Server hoặc MariaDB đã được cài đặt
 - Quyền admin trên MySQL Server để tạo database và thực thi các câu lệnh SQL
@@ -40,12 +45,14 @@ Cần đảm bảo rằng thông tin đăng nhập MySQL trong file `appsettings
 ```
 
 ### Lỗi "Unknown database 'EsportsManager'"
-Database chưa được tạo. Hãy chạy file `01_create_database.sql` trước.
+Database chưa được tạo. Hãy chạy file `split_sql/01_create_database_and_tables.sql` trước.
 
 ### Lỗi "Table already exists"
 Nếu bạn đã chạy một số file SQL và gặp lỗi bảng đã tồn tại, hãy sử dụng cú pháp `DROP TABLE IF EXISTS` trước khi tạo bảng mới. Cú pháp này đã được sử dụng trong các file SQL của chúng tôi.
 
 ## Tài khoản mặc định sau khi cài đặt
+
+**Lưu ý**: Nếu bạn gặp vấn đề đăng nhập, hãy chạy file `standardize_passwords.sql` để đảm bảo mật khẩu được hash đúng cách với BCrypt.
 
 ### Admin
 - Username: admin
@@ -76,6 +83,11 @@ Nếu gặp lỗi "Không thể kết nối đến cơ sở dữ liệu", hãy k
 - Trên Windows: Mở Services.msc và khởi động MySQL service
 - Trên Linux: Sử dụng lệnh `sudo service mysql start` hoặc `sudo systemctl start mysql`
 
+### Chạy SQL từ command line
+- Trên Windows: `mysql -u root -p < database\esportsmanager.sql`
+- Trên Linux/Mac: `mysql -u root -p < database/esportsmanager.sql`
+- Hoặc từng file riêng lẻ: `mysql -u root -p < database/split_sql/01_create_database_and_tables.sql` và tiếp tục theo thứ tự
+
 ### Lỗi khi import SQL
 - Kiểm tra xem file SQL có lỗi cú pháp không
 - Đảm bảo đã import các file theo đúng thứ tự
@@ -85,3 +97,28 @@ Nếu gặp lỗi "Không thể kết nối đến cơ sở dữ liệu", hãy k
 - Kiểm tra connection string trong `appsettings.json`
 - Đảm bảo MySQL Server chấp nhận kết nối từ localhost
 - Kiểm tra username và password kết nối đến MySQL
+
+### Lỗi "Unknown column 'Status' in 'field list'" hoặc "Unknown column 'IsEmailVerified' in 'field list'"
+- Nếu gặp lỗi này khi đăng nhập, thiếu các cột trong bảng Users
+- Tạo lại toàn bộ database từ đầu bằng file `database/esportsmanager.sql` mới nhất
+- Hoặc có thể cập nhật bảng Users thủ công thông qua MySQL với ALTER TABLE 
+
+### Lỗi "Table 'esportsmanager.wallettransactions' doesn't exist"
+- Thiếu bảng WalletTransactions trong database
+- Tạo lại toàn bộ database từ đầu bằng file `database/esportsmanager.sql` mới nhất
+- Hoặc có thể chạy file `database/split_sql/01_create_database_and_tables.sql` để thêm các bảng còn thiếu
+
+### Lỗi "TÀI KHOẢN MẶC ĐỊNH KHÔNG TỒN TẠI"
+- Dữ liệu mẫu chưa được import vào database
+- Chạy trực tiếp file `database/split_sql/07_sample_data.sql` để thêm tài khoản mặc định
+- Hoặc tạo lại toàn bộ database từ đầu bằng file `database/esportsmanager.sql` mới nhất để có sẵn dữ liệu mẫu
+
+## Lưu ý về tính đồng bộ
+
+Dự án EsportsManager SQL đã được đồng bộ hoàn toàn giữa code và database:
+- Tất cả các cấu trúc bảng đã khớp với mô hình trong code
+- Các cột Status, IsEmailVerified, và các trường quan trọng khác đã được thêm vào
+- Bảng WalletTransactions và các bảng khác đã được đồng bộ đầy đủ
+- Dữ liệu mẫu với các tài khoản mặc định đã được tích hợp sẵn
+
+Nếu gặp lỗi không đồng bộ giữa code và database, hãy luôn tạo database mới từ file esportsmanager.sql hoặc chạy tuần tự các file trong thư mục split_sql/ theo đúng thứ tự.

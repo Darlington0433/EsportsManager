@@ -11,13 +11,62 @@ Hãy chạy các file theo thứ tự sau trong MySQL Workbench hoặc MySQL Com
 1. **01_create_database_and_tables.sql**: Tạo database và các bảng cơ bản (bao gồm Users, Teams, Tournaments, Wallets, WalletTransactions, ...)
 2. **02_create_indexes.sql**: Tạo các indexes để tối ưu hiệu năng truy vấn
 3. **03_create_views.sql**: Tạo các views để đơn giản hóa các truy vấn phức tạp
+4. **04_create_triggers.sql**: Tạo các triggers tự động hóa nghiệp vụ
+5. **05_create_procedures.sql**: Tạo các stored procedures cơ bản
+6. **06_add_constraints.sql**: Thêm các ràng buộc dữ liệu
+7. **07_sample_data.sql**: Thêm dữ liệu mẫu, bao gồm tài khoản admin
+8. **08_tournament_procedures.sql**: Tạo các stored procedures liên quan đến giải đấu
 
-QUAN TRỌNG: Phải đảm bảo thực hiện theo đúng thứ tự trên. Nếu không các view và trigger sẽ gặp lỗi do thiếu bảng hoặc cấu trúc bảng không đúng.
-5. **04_create_triggers.sql**: Tạo các triggers tự động hóa nghiệp vụ
-6. **05_create_procedures.sql**: Tạo các stored procedures cơ bản
-7. **06_add_constraints.sql**: Thêm các ràng buộc dữ liệu
-8. **07_sample_data.sql**: Thêm dữ liệu mẫu, bao gồm tài khoản admin
-9. **08_tournament_procedures.sql**: Tạo các stored procedures liên quan đến giải đấu
+**QUAN TRỌNG**: Phải đảm bảo thực hiện theo đúng thứ tự trên. Nếu không các view và trigger sẽ gặp lỗi do thiếu bảng hoặc cấu trúc bảng không đúng. Các file đã được thiết kế để chạy tuần tự, với mỗi file phụ thuộc vào các file trước đó.
+
+## Chạy từ Command Line
+
+Để chạy từng file SQL theo thứ tự từ dòng lệnh MySQL:
+
+### Windows
+```
+mysql -u root -p < 01_create_database_and_tables.sql
+mysql -u root -p EsportsManager < 02_create_indexes.sql
+mysql -u root -p EsportsManager < 03_create_views.sql
+mysql -u root -p EsportsManager < 04_create_triggers.sql
+mysql -u root -p EsportsManager < 05_create_procedures.sql
+mysql -u root -p EsportsManager < 06_add_constraints.sql
+mysql -u root -p EsportsManager < 07_sample_data.sql
+mysql -u root -p EsportsManager < 08_tournament_procedures.sql
+```
+
+### Linux/Mac
+```
+mysql -u root -p < 01_create_database_and_tables.sql
+mysql -u root -p EsportsManager < 02_create_indexes.sql
+mysql -u root -p EsportsManager < 03_create_views.sql
+mysql -u root -p EsportsManager < 04_create_triggers.sql
+mysql -u root -p EsportsManager < 05_create_procedures.sql
+mysql -u root -p EsportsManager < 06_add_constraints.sql
+mysql -u root -p EsportsManager < 07_sample_data.sql
+mysql -u root -p EsportsManager < 08_tournament_procedures.sql
+```
+
+Lưu ý: File đầu tiên sẽ tạo database nên không cần chỉ định tên database. Các file còn lại phải chỉ định database EsportsManager.
+
+## Đồng bộ với file tổng hợp
+
+Tất cả nội dung trong các file SQL riêng lẻ này đã được tích hợp đầy đủ trong file `../esportsmanager.sql`. Hai cách cài đặt này hoàn toàn tương đương và sẽ tạo ra cùng một cấu trúc cơ sở dữ liệu:
+
+1. Chạy file `esportsmanager.sql` trong thư mục gốc
+2. Chạy tuần tự 8 file trong thư mục `split_sql/` theo thứ tự đã nêu
+
+Nếu bạn muốn tạo lại file tổng hợp sau khi sửa đổi các file riêng lẻ, bạn có thể kết hợp chúng bằng lệnh:
+
+### Windows
+```
+type 01_create_database_and_tables.sql 02_create_indexes.sql 03_create_views.sql 04_create_triggers.sql 05_create_procedures.sql 06_add_constraints.sql 07_sample_data.sql 08_tournament_procedures.sql > ..\esportsmanager.sql
+```
+
+### Linux/Mac
+```
+cat 01_create_database_and_tables.sql 02_create_indexes.sql 03_create_views.sql 04_create_triggers.sql 05_create_procedures.sql 06_add_constraints.sql 07_sample_data.sql 08_tournament_procedures.sql > ../esportsmanager.sql
+```
 
 ## Tài khoản có sẵn
 

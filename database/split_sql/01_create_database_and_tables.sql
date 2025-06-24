@@ -37,8 +37,14 @@ CREATE TABLE IF NOT EXISTS Users (
     DisplayName VARCHAR(100),
     Role ENUM('Admin', 'Player', 'Viewer') NOT NULL DEFAULT 'Viewer',
     IsActive BOOLEAN DEFAULT FALSE,
+    Status ENUM('Active', 'Suspended', 'Inactive', 'Pending', 'Deleted') NOT NULL DEFAULT 'Pending',
+    IsEmailVerified BOOLEAN DEFAULT FALSE,
+    EmailVerificationToken VARCHAR(255),
+    PasswordResetToken VARCHAR(255),
+    PasswordResetExpiry DATETIME,
     CreatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    LastLogin DATETIME,
+    UpdatedAt TIMESTAMP NULL ON UPDATE CURRENT_TIMESTAMP,
+    LastLoginAt DATETIME,
     SecurityQuestion VARCHAR(255),
     SecurityAnswer VARCHAR(255)
 ) ENGINE=InnoDB COMMENT='Users table';
@@ -287,7 +293,8 @@ CREATE TABLE IF NOT EXISTS UserProfiles (
 CREATE TABLE IF NOT EXISTS WalletTransactions (
     TransactionID INT AUTO_INCREMENT PRIMARY KEY,
     WalletID INT NOT NULL,
-    TransactionType ENUM('Deposit', 'Withdrawal', 'Donation_Received', 'Prize_Money', 'Refund') NOT NULL,    Amount DECIMAL(12,2) NOT NULL,
+    TransactionType ENUM('Deposit', 'Withdrawal', 'Donation_Received', 'Prize_Money', 'Refund') NOT NULL,
+    Amount DECIMAL(12,2) NOT NULL,
     Description TEXT,
     ReferenceID INT, -- Reference to Donation/Withdrawal/etc
     CreatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

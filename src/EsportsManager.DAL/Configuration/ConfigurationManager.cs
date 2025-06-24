@@ -44,8 +44,8 @@ namespace EsportsManager.DAL.Configuration
         /// Lấy cấu hình
         /// </summary>
         public static IConfiguration Configuration => _configuration;        /// <summary>
-        /// Lấy chuỗi kết nối MySQL từ cấu hình
-        /// </summary>
+                                                                             /// Lấy chuỗi kết nối MySQL từ cấu hình
+                                                                             /// </summary>
         public static string GetConnectionString()
         {
             // Ưu tiên từ biến môi trường
@@ -54,8 +54,8 @@ namespace EsportsManager.DAL.Configuration
                 return envConnectionString;
 
             // Lấy từ cấu hình MySQL
-            return _configuration.GetConnectionString("MySqlConnection") ?? 
-                   _configuration.GetConnectionString("DefaultConnection") ?? 
+            return _configuration.GetConnectionString("MySqlConnection") ??
+                   _configuration.GetConnectionString("DefaultConnection") ??
                    DatabaseConfig.MySqlConnectionString;
         }
 

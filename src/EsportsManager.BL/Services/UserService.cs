@@ -76,10 +76,8 @@ public class UserService : IUserService
             {
                 _logger.LogWarning("Login attempt for inactive account: {Username}", loginDto.Username);
                 return Models.AuthenticationResult.Failure("Account is not active");
-            }
-
-            // Verify password
-            bool isPasswordValid = PasswordHasher.VerifyPassword(loginDto.Password, user.PasswordHash);
+            }            // Xác thực mật khẩu
+            bool isPasswordValid = BCrypt.Net.BCrypt.Verify(loginDto.Password, user.PasswordHash);
             if (!isPasswordValid)
             {
                 _logger.LogWarning("Login attempt with invalid password: {Username}", loginDto.Username);

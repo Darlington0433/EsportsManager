@@ -15,18 +15,21 @@ public class ServiceManager
     private readonly IUserService _userService;
     private readonly ITournamentService _tournamentService;
     private readonly ITeamService _teamService;
+    private readonly IWalletService _walletService;
 
-    public ServiceManager(IUserService userService, ITournamentService tournamentService, ITeamService teamService)
+    public ServiceManager(IUserService userService, ITournamentService tournamentService, ITeamService teamService, IWalletService walletService)
     {
         _userService = userService ?? throw new ArgumentNullException(nameof(userService));
         _tournamentService = tournamentService ?? throw new ArgumentNullException(nameof(tournamentService));
-        _teamService = teamService ?? throw new ArgumentNullException(nameof(teamService));
-    }    /// <summary>
-         /// Tạo AdminUIController và AdminMenuService
-         /// </summary>
+        _teamService = teamService ?? throw new ArgumentNullException(nameof(teamService));        _walletService = walletService ?? throw new ArgumentNullException(nameof(walletService));
+    }
+
+    /// <summary>
+    /// Tạo AdminUIController và AdminMenuService
+    /// </summary>
     public AdminMenuService CreateAdminMenuService(UserProfileDto adminUser)
     {
-        var adminController = new AdminUIController(adminUser, _userService, _tournamentService, _teamService);
+        var adminController = new AdminUIController(adminUser, _userService, _tournamentService, _teamService, _walletService);
         return new AdminMenuService(adminController);
     }
 

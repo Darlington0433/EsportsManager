@@ -76,10 +76,54 @@
    VALUES ('admin', '$2a$11$jytLhMkiejhdiugfkrjgnyoerpw3riue0r8urhw9478/djfeiorj', 'admin@esportmanager.com', 'Admin', TRUE);
    ```
 
-### 5. Lỗi "Lỗi đăng nhập: Column 'xxx' does not exist"
+### 5. Lỗi "Unknown column" trong bảng Users (Status, IsEmailVerified, v.v.)
 
 **Hiện tượng:**
-- Khi đăng nhập gặp lỗi về cột không tồn tại
+- Khi đăng nhập hiển thị lỗi "Unknown column 'Status' in 'field list'" hoặc "Unknown column 'IsEmailVerified' in 'field list'"
+- Không thể đăng nhập vào hệ thống với bất kỳ tài khoản nào
+
+**Nguyên nhân:**
+- Bảng Users trong database thiếu một số cột mà code đang tìm kiếm
+- Có sự không đồng bộ giữa cấu trúc database và model trong code
+
+**Cách khắc phục:**
+1. Chạy file SQL để thêm tất cả các cột còn thiếu vào bảng Users:
+   ```sql
+   USE EsportsManager;
+   
+   -- Thêm cột Status nếu chưa tồn tại
+   ALTER TABLE Users
+   ADD COLUMN IF NOT EXISTS Status ENUM('Active', 'Suspended', 'Inactive', 'Pending', 'Deleted') 
+   NOT NULL DEFAULT 'Pending' AFTER IsActive;
+   
+   -- Thêm cột IsEmailVerified nếu chưa tồn tại
+   ALTER TABLE Users
+   ADD COLUMN IF NOT EXISTS IsEmailVerified BOOLEAN DEFAULT FALSE AFTER Status;
+   
+   -- Thêm cột EmailVerificationToken nếu chưa tồn tại
+   ALTER TABLE Users
+   ADD COLUMN IF NOT EXISTS EmailVerificationToken VARCHAR(255) NULL AFTER IsEmailVerified;
+   
+   -- Thêm cột PasswordResetToken nếu chưa tồn tại
+   ALTER TABLE Users
+   ADD COLUMN IF NOT EXISTS PasswordResetToken VARCHAR(255) NULL AFTER EmailVerificationToken;
+   
+   -- Thêm cột PasswordResetExpiry nếu chưa tồn tại
+   ALTER TABLE Users
+   ADD COLUMN IF NOT EXISTS PasswordResetExpiry DATETIME NULL AFTER PasswordResetToken;
+   
+   -- Thêm cột UpdatedAt nếu chưa tồn tại
+   ALTER TABLE Users
+   ADD COLUMN IF NOT EXISTS UpdatedAt TIMESTAMP NULL ON UPDATE CURRENT_TIMESTAMP AFTER CreatedAt;
+   ```
+
+2. Hoặc import lại toàn bộ database từ file `database/esportsmanager.sql` 
+   (đây là cách giải quyết tổng thể và đáng tin cậy nhất)
+
+### 6. Lỗi "Lỗi đăng nhập: Column 'xxx' does not exist" khác
+
+**Hiện tượng:**
+- Khi đăng nhập gặp lỗi về cột không tồn tại ngoài cột Status
 
 **Nguyên nhân:**
 - Cấu trúc database không khớp với code
@@ -89,11 +133,11 @@
 1. Import lại toàn bộ database từ file `database/esportsmanager.sql`
 2. Hoặc chạy lại tất cả các file SQL trong thư mục `database/split_sql/` theo đúng thứ tự
 
-### 6. Lỗi "Error Code: 1146. Table 'esportsmanager.wallettransactions' doesn't exist"
+### 7. Lỗi "Error Code: 1146. Table 'esportsmanager.wallettransactions' doesn't exist"
 
 **Hiện tượng:**
 - Gặp lỗi khi chạy SQL hoặc khi ứng dụng cố gắng truy cập vào bảng WalletTransactions
-- Thường xuất hiện khi tạo view v_user_wallet_summary
+- Thường xuất hiện khi tạo view v_user_wallet_summary hoặc khi thực hiện các thao tác liên quan đến wallet
 
 **Nguyên nhân:**
 - Bảng WalletTransactions chưa được tạo
@@ -101,7 +145,45 @@
 - File 01_create_database_and_tables.sql chưa được chạy hoặc chạy không thành công
 
 **Cách khắc phục:**
-1. Import lại toàn bộ database theo đúng thứ tự (đây là cách đảm bảo nhất):
+1. **Giải pháp nhanh**: Chạy script để tạo các bảng thiếu:
+   ```sql
+   USE EsportsManager;
+   
+   -- Tạo bảng Wallets nếu chưa tồn tại
+   CREATE TABLE IF NOT EXISTS Wallets (
+       WalletID INT AUTO_INCREMENT PRIMARY KEY,
+       UserID INT NOT NULL UNIQUE,
+       Balance DECIMAL(12,2) DEFAULT 0.00,
+       TotalReceived DECIMAL(12,2) DEFAULT 0.00,
+       TotalWithdrawn DECIMAL(12,2) DEFAULT 0.00,
+       IsActive BOOLEAN DEFAULT TRUE,
+       CreatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+       LastUpdated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+       
+       FOREIGN KEY (UserID) REFERENCES Users(UserID) ON DELETE CASCADE
+   ) ENGINE=InnoDB COMMENT='Wallets table';
+   
+   -- Tạo bảng WalletTransactions nếu chưa tồn tại
+   CREATE TABLE IF NOT EXISTS WalletTransactions (
+       TransactionID INT AUTO_INCREMENT PRIMARY KEY,
+       WalletID INT NOT NULL,
+       TransactionType ENUM('Deposit', 'Withdrawal', 'Donation_Received', 'Prize_Money', 'Refund') NOT NULL,
+       Amount DECIMAL(12,2) NOT NULL,
+       Description TEXT,
+       ReferenceID INT,
+       CreatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+       
+       FOREIGN KEY (WalletID) REFERENCES Wallets(WalletID) ON DELETE CASCADE
+   ) ENGINE=InnoDB COMMENT='Detailed wallet transaction history';
+   
+   -- Thêm wallet cho tất cả người dùng nếu họ chưa có
+   INSERT IGNORE INTO Wallets (UserID, Balance, TotalReceived, TotalWithdrawn)
+   SELECT UserID, 0.00, 0.00, 0.00
+   FROM Users u
+   WHERE NOT EXISTS (SELECT 1 FROM Wallets w WHERE w.UserID = u.UserID);
+   ```
+
+2. **Giải pháp hoàn chỉnh**: Import lại toàn bộ database theo đúng thứ tự:
    ```sql
    -- Import theo thứ tự
    source [đường_dẫn]/database/split_sql/01_create_database_and_tables.sql
@@ -114,30 +196,15 @@
    source [đường_dẫn]/database/split_sql/08_tournament_procedures.sql
    ```
    
-2. Hoặc tạo thủ công bảng WalletTransactions nếu thiếu:
-   ```sql
-   USE EsportsManager;
-   
-   CREATE TABLE IF NOT EXISTS WalletTransactions (
-     TransactionID INT AUTO_INCREMENT PRIMARY KEY,
-     WalletID INT NOT NULL,
-     TransactionType ENUM('Deposit', 'Withdrawal', 'Donation_Received', 'Prize_Money', 'Refund') NOT NULL,
-     Amount DECIMAL(12,2) NOT NULL,
-     Description TEXT,
-     ReferenceID INT,
-     CreatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-     
-     FOREIGN KEY (WalletID) REFERENCES Wallets(WalletID) ON DELETE CASCADE
-   ) ENGINE=InnoDB COMMENT='Detailed wallet transaction history';
-   ```
-   
-3. Sau đó import lại các view từ file `03_create_views.sql`:
+3. Sau khi tạo bảng, import lại các view từ file `03_create_views.sql` nếu cần:
    ```sql
    USE EsportsManager;
    source [đường_dẫn]/database/split_sql/03_create_views.sql
    ```
 
-### 7. Lỗi khác
+4. **Lưu ý quan trọng**: Chúng tôi đã tạo file `database/fix_missing_wallet_tables.sql` để giải quyết vấn đề này một cách tự động. Bạn có thể chạy file này để sửa lỗi.
+
+### 8. Lỗi khác
 
 Nếu bạn gặp các lỗi khác không được liệt kê ở đây, vui lòng kiểm tra:
 

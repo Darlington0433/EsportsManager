@@ -1,23 +1,25 @@
-NHỮNG GÌ ĐÃ ĐƯỢC CẬP NHẬT
+TỐI ƯU HỆ THỐNG VÀ CẢI THIỆN TRẢI NGHIỆM NGƯỜI DÙNG
 
-1. CHUẨN HÓA TÊN GỌI (User → Users)
-- Models: User.cs → Users.cs
-- Services: UserService.cs → UsersService.cs
-- Repositories: UserRepository.cs → UsersRepository.cs
-- Interfaces: IUserService.cs → IUsersService.cs, IUserRepository.cs → IUsersRepository.cs
-- DTOs: Tất cả DTO liên quan đến User đã được đổi tên
-- Enums: UserRole → UsersRole, UserStatus → UsersStatus
+1. CẢI THIỆN KHẢ NĂNG XỬ LÝ LỖI
+- Thêm SystemIntegrityService kiểm tra toàn vẹn database khi khởi động
+- Cải thiện thông báo lỗi khi database không tồn tại, thiếu bảng, hoặc thiếu tài khoản mặc định
+- Thêm kiểm tra kết nối database và hiển thị thông báo lỗi thân thiện
+- Thêm hướng dẫn khắc phục sự cố cho từng loại lỗi
+- Cập nhật form đăng nhập để hiển thị lỗi chi tiết khi không kết nối được database
 
-2. SỬA LỖI BIÊN DỊCH
-- Duplicate Interface: Loại bỏ các interface trùng lặp
-- Namespace Conflicts: Sửa lỗi xung đột namespace
-- Missing References: Cập nhật tất cả using statements và references
-- DTO Structure: Sửa cấu trúc DTO để khớp với business requirements
+2. CHUẨN HÓA CẤU TRÚC CODE
+- Xóa các file DTO rỗng hoặc không cần thiết: UserProfileDto, TeamInfoDto_New, TestDto, TournamentDTOs
+- Chuẩn hóa lại các DTO: WalletDtos, SystemStatsDto, UserDto, TournamentStatDto, ViewerFeedbackDto
+- Loại bỏ file BusinessResult.cs trùng lặp, chỉ giữ BusinessModels.cs
+- Sửa lỗi cú pháp, null reference, async/await trong AdminController và PlayerController
+- Cập nhật ConsoleRenderingService để hiển thị thông báo tốt hơn
 
-3. HOÀN THIỆN SERVICE IMPLEMENTATION
-- WalletService: Mock implementation với các method cơ bản
-- TournamentService: Mock implementation cho quản lý giải đấu
-- TeamService: Mock implementation cho quản lý đội
+3. TỐI ƯU DATABASE VÀ SQL SCRIPTS
+- Cập nhật tên database đồng nhất thành "EsportsManager" trong tất cả file SQL
+- Xóa file 01_create_database.sql trùng lặp, chỉ giữ 01_create_database_and_tables.sql
+- Đảm bảo các file SQL chạy theo đúng thứ tự để tránh lỗi Table 'wallettransactions' doesn't exist
+- Cập nhật hướng dẫn import database trong README.md và SETUP_GUIDE.md
+- Thêm TROUBLESHOOTING.md với hướng dẫn chi tiết khắc phục lỗi database
 - FeedbackService: Mock implementation cho phản hồi
 - UsersService: Cập nhật các method theo chuẩn mới
 

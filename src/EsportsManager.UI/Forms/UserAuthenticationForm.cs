@@ -85,7 +85,6 @@ namespace EsportsManager.UI.Forms
                     case ConsoleKey.Enter:
                         HandleFieldInput();
                         break;
-
                     case ConsoleKey.Escape:
                         return false; // User hủy bỏ
 
@@ -94,7 +93,12 @@ namespace EsportsManager.UI.Forms
                         if (ValidateForm())
                         {
                             HandleSubmit();
-                            return true; // User hoàn thành thành công
+                            // Bây giờ HandleSubmit() đã synchronous, kiểm tra kết quả ngay
+                            if (_authResult != null && _authResult.IsAuthenticated)
+                            {
+                                return true; // Đăng nhập thành công
+                            }
+                            // Nếu đăng nhập thất bại, tiếp tục vòng lặp để user thử lại
                         }
                         break;
                 }
@@ -262,12 +266,10 @@ namespace EsportsManager.UI.Forms
         private bool ValidateForm()
         {
             return ValidationService.ValidateRequiredFields(_fieldValues, _fieldLabels, ShowMessage);
-        }
-
-        /// <summary>
-        /// Xử lý submit form đăng nhập với UserService
-        /// </summary>
-        private async void HandleSubmit()
+        }        /// <summary>
+                 /// Xử lý submit form đăng nhập với UserService
+                 /// </summary>
+        private void HandleSubmit()
         {
             try
             {
@@ -276,15 +278,14 @@ namespace EsportsManager.UI.Forms
                 {
                     Username = _fieldValues[0],
                     Password = _fieldValues[1]
-                };
-
-                // Gọi UserService để authenticate (sử dụng authentication thực tế)
-                var result = await _userService.AuthenticateAsync(loginDto);
-
-                if (result.IsAuthenticated)
+                };                // Gọi UserService để authenticate (sử dụng authentication thực tế) - chuyển thành synchronous
+                var result = _userService.AuthenticateAsync(loginDto).GetAwaiter().GetResult(); if (result.IsAuthenticated)
                 {
                     // Đăng nhập thành công, hiển thị thông báo
                     ShowMessage($"Đăng nhập thành công! Chào mừng {result.Username}", false);
+
+                    // Lưu kết quả authentication vào _authResult
+                    _authResult = result;
 
                     // Lưu profile thực tế của người dùng (không còn dùng demo)
                     UserSessionManager.CurrentUser = new UserProfileDto

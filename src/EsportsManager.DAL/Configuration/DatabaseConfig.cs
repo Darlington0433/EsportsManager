@@ -2,15 +2,15 @@ using System;
 
 namespace EsportsManager.DAL.Configuration
 {    /// <summary>
-    /// Cấu hình mặc định kết nối cơ sở dữ liệu MySQL
-    /// </summary>
+     /// Cấu hình mặc định kết nối cơ sở dữ liệu MySQL
+     /// </summary>
     public static class DatabaseConfig
     {
         /// <summary>
         /// Connection string mặc định cho MySQL
         /// </summary>
         public static string DefaultConnectionString =>
-            "Server=localhost;Database=EsportsManager;Uid=root;Pwd=;CharSet=utf8mb4;";
+            "Server=localhost;Database=EsportsManager;Uid=root;Pwd=123456;CharSet=utf8mb4;";
 
         /// <summary>
         /// Connection string cho MySQL (alias cho DefaultConnectionString)

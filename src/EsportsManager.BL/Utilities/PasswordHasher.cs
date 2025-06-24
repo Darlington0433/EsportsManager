@@ -13,7 +13,7 @@ namespace EsportsManager.BL.Utilities;
 public static class PasswordHasher
 {
     #region Password Hashing - Mã hóa mật khẩu
-    
+
     /// <summary>
     /// Hash mật khẩu sử dụng BCrypt algorithm
     /// BCrypt tự động generate salt và combine với password để tạo hash an toàn
@@ -34,11 +34,11 @@ public static class PasswordHasher
         // GenerateSalt() tạo salt ngẫu nhiên để đảm bảo mỗi hash là unique
         return BCrypt.Net.BCrypt.HashPassword(password, BCrypt.Net.BCrypt.GenerateSalt());
     }
-    
+
     #endregion
 
     #region Password Verification - Xác minh mật khẩu
-    
+
     /// <summary>
     /// Verify mật khẩu plain text với hash đã lưu trong database
     /// BCrypt sẽ extract salt từ hash và dùng nó để hash password input
@@ -67,11 +67,11 @@ public static class PasswordHasher
             return false;
         }
     }
-    
+
     #endregion
 
     #region Password Strength Validation - Kiểm tra độ mạnh mật khẩu
-    
+
     /// <summary>
     /// Kiểm tra mật khẩu có đủ mạnh theo các tiêu chí security
     /// Yêu cầu mật khẩu phải có:
@@ -107,7 +107,7 @@ public static class PasswordHasher
 
         // Định nghĩa các ký tự đặc biệt được chấp nhận
         var specialChars = "!@#$%^&*()_+-=[]{}|;:,.<>?";
-        
+
         // Kiểm tra phải có ít nhất 1 ký tự đặc biệt
         if (!password.Any(c => specialChars.Contains(c)))
             return false;
@@ -129,6 +129,6 @@ public static class PasswordHasher
                "- One digit (0-9)\n" +
                "- One special character (!@#$%^&*()_+-=[]{}|;:,.<>?)";
     }
-    
+
     #endregion
 }
