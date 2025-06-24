@@ -1,4 +1,4 @@
-// Form đăng nhập
+﻿// Form Ä‘Äƒng nháº­p
 
 using System;
 using EsportsManager.UI.Utilities;
@@ -8,11 +8,19 @@ using EsportsManager.BL.Interfaces;
 using EsportsManager.BL.DTOs;
 using Models = EsportsManager.BL.Models;
 
-namespace EsportsManager.UI.Forms
+name                    // Lưu profile thực tế của người dùng (không còn dùng demo)                    
+                    UserSessionManager.CurrentUser = new UserProfileDto 
+                    { 
+                        Id = result.UserId ?? 0, 
+                        Username = result.Username ?? string.Empty, 
+                        Role = result.Role ?? "Viewer", 
+                        Status = "Active",
+                        CreatedAt = DateTime.Now
+                    };pace EsportsManager.UI.Forms
 {
     /// <summary>
-    /// UserAuthenticationForm - Form đăng nhập với giao diện giống hệt ảnh mẫu
-    /// Bao gồm: border xanh lá, label căn trái, input field highlight, hướng dẫn phím
+    /// UserAuthenticationForm - Form Ä‘Äƒng nháº­p vá»›i giao diá»‡n giá»‘ng há»‡t áº£nh máº«u
+    /// Bao gá»“m: border xanh lĂ¡, label cÄƒn trĂ¡i, input field highlight, hÆ°á»›ng dáº«n phĂ­m
     /// </summary>
     public class UserAuthenticationForm
     {
@@ -20,19 +28,19 @@ namespace EsportsManager.UI.Forms
 
         private readonly IUserService _userService;
 
-        // Các field cần nhập trong form đăng nhập
+        // CĂ¡c field cáº§n nháº­p trong form Ä‘Äƒng nháº­p
         private readonly string[] _fieldLabels = {
-            "Tên đăng nhập",
-            "Mật khẩu"
+            "TĂªn Ä‘Äƒng nháº­p",
+            "Máº­t kháº©u"
         };
 
-        // Giá trị đã nhập cho mỗi field
+        // GiĂ¡ trá»‹ Ä‘Ă£ nháº­p cho má»—i field
         private readonly string[] _fieldValues = new string[2];
 
-        // Index của field đang được chọn
+        // Index cá»§a field Ä‘ang Ä‘Æ°á»£c chá»n
         private int _selectedFieldIndex = 0;
 
-        // Lưu trữ kết quả đăng nhập
+        // LÆ°u trá»¯ káº¿t quáº£ Ä‘Äƒng nháº­p
         private Models.AuthenticationResult? _authResult;
 
         #endregion
@@ -47,25 +55,23 @@ namespace EsportsManager.UI.Forms
         #endregion
 
         #region Public Methods
-        
         /// <summary>
-        /// Hiển thị form đăng nhập với giao diện giống hệt ảnh mẫu
-        /// </summary>
-        /// <returns>true nếu user hoàn thành form, false nếu hủy bỏ (ESC)</returns>
+        /// Hiá»ƒn thá»‹ form Ä‘Äƒng nháº­p vá»›i giao diá»‡n giá»‘ng há»‡t áº£nh máº«u
+        /// </summary>        /// <returns>true náº¿u user hoĂ n thĂ nh form, false náº¿u há»§y bá» (ESC)</returns>
         public bool Show()
         {
-            // Khởi tạo giá trị rỗng cho tất cả fields
+            // Khá»Ÿi táº¡o giĂ¡ trá»‹ rá»—ng cho táº¥t cáº£ fields
             for (int i = 0; i < _fieldValues.Length; i++)
             {
                 _fieldValues[i] = "";
             }
 
-            // Vòng lặp chính xử lý form
+            // VĂ²ng láº·p chĂ­nh xá»­ lĂ½ form
             while (true)
             {
                 DrawForm();
 
-                // Xử lý input từ user
+                // Xá»­ lĂ½ input tá»« user
                 var key = Console.ReadKey(true);
 
                 switch (key.Key)
@@ -85,16 +91,15 @@ namespace EsportsManager.UI.Forms
                     case ConsoleKey.Enter:
                         HandleFieldInput();
                         break;
-                        
                     case ConsoleKey.Escape:
-                        return false; // User hủy bỏ
+                        return false; // User há»§y bá»
 
                     case ConsoleKey.F1:
-                        // Xử lý submit form
+                        // Xá»­ lĂ½ submit form (giáº£ láº­p)
                         if (ValidateForm())
                         {
                             HandleSubmit();
-                            return true; // User hoàn thành thành công
+                            return true; // User hoĂ n thĂ nh thĂ nh cĂ´ng
                         }
                         break;
                 }
@@ -102,7 +107,7 @@ namespace EsportsManager.UI.Forms
         }
 
         /// <summary>
-        /// Lấy kết quả đăng nhập
+        /// Láº¥y káº¿t quáº£ Ä‘Äƒng nháº­p
         /// </summary>
         public Models.AuthenticationResult? GetAuthResult()
         {
@@ -114,57 +119,54 @@ namespace EsportsManager.UI.Forms
         #region Private Methods
 
         /// <summary>
-        /// Vẽ toàn bộ form với layout giống hệt ảnh mẫu
+        /// Váº½ toĂ n bá»™ form vá»›i layout giá»‘ng há»‡t áº£nh máº«u
         /// </summary>
         private void DrawForm()
         {
             Console.Clear();
             Console.BackgroundColor = ConsoleColor.Black;
-            
-            // Kích thước và vị trí an toàn, không bao giờ lòi ra ngoài màn hình
+            // KĂ­ch thÆ°á»›c vĂ  vá»‹ trĂ­ an toĂ n, khĂ´ng bao giá» lĂ²i ra ngoĂ i mĂ n hĂ¬nh
             int windowWidth = Console.WindowWidth;
             int windowHeight = Console.WindowHeight;
-            int formWidth = Math.Min(60, windowWidth - 6);  // Tối đa 60, margin 6
-            int formHeight = Math.Min(12, windowHeight - 4); // Tối đa 12, margin 4
+            int formWidth = Math.Min(60, windowWidth - 6);  // Tá»‘i Ä‘a 60, margin 6
+            int formHeight = Math.Min(12, windowHeight - 4); // Tá»‘i Ä‘a 12, margin 4
 
-            // Căn giữa màn hình với vị trí an toàn
+            // CÄƒn giá»¯a mĂ n hĂ¬nh vá»›i vá»‹ trĂ­ an toĂ n
             int left = Math.Max(1, (windowWidth - formWidth) / 2);
             int top = Math.Max(1, (windowHeight - formHeight) / 2);
 
-            // Vẽ border xanh lá
-            ConsoleRenderingService.DrawBorder(left, top, formWidth, formHeight, "[ĐĂNG NHẬP]", true);
+            // Váº½ border xanh lĂ¡
+            ConsoleRenderingService.DrawBorder(left, top, formWidth, formHeight, "[ÄÄ‚NG NHáº¬P]", true);
 
-            // Vẽ các input fields
+            // Váº½ cĂ¡c input fields
             for (int i = 0; i < _fieldLabels.Length; i++)
             {
                 int fieldY = top + 3 + (i * 3);
-                
-                // Vẽ label field
+                // Váº½ label field
                 SafeConsole.SetCursorPosition(left + 2, fieldY);
                 Console.ForegroundColor = ConsoleColor.White;
                 Console.Write($"{_fieldLabels[i]}:");
 
-                // Vẽ input field với highlight nếu được chọn
+                // Váº½ input field vá»›i highlight náº¿u Ä‘Æ°á»£c chá»n
                 SafeConsole.SetCursorPosition(left + 18, fieldY);
 
                 if (i == _selectedFieldIndex)
                 {
-                    // Field được chọn: background xanh
+                    // Field Ä‘Æ°á»£c chá»n: background xanh
                     Console.BackgroundColor = ConsoleColor.Green;
                     Console.ForegroundColor = ConsoleColor.Black;
                 }
                 else
                 {
-                    // Field không được chọn: background đen
+                    // Field khĂ´ng Ä‘Æ°á»£c chá»n: background Ä‘en
                     Console.BackgroundColor = ConsoleColor.DarkGray;
                     Console.ForegroundColor = ConsoleColor.White;
                 }
-                
-                // Hiển thị value (password thì hiển thị *)
+                // Hiá»ƒn thá»‹ value (password thĂ¬ hiá»ƒn thá»‹ *)
                 string displayValue = "";
                 if (!string.IsNullOrEmpty(_fieldValues[i]))
                 {
-                    if (_fieldLabels[i].Contains("Mật khẩu"))
+                    if (_fieldLabels[i].Contains("Máº­t kháº©u"))
                     {
                         displayValue = new string('*', _fieldValues[i].Length);
                     }
@@ -174,27 +176,25 @@ namespace EsportsManager.UI.Forms
                     }
                 }
 
-                // Tính chiều rộng field thích ứng với kích thước form
-                int fieldWidth = Math.Min(25, formWidth - 25); // Tối đa 25, nhưng không vượt khung
+                // TĂ­nh chiá»u rá»™ng field thĂ­ch á»©ng vá»›i kĂ­ch thÆ°á»›c form
+                int fieldWidth = Math.Min(25, formWidth - 25); // Tá»‘i Ä‘a 25, nhÆ°ng khĂ´ng vÆ°á»£t khung
 
-                // Pad để đủ chiều rộng field
+                // Pad Ä‘á»ƒ Ä‘á»§ chiá»u rá»™ng field
                 displayValue = displayValue.PadRight(fieldWidth);
                 Console.Write(displayValue);
                 Console.ResetColor();
                 Console.BackgroundColor = ConsoleColor.Black;
             }
-            
-            // Vẽ hướng dẫn phím ở cuối form - căn giữa và cắt nếu quá dài
-            string helpText = "↑↓/Tab: Chọn   Enter: Nhập   F1: Đăng nhập   Esc: Thoát";
-            int maxHelpWidth = formWidth - 4; // Để trong khung border
+            // Váº½ hÆ°á»›ng dáº«n phĂ­m á»Ÿ cuá»‘i form - cÄƒn giá»¯a vĂ  cáº¯t náº¿u quĂ¡ dĂ i
+            string helpText = "â†‘â†“/Tab: Chá»n   Enter: Nháº­p   F1: ÄÄƒng nháº­p   Esc: ThoĂ¡t";
+            int maxHelpWidth = formWidth - 4; // Äá»ƒ trong khung border
 
-            // Cắt text nếu quá dài
+            // Cáº¯t text náº¿u quĂ¡ dĂ i
             if (helpText.Length > maxHelpWidth)
             {
-                helpText = "↑↓: Chọn   Enter: Nhập   F1: OK   Esc: Thoát";
+                helpText = "â†‘â†“: Chá»n   Enter: Nháº­p   F1: OK   Esc: ThoĂ¡t";
             }
-            
-            // Tính vị trí căn giữa
+            // TĂ­nh vá»‹ trĂ­ cÄƒn giá»¯a
             int helpX = left + ((formWidth - helpText.Length) / 2);
             SafeConsole.SetCursorPosition(helpX, top + formHeight - 2);
             Console.ForegroundColor = ConsoleColor.Gray;
@@ -203,11 +203,11 @@ namespace EsportsManager.UI.Forms
         }
 
         /// <summary>
-        /// Xử lý nhập dữ liệu cho field đang được chọn
+        /// Xá»­ lĂ½ nháº­p dá»¯ liá»‡u cho field Ä‘ang Ä‘Æ°á»£c chá»n
         /// </summary>
         private void HandleFieldInput()
         {
-            // Tính vị trí input
+            // TĂ­nh vá»‹ trĂ­ input
             int windowWidth = Console.WindowWidth;
             int windowHeight = Console.WindowHeight;
             int formWidth = 60;
@@ -215,19 +215,17 @@ namespace EsportsManager.UI.Forms
             int left = Math.Max(0, (windowWidth - formWidth) / 2);
             int top = Math.Max(0, (windowHeight - formHeight) / 2);
             int fieldY = top + 3 + (_selectedFieldIndex * 3);
-            
-            // Đặt cursor vào vị trí input
+            // Äáº·t cursor vĂ o vá»‹ trĂ­ input
             SafeConsole.SetCursorPosition(left + 18, fieldY);
             Console.BackgroundColor = ConsoleColor.Green;
             Console.ForegroundColor = ConsoleColor.Black;
-            
-            // Clear field hiện tại
+            // Clear field hiá»‡n táº¡i
             int fieldWidth = Math.Min(25, formWidth - 25);
             Console.Write(new string(' ', fieldWidth));
             SafeConsole.SetCursorPosition(left + 18, fieldY);
 
-            // Đọc input dựa trên loại field
-            if (_fieldLabels[_selectedFieldIndex].Contains("Mật khẩu"))
+            // Äá»c input dá»±a trĂªn loáº¡i field
+            if (_fieldLabels[_selectedFieldIndex].Contains("Máº­t kháº©u"))
             {
                 _fieldValues[_selectedFieldIndex] = ReadPasswordInput();
             }
@@ -239,80 +237,67 @@ namespace EsportsManager.UI.Forms
             Console.ResetColor();
             Console.BackgroundColor = ConsoleColor.Black;
         }
-        
         /// <summary>
-        /// Đọc password input (hiển thị dấu *)
+        /// Äá»c password input (hiá»ƒn thá»‹ dáº¥u *)
         /// </summary>
         private string ReadPasswordInput()
         {
             return UnifiedInputService.ReadPassword() ?? "";
         }
-        
         /// <summary>
-        /// Đọc text input thông thường
+        /// Äá»c text input thĂ´ng thÆ°á»ng
         /// </summary>
         private string ReadTextInput()
         {
             return UnifiedInputService.ReadUsername() ?? "";
         }
-        
         /// <summary>
-        /// Validate form trước khi submit
+        /// Validate form trÆ°á»›c khi submit
         /// </summary>
         private bool ValidateForm()
         {
             return ValidationService.ValidateRequiredFields(_fieldValues, _fieldLabels, ShowMessage);
-        }
-        
-        /// <summary>
-        /// Xử lý submit form đăng nhập với UserService
-        /// </summary>
+        }        /// <summary>
+                 /// Xá»­ lĂ½ submit form Ä‘Äƒng nháº­p vá»›i UserService
+                 /// </summary>
         private async void HandleSubmit()
         {
             try
             {
-                // Tạo LoginDto từ input
+                // Táº¡o LoginDto tá»« input
                 var loginDto = new LoginDto
                 {
                     Username = _fieldValues[0],
                     Password = _fieldValues[1]
                 };
 
-                // Gọi UserService để authenticate (sử dụng authentication thực tế)
+                // Gá»i UserService Ä‘á»ƒ authenticate (sá»­ dá»¥ng authentication thá»±c táº¿)
                 var result = await _userService.AuthenticateAsync(loginDto);
 
                 if (result.IsAuthenticated)
                 {
-                    // Đăng nhập thành công, hiển thị thông báo
-                    ShowMessage($"Đăng nhập thành công! Chào mừng {result.Username}", false);
+                    // ÄÄƒng nháº­p thĂ nh cĂ´ng, hiá»ƒn thá»‹ thĂ´ng bĂ¡o
+                    ShowMessage($"ÄÄƒng nháº­p thĂ nh cĂ´ng! ChĂ o má»«ng {result.Username}", false);
 
-                    // Lưu profile thực tế của người dùng (không còn dùng demo)
-                    UserSessionManager.CurrentUser = new UserProfileDto 
-                    { 
-                        Id = result.UserId ?? 0, 
-                        Username = result.Username ?? string.Empty, 
-                        Role = result.Role ?? "Viewer", 
-                        Status = "Active",
-                        CreatedAt = DateTime.Now
-                    };
+                    // LÆ°u profile thá»±c táº¿ cá»§a ngÆ°á»i dĂ¹ng (khĂ´ng cĂ²n dĂ¹ng demo)                    UserSessionManager.CurrentUser = new UserProfileDto { Id = result.UserId ?? 0, Username = result.Username ?? string.Empty, Role = result.Role ?? "Viewer", Status = "Active" };
 
                     UserSessionManager.IsLoggedIn = true;
                 }
                 else
                 {
-                    ShowMessage(result.ErrorMessage ?? "Tên đăng nhập hoặc mật khẩu không đúng!", true);
+                    ShowMessage(result.ErrorMessage ?? "TĂªn Ä‘Äƒng nháº­p hoáº·c máº­t kháº©u khĂ´ng Ä‘Ăºng!", true);
                     UserSessionManager.IsLoggedIn = false;
                 }
             }
             catch (Exception ex)
             {
-                ShowMessage($"Lỗi đăng nhập: {ex.Message}", true);
+                ShowMessage($"Lá»—i Ä‘Äƒng nháº­p: {ex.Message}", true);
                 UserSessionManager.IsLoggedIn = false;
             }
         }
 
         /// <summary>
-        /// Hiển thị thông báo
+        /// Hiá»ƒn thá»‹ thĂ´ng bĂ¡o
         /// </summary>
         private void ShowMessage(string message, bool isError)
         {
@@ -322,3 +307,4 @@ namespace EsportsManager.UI.Forms
         #endregion
     }
 }
+

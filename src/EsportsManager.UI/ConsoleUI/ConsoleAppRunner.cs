@@ -11,12 +11,12 @@ using EsportsManager.BL.DTOs;
 
 namespace EsportsManager.UI.ConsoleUI
 {    /// <summary>
-    /// Điều khiển giao diện console
-    /// </summary>
+     /// Điều khiển giao diện console
+     /// </summary>
     public static class ConsoleAppRunner
     {
         private static ServiceProvider? _serviceProvider;
-        
+
         /// <summary>
         /// Chạy ứng dụng console với DI container
         /// </summary>
@@ -25,14 +25,15 @@ namespace EsportsManager.UI.ConsoleUI
             _serviceProvider = serviceProvider;
             Run(); // Delegate sang method Run() chính
         }
-        
+
         /// <summary>
         /// Method chính điều khiển flow của ứng dụng
         /// Hiển thị welcome screen, sau đó vào vòng lặp main menu
         /// UPDATED: Sử dụng EnhancedMenuService cho giao diện đẹp hơn
         /// </summary>
         public static void Run()
-        {            try
+        {
+            try
             {
                 // Thiết lập màu nền cho toàn bộ ứng dụng
                 try
@@ -55,28 +56,29 @@ namespace EsportsManager.UI.ConsoleUI
                         "Quên mật khẩu",    // Option 2: Khôi phục mật khẩu
                         "Giới thiệu"        // Option 3: Giới thiệu về ứng dụng
                     };
-                    
+
                     // Hiển thị menu tương tác và nhận lựa chọn từ user
                     int selectedOption = InteractiveMenuService.DisplayInteractiveMenu("MENU CHÍNH", mainMenuOptions);
-                    
+
                     // Xử lý lựa chọn của user bằng switch-case
                     switch (selectedOption)
-                    {                        case 0: // User chọn "Đăng nhập"
+                    {
+                        case 0: // User chọn "Đăng nhập"
                             HandleLogin();
                             break;
-                            
+
                         case 1: // User chọn "Đăng ký"
                             HandleRegister();
                             break;
-                            
+
                         case 2: // User chọn "Quên mật khẩu"
                             HandleForgotPassword();
                             break;
-                            
+
                         case 3: // User chọn "Giới thiệu"
                             HandleAbout();
                             break;
-                            
+
                         case -1: // User nhấn ESC (trả về -1)
                             // Thoát trực tiếp không cần xác nhận
                             Console.Clear();
@@ -84,14 +86,15 @@ namespace EsportsManager.UI.ConsoleUI
                             return; // Thoát khỏi method Run() = kết thúc ứng dụng
                     }
                 }
-            }            catch
+            }
+            catch
             {
                 // Bắt và xử lý các lỗi không mong muốn ở cấp cao nhất - im lặng thoát
             }
         }        /// <summary>
-        /// Xử lý quy trình đăng nhập của user
-        /// Hiển thị form đăng nhập và xử lý logic authentication
-        /// </summary>
+                 /// Xử lý quy trình đăng nhập của user
+                 /// Hiển thị form đăng nhập và xử lý logic authentication
+                 /// </summary>
         private static void HandleLogin()
         {
             try
@@ -104,16 +107,16 @@ namespace EsportsManager.UI.ConsoleUI
 
                 // Lấy UserService từ DI container
                 var userService = _serviceProvider.GetRequiredService<EsportsManager.BL.Interfaces.IUserService>();
-                
+
                 // Tạo và hiển thị form đăng nhập với UserService
                 var loginForm = new UserAuthenticationForm(userService);
-                bool isCompleted = loginForm.Show(); // Nhận kết quả từ form
-                
-                if (isCompleted)
+                bool isCompleted = loginForm.Show(); // Nhận kết quả từ form                if (isCompleted)
                 {
-                    // Đăng nhập thành công - cho user chọn role để demo
-                    string selectedRole = UserRoleSelector.SelectUserRole();
-                    ShowUserMenu(selectedRole);
+                    // Đăng nhập thành công - kiểm tra và sử dụng thông tin user từ UserSessionManager
+                    if (Services.UserSessionManager.IsLoggedIn && Services.UserSessionManager.CurrentUser != null)
+                    {
+                        ShowUserMenu(Services.UserSessionManager.CurrentUser.Role);
+                    }
                 }
             }
             catch
@@ -122,8 +125,8 @@ namespace EsportsManager.UI.ConsoleUI
                 // Log lỗi nếu cần thiết nhưng không làm phiền user
             }
         }        /// <summary>
-        /// Hiển thị menu tương ứng với role của user
-        /// </summary>
+                 /// Hiển thị menu tương ứng với role của user đã đăng nhập
+                 /// </summary>
         private static void ShowUserMenu(string role)
         {
             try
@@ -136,41 +139,40 @@ namespace EsportsManager.UI.ConsoleUI
 
                 // Lấy ServiceManager từ DI container
                 var serviceManager = _serviceProvider.GetRequiredService<ServiceManager>();
-                
-                // Tạo user profile mẫu
-                var sampleUser = new UserProfileDto
+
+                // Lấy thông tin user đã xác thực từ UserSessionManager
+                var currentUser = Services.UserSessionManager.CurrentUser;
+                if (currentUser == null)
                 {
-                    Id = 1,
-                    Username = "demo_user",
-                    Email = "demo@example.com",
-                    FullName = "Demo User",
-                    Role = role
-                };
-                
+                    ConsoleRenderingService.ShowMessageBox("Lỗi: Thông tin người dùng không tồn tại", true, 3000);
+                    return;
+                }
+
+                // Chuyển đến menu tương ứng với role thực của người dùng
                 switch (role.ToLower())
                 {
                     case "player":
-                        ShowPlayerMenu(serviceManager, sampleUser);
+                        ShowPlayerMenu(serviceManager, currentUser);
                         break;
-                        
+
                     case "admin":
-                        ShowAdminMenu(serviceManager, sampleUser);
+                        ShowAdminMenu(serviceManager, currentUser);
                         break;
-                        
+
                     case "viewer":
                     default:
-                        ShowViewerMenu(serviceManager, sampleUser);
+                        ShowViewerMenu(serviceManager, currentUser);
                         break;
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                // Xử lý lỗi menu - quay về menu chính
+                ConsoleRenderingService.ShowMessageBox($"Lỗi khi hiển thị menu: {ex.Message}", true, 3000);
             }
         }        /// <summary>
-        /// Xử lý quy trình đăng ký tài khoản mới
-        /// Hiển thị form đăng ký và xử lý logic tạo account
-        /// </summary>
+                 /// Xử lý quy trình đăng ký tài khoản mới
+                 /// Hiển thị form đăng ký và xử lý logic tạo account
+                 /// </summary>
         private static void HandleRegister()
         {
             try
@@ -183,7 +185,7 @@ namespace EsportsManager.UI.ConsoleUI
 
                 // Lấy UserService từ DI container
                 var userService = _serviceProvider.GetRequiredService<EsportsManager.BL.Interfaces.IUserService>();
-                
+
                 // Tạo và hiển thị form đăng ký với UserService
                 var registerForm = new UserRegistrationForm(userService);
                 bool isCompleted = registerForm.Show(); // Nhận kết quả từ form                  if (isCompleted)
@@ -191,7 +193,8 @@ namespace EsportsManager.UI.ConsoleUI
                     // User hoàn thành form - đăng ký thành công, quay lại menu
                     return;
                 }
-            }            catch
+            }
+            catch
             {
                 // Xử lý lỗi riêng cho process đăng ký - im lặng, không hiển thị gì
             }
@@ -213,10 +216,10 @@ namespace EsportsManager.UI.ConsoleUI
 
                 // Lấy UserService từ DI container
                 var userService = _serviceProvider.GetRequiredService<EsportsManager.BL.Interfaces.IUserService>();
-                
+
                 // Tạo và hiển thị form khôi phục mật khẩu với UserService
-                var forgotPasswordForm = new PasswordRecoveryForm(userService);                bool isCompleted = forgotPasswordForm.Show(); // Nhận kết quả từ form
-                
+                var forgotPasswordForm = new PasswordRecoveryForm(userService); bool isCompleted = forgotPasswordForm.Show(); // Nhận kết quả từ form
+
                 if (isCompleted)
                 {
                     // User hoàn thành form - khôi phục mật khẩu thành công, quay lại menu
@@ -250,8 +253,8 @@ namespace EsportsManager.UI.ConsoleUI
             Console.WriteLine("\n\tNhấn phím bất kỳ để quay lại menu chính...");
             Console.ReadKey();
         }        /// <summary>
-        /// Hiển thị menu Player với ServiceManager
-        /// </summary>
+                 /// Hiển thị menu Player với ServiceManager
+                 /// </summary>
         private static void ShowPlayerMenu(ServiceManager serviceManager, UserProfileDto playerUser)
         {
             try
@@ -264,8 +267,8 @@ namespace EsportsManager.UI.ConsoleUI
                 ConsoleRenderingService.ShowMessageBox($"Lỗi khi hiển thị menu Player: {ex.Message}", false, 3000);
             }
         }        /// <summary>
-        /// Hiển thị menu Admin với ServiceManager
-        /// </summary>
+                 /// Hiển thị menu Admin với ServiceManager
+                 /// </summary>
         private static void ShowAdminMenu(ServiceManager serviceManager, UserProfileDto adminUser)
         {
             try
@@ -278,8 +281,8 @@ namespace EsportsManager.UI.ConsoleUI
                 ConsoleRenderingService.ShowMessageBox($"Lỗi khi hiển thị menu Admin: {ex.Message}", false, 3000);
             }
         }        /// <summary>
-        /// Hiển thị menu Viewer với ServiceManager
-        /// </summary>
+                 /// Hiển thị menu Viewer với ServiceManager
+                 /// </summary>
         private static void ShowViewerMenu(ServiceManager serviceManager, UserProfileDto viewerUser)
         {
             try

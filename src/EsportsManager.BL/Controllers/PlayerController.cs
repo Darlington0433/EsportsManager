@@ -14,12 +14,24 @@ public class PlayerController
 {
     private readonly IUserService _userService;
     private readonly UserProfileDto _currentPlayer;
+    private readonly ITeamService? _teamService;
+    private readonly ITournamentService? _tournamentService;
+    private readonly IWalletService? _walletService;
 
-    public PlayerController(IUserService userService, UserProfileDto currentPlayer)
+    public PlayerController(
+        IUserService userService,
+        UserProfileDto currentPlayer,
+        ITeamService? teamService = null,
+        ITournamentService? tournamentService = null,
+        IWalletService? walletService = null)
     {
         _userService = userService ?? throw new ArgumentNullException(nameof(userService));
         _currentPlayer = currentPlayer ?? throw new ArgumentNullException(nameof(currentPlayer));
-          // Validate player permissions
+        _teamService = teamService; // Optional dependency
+        _tournamentService = tournamentService; // Optional dependency
+        _walletService = walletService; // Optional dependency
+
+        // Validate player permissions
         if (_currentPlayer.Role != "Player")
         {
             throw new UnauthorizedAccessException("Chỉ Player mới có quyền truy cập controller này.");
@@ -33,12 +45,13 @@ public class PlayerController
     /// <summary>
     /// Lấy thông tin cá nhân của player
     /// </summary>
-    public async Task<UserProfileDto> GetPersonalInfoAsync()
+    public async Task<UserProfileDto?> GetPersonalInfoAsync()
     {
         try
-        {            // TODO: Implement get updated user info from database
-            // return await _userService.GetUserByIdAsync(_currentPlayer.Id);
-            return _currentPlayer;
+        {
+            // Lấy thông tin người dùng mới nhất từ database
+            var result = await _userService.GetUserProfileAsync(_currentPlayer.Id);
+            return result.IsSuccess ? result.Data : null;
         }
         catch (Exception ex)
         {
@@ -55,9 +68,20 @@ public class PlayerController
             throw new ArgumentNullException(nameof(updateDto));
 
         try
-        {            // TODO: Implement user info update
-            // return await _userService.UpdateUserInfoAsync(_currentPlayer.Id, updateDto);
-            return true; // Mock success
+        {
+            // Chuyển từ UserUpdateDto sang UserDto
+            var userDto = new UserDto
+            {
+                Id = _currentPlayer.Id,
+                Username = _currentPlayer.Username,
+                Role = _currentPlayer.Role,
+                Email = updateDto.Email,
+                FullName = updateDto.FullName,
+                Status = _currentPlayer.Status
+            };
+
+            var result = await _userService.UpdateUserProfileAsync(_currentPlayer.Id, userDto);
+            return result.IsSuccess;
         }
         catch (Exception ex)
         {
@@ -72,14 +96,21 @@ public class PlayerController
     {
         if (string.IsNullOrWhiteSpace(currentPassword))
             throw new ArgumentException("Mật khẩu hiện tại không được rỗng", nameof(currentPassword));
-            
+
         if (string.IsNullOrWhiteSpace(newPassword))
             throw new ArgumentException("Mật khẩu mới không được rỗng", nameof(newPassword));
 
         try
-        {            // TODO: Implement password change
-            // return await _userService.ChangePasswordAsync(_currentPlayer.Id, currentPassword, newPassword);
-            return true; // Mock success
+        {
+            var updatePasswordDto = new UpdatePasswordDto
+            {
+                UserId = _currentPlayer.Id,
+                CurrentPassword = currentPassword,
+                NewPassword = newPassword
+            };
+
+            var result = await _userService.UpdatePasswordAsync(updatePasswordDto);
+            return result.IsSuccess;
         }
         catch (Exception ex)
         {
@@ -94,24 +125,14 @@ public class PlayerController
     /// <summary>
     /// Lấy danh sách giải đấu có thể tham gia
     /// </summary>
-    public async Task<List<TournamentInfoDto>> GetAvailableTournamentsAsync()
+    public async Task<List<EsportsManager.BL.DTOs.TournamentInfoDto>> GetAvailableTournamentsAsync()
     {
         try
         {
-            // TODO: Implement get available tournaments
-            return new List<TournamentInfoDto>
-            {
-                new TournamentInfoDto 
-                { 
-                    Id = 1, 
-                    Name = "Championship 2025", 
-                    Description = "Giải đấu lớn nhất năm",
-                    StartDate = DateTime.Now.AddDays(30),
-                    EntryFee = 100000,
-                    MaxParticipants = 64,
-                    CurrentParticipants = 25
-                }
-            };
+            if (_tournamentService is null)
+                throw new InvalidOperationException("Dịch vụ giải đấu chưa được khởi tạo");
+
+            return await _tournamentService.GetAvailableTournamentsAsync();
         }
         catch (Exception ex)
         {
@@ -129,8 +150,33 @@ public class PlayerController
 
         try
         {
-            // TODO: Implement tournament registration
-            return true; // Mock success
+            if (_tournamentService is null)
+                throw new InvalidOperationException("Dịch vụ giải đấu chưa được khởi tạo");
+
+            // Kiểm tra xem player đã có team chưa
+            if (_teamService is null)
+                throw new InvalidOperationException("Dịch vụ team chưa được khởi tạo");
+
+            var playerTeam = await _teamService.GetPlayerTeamAsync(_currentPlayer.Id);
+            if (playerTeam == null)
+                throw new InvalidOperationException("Bạn cần phải thuộc về một team để tham gia giải đấu");
+
+            // Kiểm tra xem ví có đủ tiền không
+            if (_walletService is null)
+                throw new InvalidOperationException("Dịch vụ ví điện tử chưa được khởi tạo");
+
+            // Lấy thông tin giải đấu để biết entry fee
+            var tournament = await _tournamentService.GetTournamentByIdAsync(tournamentId);
+            if (tournament == null)
+                throw new InvalidOperationException("Không tìm thấy giải đấu");
+
+            // Kiểm tra số dư
+            bool hasSufficientBalance = await _walletService.HasSufficientBalanceAsync(_currentPlayer.Id, tournament.EntryFee);
+            if (!hasSufficientBalance)
+                throw new InvalidOperationException($"Số dư không đủ để đăng ký giải đấu. Phí tham gia: {tournament.EntryFee}");
+
+            // Đăng ký
+            return await _tournamentService.RegisterTeamForTournamentAsync(tournamentId, playerTeam.Id);
         }
         catch (Exception ex)
         {
@@ -141,12 +187,23 @@ public class PlayerController
     /// <summary>
     /// Lấy danh sách giải đấu đã tham gia
     /// </summary>
-    public async Task<List<TournamentInfoDto>> GetMyTournamentsAsync()
+    public async Task<List<EsportsManager.BL.DTOs.TournamentInfoDto>> GetMyTournamentsAsync()
     {
         try
         {
-            // TODO: Implement get player's tournaments
-            return new List<TournamentInfoDto>();
+            if (_tournamentService is null)
+                throw new InvalidOperationException("Dịch vụ giải đấu chưa được khởi tạo");
+
+            if (_teamService is null)
+                throw new InvalidOperationException("Dịch vụ team chưa được khởi tạo");
+
+            // Lấy team của player
+            var playerTeam = await _teamService.GetPlayerTeamAsync(_currentPlayer.Id);
+            if (playerTeam == null)
+                return new List<EsportsManager.BL.DTOs.TournamentInfoDto>(); // Player chưa có team
+
+            // Lấy giải đấu của team
+            return await _tournamentService.GetTeamTournamentsAsync(playerTeam.Id);
         }
         catch (Exception ex)
         {
@@ -161,15 +218,23 @@ public class PlayerController
     /// <summary>
     /// Tạo team mới
     /// </summary>
-    public async Task<bool> CreateTeamAsync(TeamCreateDto teamDto)
+    public async Task<EsportsManager.BL.DTOs.TeamInfoDto> CreateTeamAsync(EsportsManager.BL.DTOs.TeamCreateDto teamDto)
     {
         if (teamDto == null)
             throw new ArgumentNullException(nameof(teamDto));
 
         try
         {
-            // TODO: Implement team creation
-            return true; // Mock success
+            if (_teamService is null)
+                throw new InvalidOperationException("Dịch vụ team chưa được khởi tạo");
+
+            // Kiểm tra player đã có team chưa
+            var existingTeam = await _teamService.GetPlayerTeamAsync(_currentPlayer.Id);
+            if (existingTeam != null)
+                throw new InvalidOperationException("Bạn đã là thành viên của một team");
+
+            // Tạo team mới
+            return await _teamService.CreateTeamAsync(teamDto, _currentPlayer.Id);
         }
         catch (Exception ex)
         {
@@ -180,16 +245,279 @@ public class PlayerController
     /// <summary>
     /// Lấy thông tin team của player
     /// </summary>
-    public async Task<TeamInfoDto?> GetMyTeamAsync()
+    public async Task<EsportsManager.BL.DTOs.TeamInfoDto?> GetMyTeamAsync()
     {
         try
         {
-            // TODO: Implement get player's team
-            return null; // Mock - player chưa có team
+            if (_teamService is null)
+                throw new InvalidOperationException("Dịch vụ team chưa được khởi tạo");
+
+            return await _teamService.GetPlayerTeamAsync(_currentPlayer.Id);
         }
         catch (Exception ex)
         {
             throw new InvalidOperationException($"Lỗi khi lấy thông tin team: {ex.Message}", ex);
+        }
+    }
+
+    /// <summary>
+    /// Yêu cầu tham gia team
+    /// </summary>
+    public async Task<bool> RequestToJoinTeamAsync(int teamId, string? message = null)
+    {
+        try
+        {
+            if (_teamService is null)
+                throw new InvalidOperationException("Dịch vụ team chưa được khởi tạo");
+
+            // Kiểm tra player đã có team chưa
+            var existingTeam = await _teamService.GetPlayerTeamAsync(_currentPlayer.Id);
+            if (existingTeam != null)
+                throw new InvalidOperationException("Bạn đã là thành viên của một team");
+
+            // Gửi yêu cầu tham gia team
+            return await _teamService.RequestToJoinTeamAsync(teamId, _currentPlayer.Id, message);
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException($"Lỗi khi yêu cầu tham gia team: {ex.Message}", ex);
+        }
+    }
+
+    /// <summary>
+    /// Thêm thành viên vào team
+    /// </summary>
+    public async Task<bool> AddMemberToTeamAsync(int teamId, int playerId)
+    {
+        try
+        {
+            if (_teamService is null)
+                throw new InvalidOperationException("Dịch vụ team chưa được khởi tạo");
+
+            // Kiểm tra người thực hiện có phải leader không
+            bool isLeader = await _teamService.IsTeamLeaderAsync(_currentPlayer.Id, teamId);
+            if (!isLeader)
+                throw new UnauthorizedAccessException("Chỉ leader mới có quyền thêm thành viên vào team");
+
+            // Thêm thành viên vào team
+            return await _teamService.AddMemberToTeamAsync(teamId, playerId, _currentPlayer.Id);
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException($"Lỗi khi thêm thành viên vào team: {ex.Message}", ex);
+        }
+    }
+
+    /// <summary>
+    /// Xóa thành viên khỏi team
+    /// </summary>
+    public async Task<bool> RemoveMemberAsync(int teamId, int playerId)
+    {
+        try
+        {
+            if (_teamService is null)
+                throw new InvalidOperationException("Dịch vụ team chưa được khởi tạo");
+
+            // Kiểm tra người thực hiện có phải leader không
+            bool isLeader = await _teamService.IsTeamLeaderAsync(_currentPlayer.Id, teamId);
+            if (!isLeader)
+                throw new UnauthorizedAccessException("Chỉ leader mới có quyền xóa thành viên khỏi team");
+
+            // Xóa thành viên khỏi team
+            return await _teamService.RemoveMemberAsync(teamId, playerId, _currentPlayer.Id);
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException($"Lỗi khi xóa thành viên khỏi team: {ex.Message}", ex);
+        }
+    }
+
+    /// <summary>
+    /// Tìm kiếm team theo tên
+    /// </summary>
+    public async Task<List<EsportsManager.BL.DTOs.TeamInfoDto>> SearchTeamsAsync(string searchTerm)
+    {
+        try
+        {
+            if (_teamService is null)
+                throw new InvalidOperationException("Dịch vụ team chưa được khởi tạo");
+
+            return await _teamService.SearchTeamsAsync(searchTerm);
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException($"Lỗi khi tìm kiếm team: {ex.Message}", ex);
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // WALLET MANAGEMENT
+    // ═══════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Lấy thông tin ví điện tử
+    /// </summary>
+    public async Task<WalletInfoDto?> GetWalletInfoAsync()
+    {
+        try
+        {
+            if (_walletService is null)
+                throw new InvalidOperationException("Dịch vụ ví điện tử chưa được khởi tạo");
+
+            return await _walletService.GetWalletByUserIdAsync(_currentPlayer.Id);
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException($"Lỗi khi lấy thông tin ví: {ex.Message}", ex);
+        }
+    }
+
+    /// <summary>
+    /// Nạp tiền vào ví
+    /// </summary>
+    public async Task<TransactionResultDto> DepositAsync(DepositDto depositDto)
+    {
+        if (depositDto == null)
+            throw new ArgumentNullException(nameof(depositDto));
+
+        try
+        {
+            if (_walletService is null)
+                throw new InvalidOperationException("Dịch vụ ví điện tử chưa được khởi tạo");
+
+            return await _walletService.DepositAsync(_currentPlayer.Id, depositDto);
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException($"Lỗi khi nạp tiền: {ex.Message}", ex);
+        }
+    }
+
+    /// <summary>
+    /// Rút tiền từ ví
+    /// </summary>
+    public async Task<TransactionResultDto> WithdrawAsync(WithdrawalDto withdrawalDto)
+    {
+        if (withdrawalDto == null)
+            throw new ArgumentNullException(nameof(withdrawalDto));
+
+        try
+        {
+            if (_walletService is null)
+                throw new InvalidOperationException("Dịch vụ ví điện tử chưa được khởi tạo");
+
+            return await _walletService.WithdrawAsync(_currentPlayer.Id, withdrawalDto);
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException($"Lỗi khi rút tiền: {ex.Message}", ex);
+        }
+    }
+
+    /// <summary>
+    /// Chuyển tiền cho người dùng khác
+    /// </summary>
+    public async Task<TransactionResultDto> TransferAsync(TransferDto transferDto)
+    {
+        if (transferDto == null)
+            throw new ArgumentNullException(nameof(transferDto));
+
+        try
+        {
+            if (_walletService is null)
+                throw new InvalidOperationException("Dịch vụ ví điện tử chưa được khởi tạo");
+
+            return await _walletService.TransferAsync(_currentPlayer.Id, transferDto);
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException($"Lỗi khi chuyển tiền: {ex.Message}", ex);
+        }
+    }
+
+    /// <summary>
+    /// Donate cho team hoặc giải đấu
+    /// </summary>
+    public async Task<TransactionResultDto> DonateAsync(EsportsManager.BL.DTOs.DonationDto donationDto)
+    {
+        if (donationDto == null)
+            throw new ArgumentNullException(nameof(donationDto));
+
+        try
+        {
+            if (_walletService is null)
+                throw new InvalidOperationException("Dịch vụ ví điện tử chưa được khởi tạo");
+
+            return await _walletService.DonateAsync(_currentPlayer.Id, donationDto);
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException($"Lỗi khi donate: {ex.Message}", ex);
+        }
+    }
+
+    /// <summary>
+    /// Lấy lịch sử giao dịch
+    /// </summary>
+    public async Task<List<TransactionDto>> GetTransactionHistoryAsync(
+        DateTime? fromDate = null,
+        DateTime? toDate = null,
+        string? transactionType = null,
+        int pageNumber = 1,
+        int pageSize = 20)
+    {
+        try
+        {
+            if (_walletService is null)
+                throw new InvalidOperationException("Dịch vụ ví điện tử chưa được khởi tạo");
+
+            return await _walletService.GetTransactionHistoryAsync(
+                _currentPlayer.Id,
+                fromDate,
+                toDate,
+                transactionType,
+                pageNumber,
+                pageSize);
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException($"Lỗi khi lấy lịch sử giao dịch: {ex.Message}", ex);
+        }
+    }
+
+    /// <summary>
+    /// Lấy số dư ví
+    /// </summary>
+    public async Task<decimal> GetWalletBalanceAsync()
+    {
+        try
+        {
+            if (_walletService is null)
+                throw new InvalidOperationException("Dịch vụ ví điện tử chưa được khởi tạo");
+
+            return await _walletService.GetBalanceAsync(_currentPlayer.Id);
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException($"Lỗi khi lấy số dư ví: {ex.Message}", ex);
+        }
+    }
+
+    /// <summary>
+    /// Lấy thống kê giao dịch
+    /// </summary>
+    public async Task<WalletStatsDto> GetWalletStatsAsync()
+    {
+        try
+        {
+            if (_walletService is null)
+                throw new InvalidOperationException("Dịch vụ ví điện tử chưa được khởi tạo");
+
+            return await _walletService.GetWalletStatsAsync(_currentPlayer.Id);
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException($"Lỗi khi lấy thống kê giao dịch: {ex.Message}", ex);
         }
     }
 
@@ -200,94 +528,21 @@ public class PlayerController
     /// <summary>
     /// Gửi feedback về giải đấu
     /// </summary>
-    public async Task<bool> SendFeedbackAsync(FeedbackDto feedbackDto)
+    public async Task<bool> SendFeedbackAsync(EsportsManager.BL.DTOs.FeedbackDto feedbackDto)
     {
         if (feedbackDto == null)
             throw new ArgumentNullException(nameof(feedbackDto));
 
         try
         {
-            // TODO: Implement feedback submission
-            return true; // Mock success
+            if (_tournamentService is null)
+                throw new InvalidOperationException("Dịch vụ giải đấu chưa được khởi tạo");
+
+            return await _tournamentService.SubmitFeedbackAsync(_currentPlayer.Id, feedbackDto);
         }
         catch (Exception ex)
         {
             throw new InvalidOperationException($"Lỗi khi gửi feedback: {ex.Message}", ex);
         }
     }
-}
-
-// ═══════════════════════════════════════════════════════════════
-// SUPPORTING DTOs
-// ═══════════════════════════════════════════════════════════════
-
-/// <summary>
-/// DTO cho cập nhật thông tin user
-/// </summary>
-public class UserUpdateDto
-{
-    public string? Email { get; set; }
-    public string? FullName { get; set; }
-    public string? PhoneNumber { get; set; }
-}
-
-/// <summary>
-/// DTO thông tin giải đấu
-/// </summary>
-public class TournamentInfoDto
-{
-    public int Id { get; set; }
-    public required string Name { get; set; }
-    public required string Description { get; set; }
-    public DateTime StartDate { get; set; }
-    public DateTime EndDate { get; set; }
-    public decimal EntryFee { get; set; }
-    public int MaxParticipants { get; set; }
-    public int CurrentParticipants { get; set; }
-    public bool IsRegistrationOpen { get; set; }
-}
-
-/// <summary>
-/// DTO cho tạo team
-/// </summary>
-public class TeamCreateDto
-{
-    public required string Name { get; set; }
-    public required string Description { get; set; }
-    public string? LogoUrl { get; set; }
-}
-
-/// <summary>
-/// DTO thông tin team
-/// </summary>
-public class TeamInfoDto
-{
-    public int Id { get; set; }
-    public required string Name { get; set; }
-    public required string Description { get; set; }
-    public string? LogoUrl { get; set; }
-    public DateTime CreatedAt { get; set; }
-    public List<TeamMemberDto> Members { get; set; } = new();
-}
-
-/// <summary>
-/// DTO thành viên team
-/// </summary>
-public class TeamMemberDto
-{
-    public int UserId { get; set; }
-    public required string Username { get; set; }
-    public required string Role { get; set; }
-    public DateTime JoinedAt { get; set; }
-}
-
-/// <summary>
-/// DTO cho feedback
-/// </summary>
-public class FeedbackDto
-{
-    public int TournamentId { get; set; }
-    public required string Subject { get; set; }
-    public required string Content { get; set; }
-    public int Rating { get; set; } // 1-5 stars
 }

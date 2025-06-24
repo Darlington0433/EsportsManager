@@ -2,6 +2,7 @@ using EsportsManager.BL.DTOs;
 using EsportsManager.BL.Models;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using Models = EsportsManager.BL.Models;
 
 namespace EsportsManager.BL.Interfaces;
 
@@ -10,9 +11,8 @@ namespace EsportsManager.BL.Interfaces;
 /// Chỉ chứa các phương thức liên quan đến User business logic
 /// </summary>
 public interface IUserService
-{
-    // Authentication methods
-    Task<AuthenticationResult> AuthenticateAsync(LoginDto loginDto);
+{    // Authentication methods
+    Task<Models.AuthenticationResult> AuthenticateAsync(LoginDto loginDto);
     Task<BusinessResult<UserDto>> RegisterAsync(RegisterDto registerDto);
     Task<BusinessResult> LogoutAsync(int userId);
 
@@ -32,13 +32,11 @@ public interface IUserService
     // Admin methods
     Task<BusinessResult<UserDto>> CreateUserAsync(CreateUserDto createUserDto);
     Task<BusinessResult> UpdateUserStatusAsync(int userId, string status);
-    Task<BusinessResult> DeleteUserAsync(int userId);
-
-    // Validation methods
+    Task<BusinessResult> DeleteUserAsync(int userId);    // Validation methods
     Task<BusinessResult<bool>> IsUsernameAvailableAsync(string username);
     Task<BusinessResult<bool>> IsEmailAvailableAsync(string email);
-    ValidationResult ValidateUserData(CreateUserDto createUserDto);
-    ValidationResult ValidateLoginData(LoginDto loginDto);
+    Models.ValidationResult ValidateUserData(CreateUserDto createUserDto);
+    Models.ValidationResult ValidateLoginData(LoginDto loginDto);
 
     // Statistics methods
     Task<BusinessResult<int>> GetTotalUsersCountAsync();

@@ -31,4 +31,9 @@ public class ResetPasswordDto
     /// Xác nhận mật khẩu mới
     /// </summary>
     public string ConfirmNewPassword { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Token xác thực reset mật khẩu
+    /// </summary>
+    public string? Token { get; set; }
 }

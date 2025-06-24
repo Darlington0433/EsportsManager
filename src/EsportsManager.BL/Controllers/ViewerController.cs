@@ -14,12 +14,24 @@ public class ViewerController
 {
     private readonly IUserService _userService;
     private readonly UserProfileDto _currentViewer;
+    private readonly ITournamentService? _tournamentService;
+    private readonly ITeamService? _teamService;
+    private readonly IWalletService? _walletService;
 
-    public ViewerController(IUserService userService, UserProfileDto currentViewer)
+    public ViewerController(
+        IUserService userService,
+        UserProfileDto currentViewer,
+        ITournamentService? tournamentService = null,
+        ITeamService? teamService = null,
+        IWalletService? walletService = null)
     {
         _userService = userService ?? throw new ArgumentNullException(nameof(userService));
         _currentViewer = currentViewer ?? throw new ArgumentNullException(nameof(currentViewer));
-          // Validate viewer permissions
+        _tournamentService = tournamentService;
+        _teamService = teamService;
+        _walletService = walletService;
+
+        // Validate viewer permissions
         if (_currentViewer.Role != "Viewer")
         {
             throw new UnauthorizedAccessException("Chỉ Viewer mới có quyền truy cập controller này.");
@@ -33,12 +45,13 @@ public class ViewerController
     /// <summary>
     /// Lấy thông tin cá nhân của viewer
     /// </summary>
-    public async Task<UserProfileDto> GetPersonalInfoAsync()
+    public async Task<UserProfileDto?> GetPersonalInfoAsync()
     {
         try
-        {            // TODO: Implement get updated user info from database
-            // return await _userService.GetUserByIdAsync(_currentViewer.Id);
-            return _currentViewer;
+        {
+            // Lấy thông tin người dùng mới nhất từ database
+            var result = await _userService.GetUserProfileAsync(_currentViewer.Id);
+            return result.IsSuccess ? result.Data : null;
         }
         catch (Exception ex)
         {
@@ -49,19 +62,59 @@ public class ViewerController
     /// <summary>
     /// Cập nhật thông tin cá nhân (hạn chế hơn Player)
     /// </summary>
-    public async Task<bool> UpdatePersonalInfoAsync(ViewerUpdateDto updateDto)
+    public async Task<bool> UpdatePersonalInfoAsync(UserUpdateDto updateDto)
     {
         if (updateDto == null)
             throw new ArgumentNullException(nameof(updateDto));
 
         try
-        {            // TODO: Implement limited user info update for viewers
-            // return await _userService.UpdateViewerInfoAsync(_currentViewer.Id, updateDto);
-            return true; // Mock success
+        {
+            // Chuyển từ UserUpdateDto sang UserDto
+            var userDto = new UserDto
+            {
+                Id = _currentViewer.Id,
+                Username = _currentViewer.Username,
+                Role = _currentViewer.Role,
+                Email = updateDto.Email,
+                FullName = updateDto.FullName,
+                Status = _currentViewer.Status
+            };
+
+            var result = await _userService.UpdateUserProfileAsync(_currentViewer.Id, userDto);
+            return result.IsSuccess;
         }
         catch (Exception ex)
         {
             throw new InvalidOperationException($"Lỗi khi cập nhật thông tin: {ex.Message}", ex);
+        }
+    }
+
+    /// <summary>
+    /// Thay đổi mật khẩu
+    /// </summary>
+    public async Task<bool> ChangePasswordAsync(string currentPassword, string newPassword)
+    {
+        if (string.IsNullOrWhiteSpace(currentPassword))
+            throw new ArgumentException("Mật khẩu hiện tại không được rỗng", nameof(currentPassword));
+
+        if (string.IsNullOrWhiteSpace(newPassword))
+            throw new ArgumentException("Mật khẩu mới không được rỗng", nameof(newPassword));
+
+        try
+        {
+            var updatePasswordDto = new UpdatePasswordDto
+            {
+                UserId = _currentViewer.Id,
+                CurrentPassword = currentPassword,
+                NewPassword = newPassword
+            };
+
+            var result = await _userService.UpdatePasswordAsync(updatePasswordDto);
+            return result.IsSuccess;
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException($"Lỗi khi thay đổi mật khẩu: {ex.Message}", ex);
         }
     }
 
@@ -72,34 +125,14 @@ public class ViewerController
     /// <summary>
     /// Xem danh sách tất cả giải đấu (public)
     /// </summary>
-    public async Task<List<TournamentViewDto>> GetAllTournamentsAsync()
+    public async Task<List<EsportsManager.BL.DTOs.TournamentInfoDto>> GetAllTournamentsAsync()
     {
         try
         {
-            // TODO: Implement get all public tournaments
-            return new List<TournamentViewDto>
-            {
-                new TournamentViewDto 
-                { 
-                    Id = 1, 
-                    Name = "Championship 2025", 
-                    Description = "Giải đấu lớn nhất năm",
-                    StartDate = DateTime.Now.AddDays(30),
-                    Status = "Đang mở đăng ký",
-                    ParticipantCount = 25,
-                    MaxParticipants = 64
-                },
-                new TournamentViewDto 
-                { 
-                    Id = 2, 
-                    Name = "Spring Tournament", 
-                    Description = "Giải đấu mùa xuân",
-                    StartDate = DateTime.Now.AddDays(-10),
-                    Status = "Đang diễn ra",
-                    ParticipantCount = 32,
-                    MaxParticipants = 32
-                }
-            };
+            if (_tournamentService is null)
+                throw new InvalidOperationException("Dịch vụ giải đấu chưa được khởi tạo");
+
+            return await _tournamentService.GetAllTournamentsAsync();
         }
         catch (Exception ex)
         {
@@ -108,32 +141,16 @@ public class ViewerController
     }
 
     /// <summary>
-    /// Xem chi tiết giải đấu
+    /// Xem chi tiết một giải đấu
     /// </summary>
-    public async Task<TournamentDetailDto?> GetTournamentDetailAsync(int tournamentId)
+    public async Task<EsportsManager.BL.DTOs.TournamentInfoDto?> GetTournamentDetailAsync(int tournamentId)
     {
-        if (tournamentId <= 0)
-            throw new ArgumentException("Tournament ID không hợp lệ", nameof(tournamentId));
-
         try
         {
-            // TODO: Implement get tournament details
-            return new TournamentDetailDto
-            {
-                Id = tournamentId,
-                Name = "Championship 2025",
-                Description = "Giải đấu lớn nhất năm với tổng giải thưởng 1 tỷ VND",
-                StartDate = DateTime.Now.AddDays(30),
-                EndDate = DateTime.Now.AddDays(37),
-                Status = "Đang mở đăng ký",
-                EntryFee = 100000,
-                PrizePool = 1000000000,
-                Rules = "Luật thi đấu theo chuẩn quốc tế...",
-                ParticipantCount = 25,
-                MaxParticipants = 64,
-                Organizer = "ESports Vietnam",
-                Location = "TP.HCM"
-            };
+            if (_tournamentService is null)
+                throw new InvalidOperationException("Dịch vụ giải đấu chưa được khởi tạo");
+
+            return await _tournamentService.GetTournamentByIdAsync(tournamentId);
         }
         catch (Exception ex)
         {
@@ -142,51 +159,20 @@ public class ViewerController
     }
 
     /// <summary>
-    /// Xem lịch thi đấu
+    /// Xem danh sách các team tham gia giải đấu
     /// </summary>
-    public async Task<List<MatchScheduleDto>> GetMatchScheduleAsync(int tournamentId)
+    public async Task<List<EsportsManager.BL.DTOs.TeamInfoDto>> GetTournamentTeamsAsync(int tournamentId)
     {
-        if (tournamentId <= 0)
-            throw new ArgumentException("Tournament ID không hợp lệ", nameof(tournamentId));
-
         try
         {
-            // TODO: Implement get match schedule
-            return new List<MatchScheduleDto>
-            {
-                new MatchScheduleDto
-                {
-                    MatchId = 1,
-                    Team1 = "Team Alpha",
-                    Team2 = "Team Beta",
-                    ScheduledTime = DateTime.Now.AddDays(1),
-                    Status = "Chưa bắt đầu",
-                    Round = "Vòng 1/16"
-                }
-            };
+            if (_tournamentService is null)
+                throw new InvalidOperationException("Dịch vụ giải đấu chưa được khởi tạo");
+
+            return await _tournamentService.GetTournamentTeamsAsync(tournamentId);
         }
         catch (Exception ex)
         {
-            throw new InvalidOperationException($"Lỗi khi lấy lịch thi đấu: {ex.Message}", ex);
-        }
-    }
-
-    /// <summary>
-    /// Xem kết quả trận đấu
-    /// </summary>
-    public async Task<List<MatchResultDto>> GetMatchResultsAsync(int tournamentId)
-    {
-        if (tournamentId <= 0)
-            throw new ArgumentException("Tournament ID không hợp lệ", nameof(tournamentId));
-
-        try
-        {
-            // TODO: Implement get match results
-            return new List<MatchResultDto>();
-        }
-        catch (Exception ex)
-        {
-            throw new InvalidOperationException($"Lỗi khi lấy kết quả trận đấu: {ex.Message}", ex);
+            throw new InvalidOperationException($"Lỗi khi lấy danh sách đội tham gia: {ex.Message}", ex);
         }
     }
 
@@ -195,25 +181,16 @@ public class ViewerController
     // ═══════════════════════════════════════════════════════════════
 
     /// <summary>
-    /// Xem danh sách các team
+    /// Xem danh sách tất cả team (public)
     /// </summary>
-    public async Task<List<TeamPublicInfoDto>> GetAllTeamsAsync()
+    public async Task<List<EsportsManager.BL.DTOs.TeamInfoDto>> GetAllTeamsAsync()
     {
         try
         {
-            // TODO: Implement get all public teams
-            return new List<TeamPublicInfoDto>
-            {
-                new TeamPublicInfoDto
-                {
-                    Id = 1,
-                    Name = "Team Alpha",
-                    Description = "Đội tuyển chuyên nghiệp",
-                    MemberCount = 5,
-                    Achievements = "Vô địch 2024",
-                    EstablishedDate = DateTime.Now.AddYears(-2)
-                }
-            };
+            if (_teamService is null)
+                throw new InvalidOperationException("Dịch vụ team chưa được khởi tạo");
+
+            return await _teamService.GetAllTeamsAsync();
         }
         catch (Exception ex)
         {
@@ -221,71 +198,149 @@ public class ViewerController
         }
     }
 
-    // ═══════════════════════════════════════════════════════════════
-    // VOTING & INTERACTION
-    // ═══════════════════════════════════════════════════════════════
-
     /// <summary>
-    /// Vote cho team yêu thích
+    /// Xem chi tiết một team
     /// </summary>
-    public async Task<bool> VoteForTeamAsync(int teamId)
+    public async Task<EsportsManager.BL.DTOs.TeamInfoDto?> GetTeamDetailAsync(int teamId)
     {
-        if (teamId <= 0)
-            throw new ArgumentException("Team ID không hợp lệ", nameof(teamId));
-
         try
         {
-            // TODO: Implement team voting
-            return true; // Mock success
+            if (_teamService is null)
+                throw new InvalidOperationException("Dịch vụ team chưa được khởi tạo");
+
+            return await _teamService.GetTeamByIdAsync(teamId);
         }
         catch (Exception ex)
         {
-            throw new InvalidOperationException($"Lỗi khi vote: {ex.Message}", ex);
+            throw new InvalidOperationException($"Lỗi khi lấy chi tiết team: {ex.Message}", ex);
         }
     }
 
     /// <summary>
-    /// Gửi feedback (chỉ xem, không tương tác nhiều)
+    /// Xem danh sách thành viên của một team
     /// </summary>
-    public async Task<bool> SendViewerFeedbackAsync(ViewerFeedbackDto feedbackDto)
+    public async Task<List<EsportsManager.BL.DTOs.TeamMemberDto>> GetTeamMembersAsync(int teamId)
+    {
+        try
+        {
+            if (_teamService is null)
+                throw new InvalidOperationException("Dịch vụ team chưa được khởi tạo");
+
+            return await _teamService.GetTeamMembersAsync(teamId);
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException($"Lỗi khi lấy danh sách thành viên: {ex.Message}", ex);
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // DONATION FEATURE
+    // ═══════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Donate cho team hoặc giải đấu
+    /// </summary>
+    public async Task<TransactionResultDto> DonateAsync(EsportsManager.BL.DTOs.DonationDto donationDto)
+    {
+        if (donationDto == null)
+            throw new ArgumentNullException(nameof(donationDto));
+
+        try
+        {
+            if (_walletService is null)
+                throw new InvalidOperationException("Dịch vụ ví điện tử chưa được khởi tạo");
+
+            return await _walletService.DonateAsync(_currentViewer.Id, donationDto);
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException($"Lỗi khi donate: {ex.Message}", ex);
+        }
+    }
+
+    /// <summary>
+    /// Lấy thông tin ví điện tử
+    /// </summary>
+    public async Task<WalletInfoDto?> GetWalletInfoAsync()
+    {
+        try
+        {
+            if (_walletService is null)
+                throw new InvalidOperationException("Dịch vụ ví điện tử chưa được khởi tạo");
+
+            return await _walletService.GetWalletByUserIdAsync(_currentViewer.Id);
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException($"Lỗi khi lấy thông tin ví: {ex.Message}", ex);
+        }
+    }
+
+    /// <summary>
+    /// Nạp tiền vào ví
+    /// </summary>
+    public async Task<TransactionResultDto> DepositAsync(DepositDto depositDto)
+    {
+        if (depositDto == null)
+            throw new ArgumentNullException(nameof(depositDto));
+
+        try
+        {
+            if (_walletService is null)
+                throw new InvalidOperationException("Dịch vụ ví điện tử chưa được khởi tạo");
+
+            return await _walletService.DepositAsync(_currentViewer.Id, depositDto);
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException($"Lỗi khi nạp tiền: {ex.Message}", ex);
+        }
+    }
+
+    /// <summary>
+    /// Rút tiền từ ví
+    /// </summary>
+    public async Task<TransactionResultDto> WithdrawAsync(WithdrawalDto withdrawalDto)
+    {
+        if (withdrawalDto == null)
+            throw new ArgumentNullException(nameof(withdrawalDto));
+
+        try
+        {
+            if (_walletService is null)
+                throw new InvalidOperationException("Dịch vụ ví điện tử chưa được khởi tạo");
+
+            return await _walletService.WithdrawAsync(_currentViewer.Id, withdrawalDto);
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException($"Lỗi khi rút tiền: {ex.Message}", ex);
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // FEEDBACK SYSTEM
+    // ═══════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Gửi feedback về giải đấu
+    /// </summary>
+    public async Task<bool> SendFeedbackAsync(EsportsManager.BL.DTOs.FeedbackDto feedbackDto)
     {
         if (feedbackDto == null)
             throw new ArgumentNullException(nameof(feedbackDto));
 
         try
         {
-            // TODO: Implement viewer feedback
-            return true; // Mock success
+            if (_tournamentService is null)
+                throw new InvalidOperationException("Dịch vụ giải đấu chưa được khởi tạo");
+
+            return await _tournamentService.SubmitFeedbackAsync(_currentViewer.Id, feedbackDto);
         }
         catch (Exception ex)
         {
             throw new InvalidOperationException($"Lỗi khi gửi feedback: {ex.Message}", ex);
-        }
-    }
-
-    // ═══════════════════════════════════════════════════════════════
-    // DONATION SYSTEM
-    // ═══════════════════════════════════════════════════════════════
-
-    /// <summary>
-    /// Donate cho giải đấu hoặc team
-    /// </summary>
-    public async Task<bool> MakeDonationAsync(DonationDto donationDto)
-    {
-        if (donationDto == null)
-            throw new ArgumentNullException(nameof(donationDto));
-
-        if (donationDto.Amount <= 0)
-            throw new ArgumentException("Số tiền donate phải lớn hơn 0", nameof(donationDto.Amount));
-
-        try
-        {
-            // TODO: Implement donation system
-            return true; // Mock success
-        }
-        catch (Exception ex)
-        {
-            throw new InvalidOperationException($"Lỗi khi donate: {ex.Message}", ex);
         }
     }
 }
