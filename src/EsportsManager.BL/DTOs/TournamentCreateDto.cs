@@ -23,6 +23,11 @@ namespace EsportsManager.BL.DTOs
         public int GameId { get; set; }
 
         /// <summary>
+        /// Tên game
+        /// </summary>
+        public string GameName { get; set; } = string.Empty;
+
+        /// <summary>
         /// Ngày bắt đầu giải đấu
         /// </summary>
         public DateTime StartDate { get; set; }
@@ -43,6 +48,11 @@ namespace EsportsManager.BL.DTOs
         public int MaxTeams { get; set; }
 
         /// <summary>
+        /// Số người tham gia tối đa
+        /// </summary>
+        public int MaxParticipants { get; set; }
+
+        /// <summary>
         /// Phí đăng ký tham gia
         /// </summary>
         public decimal EntryFee { get; set; }
@@ -56,6 +66,16 @@ namespace EsportsManager.BL.DTOs
         /// Người tạo giải đấu
         /// </summary>
         public int CreatedBy { get; set; }
+
+        /// <summary>
+        /// Quy tắc của giải đấu
+        /// </summary>
+        public string Rules { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Định dạng của giải đấu
+        /// </summary>
+        public string Format { get; set; } = string.Empty;
     }
 }
 

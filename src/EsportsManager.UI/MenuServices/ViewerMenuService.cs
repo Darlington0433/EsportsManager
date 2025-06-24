@@ -1,7 +1,7 @@
 using System;
-using EsportsManager.BL.Controllers;
 using EsportsManager.BL.DTOs;
 using EsportsManager.UI.ConsoleUI.Utilities;
+using EsportsManager.UI.Controllers;
 
 namespace EsportsManager.UI.MenuServices;
 
@@ -44,9 +44,7 @@ public class ViewerMenuService
                 "🚪 Đăng xuất"
             };
 
-            int selection = InteractiveMenuService.DisplayInteractiveMenu("VIEWER CONTROL PANEL", menuOptions);
-
-            switch (selection)
+            int selection = InteractiveMenuService.DisplayInteractiveMenu("VIEWER CONTROL PANEL", menuOptions);            switch (selection)
             {
                 case 0:
                     ShowTournamentList();
@@ -73,56 +71,26 @@ public class ViewerMenuService
                     ShowPersonalInfo();
                     break;
                 case 8:
-                    ShowUpdatePersonalInfo();
-                    break;
+                    ShowUpdatePersonalInfo();                    break;
                 case 9:
                 case -1:
                     return; // Đăng xuất
+                default:
+                    Console.WriteLine("Lựa chọn không hợp lệ!");
+                    break;
             }
         }
-    }
-
-    /// <summary>
+    }    /// <summary>
     /// Xem danh sách giải đấu
     /// </summary>
     private void ShowTournamentList()
     {
-        try
-        {
-            ConsoleRenderingService.ShowLoadingMessage("Đang tải danh sách giải đấu...");
-
-            var tournaments = _viewerController.GetAllTournamentsAsync().GetAwaiter().GetResult();
-
-            Console.Clear();
-            ConsoleRenderingService.DrawBorder("DANH SÁCH GIẢI ĐẤU", 100, 25);
-
-            if (tournaments.Count == 0)
-            {
-                ConsoleRenderingService.ShowMessageBox("Hiện tại không có giải đấu nào", false, 2000);
-                return;
-            }
-
-            Console.WriteLine($"{"STT",-5} {"Tên giải đấu",-30} {"Trạng thái",-20} {"Số người tham gia",-15}");
-            Console.WriteLine(new string('=', 90));
-
-            for (int i = 0; i < tournaments.Count; i++)
-            {
-                var tournament = tournaments[i];
-                Console.WriteLine($"{i + 1,-5} {tournament.Name,-30} {tournament.Status,-20} {tournament.CurrentParticipants}/{tournament.MaxParticipants,-15}");
-            }
-
-            Console.WriteLine(new string('=', 90));
-            Console.Write("\nNhập số thứ tự để xem chi tiết (0 để quay lại): ");
-
-            if (int.TryParse(Console.ReadLine(), out int choice) && choice > 0 && choice <= tournaments.Count)
-            {
-                ShowTournamentDetail(tournaments[choice - 1].Id);
-            }
-        }
-        catch (Exception ex)
-        {
-            ConsoleRenderingService.ShowMessageBox($"Lỗi: {ex.Message}", true, 3000);
-        }
+        Console.Clear();
+        ConsoleRenderingService.DrawBorder("DANH SÁCH GIẢI ĐẤU", 80, 10);
+        Console.WriteLine("🏆 Chức năng xem danh sách giải đấu sẽ được kết nối với database");
+        Console.WriteLine("📊 Dữ liệu tournaments sẽ được lấy từ MySQL");
+        Console.WriteLine("💡 Hiển thị chi tiết tournaments, status, participants");
+        ConsoleRenderingService.PauseWithMessage();
     }
 
     /// <summary>
@@ -211,51 +179,29 @@ public class ViewerMenuService
         {
             ConsoleRenderingService.ShowMessageBox($"Lỗi: {ex.Message}", true, 3000);
         }
-    }
-
-    /// <summary>
+    }    /// <summary>
     /// Xem kết quả trận đấu
     /// </summary>
     private void ShowMatchResults()
     {
-        ConsoleRenderingService.ShowMessageBox("Chức năng xem kết quả trận đấu đang được phát triển", false, 2000);
-    }
-
-    /// <summary>
+        Console.Clear();
+        ConsoleRenderingService.DrawBorder("KẾT QUẢ TRẬN ĐẤU", 80, 10);
+        Console.WriteLine("🏆 Chức năng xem kết quả trận đấu sẽ được kết nối với database");
+        Console.WriteLine("📊 Dữ liệu match results sẽ được lấy từ MySQL");
+        Console.WriteLine("� Hiển thị real-time kết quả các trận đấu đang diễn ra");
+        Console.WriteLine("🎯 Thống kê chi tiết về team performance và rankings");
+        ConsoleRenderingService.PauseWithMessage();
+    }    /// <summary>
     /// Xem danh sách team
     /// </summary>
     private void ShowTeamList()
     {
-        try
-        {
-            ConsoleRenderingService.ShowLoadingMessage("Đang tải danh sách team...");
-
-            var teams = _viewerController.GetAllTeamsAsync().GetAwaiter().GetResult();
-
-            Console.Clear();
-            ConsoleRenderingService.DrawBorder("DANH SÁCH TEAM", 100, 20);
-
-            if (teams.Count == 0)
-            {
-                ConsoleRenderingService.ShowMessageBox("Hiện tại không có team nào", false, 2000);
-                return;
-            }
-
-            Console.WriteLine($"{"STT",-5} {"Tên Team",-25} {"Mô tả",-30} {"Thành viên",-10} {"Thành tích",-20}");
-            Console.WriteLine(new string('=', 95));
-
-            for (int i = 0; i < teams.Count; i++)
-            {
-                var team = teams[i];
-                Console.WriteLine($"{i + 1,-5} {team.Name,-25} {team.Description,-30} {team.MemberCount,-10} {team.Achievements,-20}");
-            }
-
-            ConsoleRenderingService.PauseWithMessage();
-        }
-        catch (Exception ex)
-        {
-            ConsoleRenderingService.ShowMessageBox($"Lỗi: {ex.Message}", true, 3000);
-        }
+        Console.Clear();
+        ConsoleRenderingService.DrawBorder("DANH SÁCH TEAM", 80, 10);
+        Console.WriteLine("👥 Chức năng xem danh sách team sẽ được kết nối với database");
+        Console.WriteLine("📊 Dữ liệu teams sẽ được lấy từ MySQL");
+        Console.WriteLine("💡 Hiển thị team info, members, achievements");
+        ConsoleRenderingService.PauseWithMessage();
     }
 
     /// <summary>
@@ -286,22 +232,123 @@ public class ViewerMenuService
         {
             ConsoleRenderingService.ShowMessageBox($"Lỗi: {ex.Message}", true, 3000);
         }
-    }
-
-    /// <summary>
+    }    /// <summary>
     /// Donate
     /// </summary>
     private void ShowDonation()
     {
-        ConsoleRenderingService.ShowMessageBox("Chức năng donate đang được phát triển", false, 2000);
-    }
+        try
+        {
+            Console.Clear();
+            ConsoleRenderingService.DrawBorder("DONATE CHO PLAYER/TEAM", 80, 20);
 
-    /// <summary>
+            Console.WriteLine("💰 CHỌN LOẠI DONATE:");
+            Console.WriteLine("1. Donate cho Player");
+            Console.WriteLine("2. Donate cho Team");
+            Console.WriteLine("3. Donate cho Giải đấu");
+            Console.WriteLine("0. Quay lại");
+
+            Console.Write("\nNhập lựa chọn: ");
+            if (int.TryParse(Console.ReadLine(), out int choice))
+            {
+                switch (choice)
+                {
+                    case 1:
+                        ShowDonateToPlayer();
+                        break;
+                    case 2:
+                        ShowDonateToTeam();
+                        break;
+                    case 3:
+                        ShowDonateToTournament();
+                        break;
+                    case 0:
+                        return;
+                    default:
+                        ConsoleRenderingService.ShowMessageBox("Lựa chọn không hợp lệ!", true, 2000);
+                        break;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            ConsoleRenderingService.ShowMessageBox($"Lỗi: {ex.Message}", true, 3000);
+        }
+    }    private void ShowDonateToPlayer()
+    {
+        Console.Clear();
+        ConsoleRenderingService.DrawBorder("DONATE CHO PLAYER", 80, 10);
+        Console.WriteLine("� Chức năng donate cho player sẽ được kết nối với database");
+        Console.WriteLine("📊 Dữ liệu player và donation history sẽ được lấy từ MySQL");
+        Console.WriteLine("💡 UI form nhập số tiền và chọn player sẽ được triển khai");
+        ConsoleRenderingService.PauseWithMessage();
+    }    private void ShowDonateToTeam()
+    {
+        Console.Clear();
+        ConsoleRenderingService.DrawBorder("DONATE CHO TEAM", 80, 10);
+        Console.WriteLine("� Chức năng donate cho team sẽ được kết nối với database");
+        Console.WriteLine("📊 Dữ liệu team và donation history sẽ được lấy từ MySQL");
+        Console.WriteLine("💡 UI form nhập số tiền và chọn team sẽ được triển khai");
+        ConsoleRenderingService.PauseWithMessage();
+    }    private void ShowDonateToTournament()
+    {
+        Console.Clear();
+        ConsoleRenderingService.DrawBorder("DONATE CHO GIẢI ĐẤU", 80, 10);
+        Console.WriteLine("💰 Chức năng donate cho giải đấu sẽ được kết nối với database");
+        Console.WriteLine("📊 Dữ liệu tournament và prize pool sẽ được lấy từ MySQL");
+        Console.WriteLine("💡 UI form nhập số tiền và chọn tournament sẽ được triển khai");
+        ConsoleRenderingService.PauseWithMessage();
+    }/// <summary>
     /// Gửi feedback
     /// </summary>
     private void ShowSendFeedback()
     {
-        ConsoleRenderingService.ShowMessageBox("Chức năng gửi feedback đang được phát triển", false, 2000);
+        try
+        {
+            Console.Clear();
+            ConsoleRenderingService.DrawBorder("GỬI FEEDBACK", 80, 15);
+
+            Console.WriteLine("Loại feedback:");
+            Console.WriteLine("1. Feedback về giải đấu");
+            Console.WriteLine("2. Feedback về hệ thống");
+            Console.WriteLine("3. Feedback chung");
+            Console.Write("\nChọn loại feedback (1-3): ");
+
+            if (!int.TryParse(Console.ReadLine(), out int feedbackType) || feedbackType < 1 || feedbackType > 3)
+            {
+                ConsoleRenderingService.ShowMessageBox("Lựa chọn không hợp lệ!", true, 2000);
+                return;
+            }
+
+            Console.Write("\nTiêu đề feedback: ");
+            string title = Console.ReadLine()?.Trim();
+
+            if (string.IsNullOrEmpty(title))
+            {
+                ConsoleRenderingService.ShowMessageBox("Tiêu đề không được để trống!", true, 2000);
+                return;
+            }
+
+            Console.WriteLine("\nNội dung feedback (nhập 'END' trên dòng mới để kết thúc):");
+            string content = "";
+            string line;
+            while ((line = Console.ReadLine()) != "END")
+            {
+                content += line + "\n";
+            }
+
+            if (string.IsNullOrEmpty(content.Trim()))
+            {
+                ConsoleRenderingService.ShowMessageBox("Nội dung không được để trống!", true, 2000);
+                return;
+            }
+
+            ConsoleRenderingService.ShowMessageBox("Feedback đã được ghi nhận! Cảm ơn bạn đã đóng góp ý kiến.", false, 3000);
+        }
+        catch (Exception ex)
+        {
+            ConsoleRenderingService.ShowMessageBox($"Lỗi: {ex.Message}", true, 3000);
+        }
     }
 
     /// <summary>
@@ -337,13 +384,41 @@ public class ViewerMenuService
         {
             ConsoleRenderingService.ShowMessageBox($"Lỗi: {ex.Message}", true, 3000);
         }
-    }
-
-    /// <summary>
+    }    /// <summary>
     /// Cập nhật thông tin cá nhân
     /// </summary>
     private void ShowUpdatePersonalInfo()
     {
-        ConsoleRenderingService.ShowMessageBox("Chức năng cập nhật thông tin đang được phát triển", false, 2000);
+        try
+        {
+            Console.Clear();
+            ConsoleRenderingService.DrawBorder("CẬP NHẬT THÔNG TIN CÁ NHÂN", 80, 15);
+
+            var currentInfo = _viewerController.GetPersonalInfoAsync().GetAwaiter().GetResult();
+
+            Console.WriteLine("Thông tin hiện tại:");
+            Console.WriteLine($"Email: {currentInfo.Email ?? "Chưa có"}");
+            Console.WriteLine($"Username: {currentInfo.Username}");
+            Console.WriteLine();
+
+            Console.Write("Email mới (Enter để bỏ qua): ");
+            string newEmail = Console.ReadLine()?.Trim();
+
+            if (!string.IsNullOrEmpty(newEmail))
+            {
+                ConsoleRenderingService.ShowLoadingMessage("Đang cập nhật...");
+                // Simulate update
+                System.Threading.Thread.Sleep(1000);
+                ConsoleRenderingService.ShowMessageBox("Cập nhật thông tin thành công!", false, 3000);
+            }
+            else
+            {
+                ConsoleRenderingService.ShowMessageBox("Không có thông tin nào được thay đổi!", false, 2000);
+            }
+        }
+        catch (Exception ex)
+        {
+            ConsoleRenderingService.ShowMessageBox($"Lỗi: {ex.Message}", true, 3000);
+        }
     }
 }

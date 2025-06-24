@@ -1,18 +1,24 @@
 // Controller xử lý chức năng Viewer
 
 using System;
+using System.Threading.Tasks;
 using EsportsManager.UI.ConsoleUI.Utilities;
 using EsportsManager.BL.DTOs;
+using EsportsManager.BL.Interfaces;
 
 namespace EsportsManager.UI.Controllers;
 
 public class ViewerController
 {
     private readonly UserProfileDto _currentUser;
+    private readonly IUserService _userService;
+    private readonly ITournamentService _tournamentService;
 
-    public ViewerController(UserProfileDto currentUser)
+    public ViewerController(UserProfileDto currentUser, IUserService userService, ITournamentService tournamentService)
     {
         _currentUser = currentUser;
+        _userService = userService;
+        _tournamentService = tournamentService;
     }
 
     public void ShowViewerMenu()
@@ -31,9 +37,7 @@ public class ViewerController
                 "Đăng xuất"
             };
 
-            int selection = InteractiveMenuService.DisplayInteractiveMenu($"MENU VIEWER - {_currentUser.Username}", menuOptions);
-
-            switch (selection)
+            int selection = InteractiveMenuService.DisplayInteractiveMenu($"MENU VIEWER - {_currentUser.Username}", menuOptions);            switch (selection)
             {
                 case 0:
                     ViewTournamentList();
@@ -59,6 +63,9 @@ public class ViewerController
                 case 7:
                 case -1:
                     return; // Đăng xuất
+                default:
+                    Console.WriteLine("Lựa chọn không hợp lệ!");
+                    break;
             }
         }
     }
@@ -101,36 +108,43 @@ public class ViewerController
             "Xem kết quả voting"
         };
 
-        int selection = InteractiveMenuService.DisplayInteractiveMenu("VOTING", voteOptions);
-        
-        switch (selection)
+        int selection = InteractiveMenuService.DisplayInteractiveMenu("VOTING", voteOptions);        switch (selection)
         {
             case 0:
-                ConsoleRenderingService.ShowMessageBox("Chức năng vote player đang được phát triển", false, 2000);
+                Console.WriteLine("🗳️ Vote cho player sẽ được kết nối với database");
+                ConsoleRenderingService.PauseWithMessage();
                 break;
             case 1:
-                ConsoleRenderingService.ShowMessageBox("Chức năng vote tournament đang được phát triển", false, 2000);
+                Console.WriteLine("🏆 Vote cho tournament sẽ được kết nối với database");
+                ConsoleRenderingService.PauseWithMessage();
                 break;
             case 2:
-                ConsoleRenderingService.ShowMessageBox("Chức năng vote sport đang được phát triển", false, 2000);
+                Console.WriteLine("🎮 Vote cho esports sẽ được kết nối với database");
+                ConsoleRenderingService.PauseWithMessage();
                 break;
             case 3:
-                ConsoleRenderingService.ShowMessageBox("Chức năng xem kết quả voting đang được phát triển", false, 2000);
+                Console.WriteLine("📊 Xem kết quả voting sẽ được kết nối với database");
+                ConsoleRenderingService.PauseWithMessage();
+                break;
+            case -1:
+                return; // Quay lại menu chính
+            default:
+                Console.WriteLine("Lựa chọn không hợp lệ!");
                 break;
         }
-    }
-
-    private void DonateToPlayer()
+    }    private void DonateToPlayer()
     {
-        ConsoleRenderingService.ShowMessageBox("Chức năng donate cho player đang được phát triển", false, 2000);
-    }
-
-    private void ViewPersonalInfo()
+        Console.Clear();
+        ConsoleRenderingService.DrawBorder("DONATE CHO PLAYER", 80, 10);
+        Console.WriteLine("💰 Chức năng donate cho player sẽ được kết nối với database");
+        Console.WriteLine("📊 Dữ liệu player và wallet sẽ được lấy từ MySQL");
+        Console.WriteLine("💡 UI form nhập số tiền và chọn player sẽ được triển khai");
+        ConsoleRenderingService.PauseWithMessage();
+    }private void ViewPersonalInfo()
     {
         var info = new[]
         {
             $"Username: {_currentUser.Username}",
-            $"Email: {_currentUser.Email}",            $"Username: {_currentUser.Username}",
             $"Email: {_currentUser.Email}",
             $"Role: {_currentUser.Role}",
             $"Ngày tạo: {_currentUser.CreatedAt:dd/MM/yyyy}",
@@ -139,15 +153,30 @@ public class ViewerController
         };
 
         InteractiveMenuService.DisplayInteractiveMenu("THÔNG TIN CÁ NHÂN", info);
+    }    private void UpdatePersonalInfo()
+    {
+        Console.Clear();
+        ConsoleRenderingService.DrawBorder("CẬP NHẬT THÔNG TIN", 80, 10);
+        Console.WriteLine("✏️ Chức năng cập nhật thông tin sẽ được kết nối với database");
+        Console.WriteLine("📊 Dữ liệu user profile sẽ được update trong MySQL");
+        Console.WriteLine("💡 UI form edit email, phone, bio sẽ được triển khai");
+        ConsoleRenderingService.PauseWithMessage();
+    }    private void ForgotPassword()
+    {
+        Console.Clear();
+        ConsoleRenderingService.DrawBorder("QUÊN MẬT KHẨU", 80, 10);        Console.WriteLine("🔑 Chức năng reset password sẽ được kết nối với database");
+        Console.WriteLine("📧 Email verification và password reset sẽ được triển khai");
+        Console.WriteLine("💡 Integration với email service để gửi reset link");
+        ConsoleRenderingService.PauseWithMessage();
+    }    // Async methods needed by ViewerMenuService - calling BL Services
+    public async Task<TournamentInfoDto?> GetTournamentDetailAsync(int tournamentId)
+    {
+        return await _tournamentService.GetTournamentByIdAsync(tournamentId);
     }
 
-    private void UpdatePersonalInfo()
+    public async Task<UserDto?> GetPersonalInfoAsync()
     {
-        ConsoleRenderingService.ShowMessageBox("Chức năng cập nhật thông tin đang được phát triển", false, 2000);
-    }
-
-    private void ForgotPassword()
-    {
-        ConsoleRenderingService.ShowMessageBox("Chức năng quên mật khẩu đang được phát triển", false, 2000);
+        var result = await _userService.GetUserByIdAsync(_currentUser.Id);
+        return result.IsSuccess ? result.Data : null;
     }
 }

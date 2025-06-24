@@ -1,7 +1,7 @@
 using System;
-using EsportsManager.BL.Controllers;
 using EsportsManager.BL.DTOs;
 using EsportsManager.BL.Interfaces;
+using EsportsManager.UI.Controllers;
 using EsportsManager.UI.MenuServices;
 
 namespace EsportsManager.UI.Services;
@@ -13,10 +13,14 @@ namespace EsportsManager.UI.Services;
 public class ServiceManager
 {
     private readonly IUserService _userService;
+    private readonly ITournamentService _tournamentService;
+    private readonly ITeamService _teamService;
 
-    public ServiceManager(IUserService userService)
+    public ServiceManager(IUserService userService, ITournamentService tournamentService, ITeamService teamService)
     {
         _userService = userService ?? throw new ArgumentNullException(nameof(userService));
+        _tournamentService = tournamentService ?? throw new ArgumentNullException(nameof(tournamentService));
+        _teamService = teamService ?? throw new ArgumentNullException(nameof(teamService));
     }
 
     /// <summary>
@@ -24,7 +28,7 @@ public class ServiceManager
     /// </summary>
     public AdminMenuService CreateAdminMenuService(UserProfileDto adminUser)
     {
-        var adminController = new AdminController(_userService, adminUser);
+        var adminController = new AdminController(adminUser, _userService, _tournamentService, _teamService);
         return new AdminMenuService(adminController);
     }
 
@@ -33,7 +37,7 @@ public class ServiceManager
     /// </summary>
     public PlayerMenuService CreatePlayerMenuService(UserProfileDto playerUser)
     {
-        var playerController = new PlayerController(_userService, playerUser);
+        var playerController = new PlayerController(playerUser, _userService, _tournamentService, _teamService);
         return new PlayerMenuService(playerController);
     }
 
@@ -42,7 +46,7 @@ public class ServiceManager
     /// </summary>
     public ViewerMenuService CreateViewerMenuService(UserProfileDto viewerUser)
     {
-        var viewerController = new ViewerController(_userService, viewerUser);
+        var viewerController = new ViewerController(viewerUser, _userService, _tournamentService);
         return new ViewerMenuService(viewerController);
     }
 }

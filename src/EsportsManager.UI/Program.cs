@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -84,12 +85,11 @@ class Program
     {
       builder.AddConsole();      // Log ra console
       builder.SetMinimumLevel(LogLevel.Information); // Minimum log level
-    });
-    // ═══════════════════════════════════════════════════════════════
+    });    // ═══════════════════════════════════════════════════════════════
     // BUSINESS LOGIC LAYER SERVICES
-    // ═══════════════════════════════════════════════════════════════
-    // Business Services - Scoped lifetime để tránh state conflicts
+    // ═══════════════════════════════════════════════════════════════    // Business Services - Scoped lifetime để tránh state conflicts
     services.AddScoped<IUserService, UserService>();
+    // services.AddScoped<ITeamService, EsportsManager.BL.Services.TeamService>(); // TODO: Fix TeamService reference
 
     // ServiceManager để tích hợp UI và BL
     services.AddScoped<EsportsManager.UI.Services.ServiceManager>();
@@ -99,12 +99,10 @@ class Program
 
     // ═══════════════════════════════════════════════════════════════
     // DATA ACCESS LAYER SERVICES
-    // ═══════════════════════════════════════════════════════════════
-
-    // Data Context - Scoped để maintain connection consistency
-    services.AddScoped<DataContext>();
-    // Repository Pattern - Scoped để share với DataContext
+    // ═══════════════════════════════════════════════════════════════    // Data Context - Scoped để maintain connection consistency
+    services.AddScoped<DataContext>();    // Repository Pattern - Scoped để share với DataContext
     services.AddScoped<IUsersRepository, UsersRepository>();
+    // services.AddScoped<EsportsManager.DAL.Interfaces.ITeamRepository, EsportsManager.DAL.Repositories.TeamRepository>(); // TODO: Fix TeamRepository reference
 
     // ═══════════════════════════════════════════════════════════════
     // ADDITIONAL CONFIGURATION

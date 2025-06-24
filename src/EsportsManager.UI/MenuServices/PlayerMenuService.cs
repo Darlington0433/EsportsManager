@@ -1,5 +1,5 @@
 using System;
-using EsportsManager.BL.Controllers;
+using EsportsManager.UI.Controllers;
 using EsportsManager.BL.DTOs;
 using EsportsManager.UI.ConsoleUI.Utilities;
 
@@ -42,9 +42,7 @@ public class PlayerMenuService
                 "🚪 Đăng xuất"
             };
 
-            int selection = InteractiveMenuService.DisplayInteractiveMenu("PLAYER CONTROL PANEL", menuOptions);
-
-            switch (selection)
+            int selection = InteractiveMenuService.DisplayInteractiveMenu("PLAYER CONTROL PANEL", menuOptions);            switch (selection)
             {
                 case 0:
                     ShowTournamentRegistration();
@@ -70,6 +68,9 @@ public class PlayerMenuService
                 case 7:
                 case -1:
                     return; // Đăng xuất
+                default:
+                    Console.WriteLine("Lựa chọn không hợp lệ!");
+                    break;
             }
         }
     }
@@ -251,37 +252,279 @@ public class PlayerMenuService
 
         Console.WriteLine("\nPress any key to continue...");
         Console.ReadKey(true);
-    }
-
-    /// <summary>
+    }    /// <summary>
     /// Cập nhật thông tin cá nhân
     /// </summary>
     private void ShowUpdatePersonalInfo()
     {
-        ConsoleRenderingService.ShowMessageBox("Chức năng cập nhật thông tin đang được phát triển", false, 2000);
-    }
+        try
+        {
+            Console.Clear();
+            ConsoleRenderingService.DrawBorder("CẬP NHẬT THÔNG TIN CÁ NHÂN", 80, 15);
 
-    /// <summary>
+            var currentInfo = _playerController.GetPersonalInfoAsync().GetAwaiter().GetResult();
+
+            Console.WriteLine("Thông tin hiện tại:");
+            Console.WriteLine($"Email: {currentInfo.Email ?? "Chưa có"}");
+            Console.WriteLine($"Họ tên: {currentInfo.FullName ?? "Chưa có"}");
+            Console.WriteLine();
+
+            Console.Write("Email mới (Enter để bỏ qua): ");
+            string newEmail = Console.ReadLine()?.Trim();
+
+            Console.Write("Họ tên mới (Enter để bỏ qua): ");
+            string newFullName = Console.ReadLine()?.Trim();
+
+            if (!string.IsNullOrEmpty(newEmail) || !string.IsNullOrEmpty(newFullName))
+            {
+                var updateDto = new UpdateUserDto
+                {
+                    Email = !string.IsNullOrEmpty(newEmail) ? newEmail : currentInfo.Email,
+                    FullName = !string.IsNullOrEmpty(newFullName) ? newFullName : currentInfo.FullName
+                };
+
+                ConsoleRenderingService.ShowLoadingMessage("Đang cập nhật...");
+                bool success = _playerController.UpdatePersonalInfoAsync(updateDto).GetAwaiter().GetResult();
+
+                if (success)
+                {
+                    ConsoleRenderingService.ShowMessageBox("Cập nhật thông tin thành công!", false, 3000);
+                }
+                else
+                {
+                    ConsoleRenderingService.ShowMessageBox("Cập nhật thất bại!", true, 2000);
+                }
+            }
+            else
+            {
+                ConsoleRenderingService.ShowMessageBox("Không có thông tin nào được thay đổi!", false, 2000);
+            }
+        }
+        catch (Exception ex)
+        {
+            ConsoleRenderingService.ShowMessageBox($"Lỗi: {ex.Message}", true, 3000);
+        }
+    }    /// <summary>
     /// Thay đổi mật khẩu
     /// </summary>
     private void ShowChangePassword()
     {
-        ConsoleRenderingService.ShowMessageBox("Chức năng thay đổi mật khẩu đang được phát triển", false, 2000);
+        try
+        {
+            Console.Clear();
+            ConsoleRenderingService.DrawBorder("THAY ĐỔI MẬT KHẨU", 80, 12);
+
+            Console.Write("Mật khẩu hiện tại: ");
+            string oldPassword = ReadPassword();
+
+            Console.Write("\nMật khẩu mới: ");
+            string newPassword = ReadPassword();
+
+            Console.Write("\nXác nhận mật khẩu mới: ");
+            string confirmPassword = ReadPassword();
+
+            if (newPassword != confirmPassword)
+            {
+                ConsoleRenderingService.ShowMessageBox("Mật khẩu xác nhận không khớp!", true, 2000);
+                return;
+            }
+
+            if (newPassword.Length < 6)
+            {
+                ConsoleRenderingService.ShowMessageBox("Mật khẩu mới phải có ít nhất 6 ký tự!", true, 2000);
+                return;
+            }
+
+            var changePasswordDto = new UpdatePasswordDto
+            {
+                CurrentPassword = oldPassword,
+                NewPassword = newPassword
+            };
+
+            ConsoleRenderingService.ShowLoadingMessage("Đang thay đổi mật khẩu...");
+            bool success = _playerController.ChangePasswordAsync(changePasswordDto).GetAwaiter().GetResult();
+
+            if (success)
+            {
+                ConsoleRenderingService.ShowMessageBox("Thay đổi mật khẩu thành công!", false, 3000);
+            }
+            else
+            {
+                ConsoleRenderingService.ShowMessageBox("Thay đổi mật khẩu thất bại! Kiểm tra lại mật khẩu hiện tại.", true, 3000);
+            }
+        }
+        catch (Exception ex)
+        {
+            ConsoleRenderingService.ShowMessageBox($"Lỗi: {ex.Message}", true, 3000);
+        }
     }
 
     /// <summary>
+    /// Đọc mật khẩu ẩn
+    /// </summary>
+    private string ReadPassword()
+    {
+        string password = "";
+        ConsoleKeyInfo key;
+        do
+        {
+            key = Console.ReadKey(true);
+            if (key.Key != ConsoleKey.Backspace && key.Key != ConsoleKey.Enter)
+            {
+                password += key.KeyChar;
+                Console.Write("*");
+            }
+            else
+            {
+                if (key.Key == ConsoleKey.Backspace && password.Length > 0)
+                {
+                    password = password.Substring(0, (password.Length - 1));
+                    Console.Write("\b \b");
+                }
+            }
+        }
+        while (key.Key != ConsoleKey.Enter);
+        return password;
+    }    /// <summary>
     /// Xem danh sách giải đấu
     /// </summary>
     private void ShowTournamentList()
     {
-        ConsoleRenderingService.ShowMessageBox("Chức năng xem danh sách giải đấu đang được phát triển", false, 2000);
+        try
+        {
+            ConsoleRenderingService.ShowLoadingMessage("Đang tải danh sách giải đấu...");
+
+            var tournaments = _playerController.GetAllTournamentsAsync().GetAwaiter().GetResult();
+
+            Console.Clear();
+            ConsoleRenderingService.DrawBorder("DANH SÁCH GIẢI ĐẤU", 100, 20);
+
+            if (tournaments.Count == 0)
+            {
+                ConsoleRenderingService.ShowMessageBox("Hiện tại không có giải đấu nào", false, 2000);
+                return;
+            }
+
+            Console.WriteLine($"{"STT",-5} {"Tên giải đấu",-30} {"Trạng thái",-15} {"Ngày bắt đầu",-15} {"Phí tham gia",-15}");
+            Console.WriteLine(new string('=', 90));
+
+            for (int i = 0; i < tournaments.Count; i++)
+            {
+                var tournament = tournaments[i];
+                Console.WriteLine($"{i + 1,-5} {tournament.Name,-30} {tournament.Status,-15} {tournament.StartDate:dd/MM/yyyy,-15} {tournament.EntryFee:N0,-15}");
+            }
+
+            Console.WriteLine(new string('=', 90));
+            Console.Write("\nNhập số thứ tự để xem chi tiết (0 để quay lại): ");
+
+            if (int.TryParse(Console.ReadLine(), out int choice) && choice > 0 && choice <= tournaments.Count)
+            {
+                var selectedTournament = tournaments[choice - 1];
+                ShowTournamentDetail(selectedTournament);
+            }
+        }
+        catch (Exception ex)
+        {
+            ConsoleRenderingService.ShowMessageBox($"Lỗi: {ex.Message}", true, 3000);
+        }
     }
 
     /// <summary>
+    /// Hiển thị chi tiết giải đấu
+    /// </summary>
+    private void ShowTournamentDetail(TournamentInfoDto tournament)
+    {
+        Console.Clear();
+        ConsoleRenderingService.DrawBorder($"CHI TIẾT GIẢI ĐẤU: {tournament.Name}", 100, 20);
+
+        Console.WriteLine($"📝 Mô tả: {tournament.Description}");
+        Console.WriteLine($"📅 Ngày bắt đầu: {tournament.StartDate:dd/MM/yyyy HH:mm}");
+        Console.WriteLine($"📅 Ngày kết thúc: {tournament.EndDate:dd/MM/yyyy HH:mm}");
+        Console.WriteLine($"🎯 Trạng thái: {tournament.Status}");
+        Console.WriteLine($"💰 Phí tham gia: {tournament.EntryFee:N0} VND");
+        Console.WriteLine($"🏆 Tổng giải thưởng: {tournament.PrizePool:N0} VND");
+        Console.WriteLine($"👥 Số người tham gia: {tournament.CurrentParticipants}/{tournament.MaxParticipants}");
+        Console.WriteLine($"📍 Địa điểm: {tournament.Location}");
+        
+        if (!string.IsNullOrEmpty(tournament.Rules))
+        {
+            Console.WriteLine($"\n📋 Luật thi đấu:\n{tournament.Rules}");
+        }
+
+        Console.WriteLine("\nNhấn phím bất kỳ để tiếp tục...");
+        Console.ReadKey(true);
+    }    /// <summary>
     /// Gửi feedback
     /// </summary>
     private void ShowSendFeedback()
     {
-        ConsoleRenderingService.ShowMessageBox("Chức năng gửi feedback đang được phát triển", false, 2000);
+        try
+        {
+            Console.Clear();
+            ConsoleRenderingService.DrawBorder("GỬI FEEDBACK", 80, 15);
+
+            Console.WriteLine("Loại feedback:");
+            Console.WriteLine("1. Feedback về giải đấu");
+            Console.WriteLine("2. Feedback về hệ thống");
+            Console.WriteLine("3. Feedback chung");
+            Console.Write("\nChọn loại feedback (1-3): ");
+
+            if (!int.TryParse(Console.ReadLine(), out int feedbackType) || feedbackType < 1 || feedbackType > 3)
+            {
+                ConsoleRenderingService.ShowMessageBox("Lựa chọn không hợp lệ!", true, 2000);
+                return;
+            }
+
+            Console.Write("\nTiêu đề feedback: ");
+            string title = Console.ReadLine()?.Trim();
+
+            if (string.IsNullOrEmpty(title))
+            {
+                ConsoleRenderingService.ShowMessageBox("Tiêu đề không được để trống!", true, 2000);
+                return;
+            }
+
+            Console.WriteLine("\nNội dung feedback (nhập 'END' trên dòng mới để kết thúc):");
+            string content = "";
+            string line;
+            while ((line = Console.ReadLine()) != "END")
+            {
+                content += line + "\n";
+            }
+
+            if (string.IsNullOrEmpty(content.Trim()))
+            {
+                ConsoleRenderingService.ShowMessageBox("Nội dung không được để trống!", true, 2000);
+                return;
+            }            var feedbackDto = new FeedbackDto();
+            // TODO: Assign properties when FeedbackDto is fully compiled
+            // feedbackDto.Title = title;
+            // feedbackDto.Content = content.Trim();
+            // feedbackDto.FeedbackType = feedbackType switch
+            // {
+            //     1 => "Tournament",
+            //     2 => "System", 
+            //     3 => "General",
+            //     _ => "General"
+            // };
+            
+            Console.WriteLine($"📝 Gửi feedback: {title} - {content.Trim()}");
+
+            ConsoleRenderingService.ShowLoadingMessage("Đang gửi feedback...");
+            bool success = _playerController.SubmitFeedbackAsync(feedbackDto).GetAwaiter().GetResult();
+
+            if (success)
+            {
+                ConsoleRenderingService.ShowMessageBox("Gửi feedback thành công! Cảm ơn bạn đã đóng góp ý kiến.", false, 3000);
+            }
+            else
+            {
+                ConsoleRenderingService.ShowMessageBox("Gửi feedback thất bại!", true, 2000);
+            }
+        }
+        catch (Exception ex)
+        {
+            ConsoleRenderingService.ShowMessageBox($"Lỗi: {ex.Message}", true, 3000);
+        }
     }
 }

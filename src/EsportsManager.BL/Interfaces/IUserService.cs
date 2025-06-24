@@ -11,7 +11,8 @@ namespace EsportsManager.BL.Interfaces;
 /// Chỉ chứa các phương thức liên quan đến User business logic
 /// </summary>
 public interface IUserService
-{    // Authentication methods
+{
+    // Authentication methods
     Task<Models.AuthenticationResult> AuthenticateAsync(LoginDto loginDto);
     Task<BusinessResult<UserDto>> RegisterAsync(RegisterDto registerDto);
     Task<BusinessResult> LogoutAsync(int userId);
@@ -19,7 +20,6 @@ public interface IUserService
     // User management methods
     Task<BusinessResult<UserDto>> GetUserByIdAsync(int userId);
     Task<BusinessResult<UserDto>> GetUserByUsernameAsync(string username);
-    Task<BusinessResult<IEnumerable<UserDto>>> GetAllUsersAsync();
     Task<BusinessResult<IEnumerable<UserDto>>> GetUsersByRoleAsync(string role);
     Task<BusinessResult<IEnumerable<UserDto>>> GetActiveUsersAsync();
 
@@ -32,7 +32,13 @@ public interface IUserService
     // Admin methods
     Task<BusinessResult<UserDto>> CreateUserAsync(CreateUserDto createUserDto);
     Task<BusinessResult> UpdateUserStatusAsync(int userId, string status);
-    Task<BusinessResult> DeleteUserAsync(int userId);    // Validation methods
+    Task<List<UserProfileDto>> GetAllUsersAsync();
+    Task<List<UserProfileDto>> SearchUsersAsync(string searchTerm);
+    Task<bool> ToggleUserStatusAsync(int userId);
+    Task<string> ResetPasswordAsync(int userId);
+    Task<bool> DeleteUserAsync(int userId);
+
+    // Validation methods
     Task<BusinessResult<bool>> IsUsernameAvailableAsync(string username);
     Task<BusinessResult<bool>> IsEmailAvailableAsync(string email);
     Models.ValidationResult ValidateUserData(CreateUserDto createUserDto);

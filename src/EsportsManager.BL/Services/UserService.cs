@@ -247,18 +247,33 @@ public class UserService : IUserService
     /// Lấy danh sách tất cả user
     /// </summary>
     /// <returns>Danh sách UserDTO</returns>
-    public async Task<BusinessResult<IEnumerable<UserDto>>> GetAllUsersAsync()
+    public async Task<List<UserProfileDto>> GetAllUsersAsync()
     {
         try
         {
             var users = await _userRepository.GetAllAsync();
-            var userDtos = users.Select(u => MapUserToDto(u)).ToList();
-            return BusinessResult<IEnumerable<UserDto>>.Success(userDtos);
+            var userProfiles = users.Select(u => new UserProfileDto
+            {
+                Id = u.UserID,
+                Username = u.Username,
+                Email = u.Email ?? string.Empty,
+                FullName = u.FullName,
+                Role = u.Role,
+                Status = u.Status,
+                CreatedAt = u.CreatedAt,
+                LastLoginAt = u.LastLoginAt,
+                TotalLogins = 0, // TODO: Implement method to get login count
+                IsEmailVerified = u.IsEmailVerified,
+                AvatarUrl = null, // Not in the current schema
+                Bio = null // Not in the current schema
+            }).ToList();
+
+            return userProfiles;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error getting all users");
-            return BusinessResult<IEnumerable<UserDto>>.Failure("An error occurred while retrieving users");
+            return new List<UserProfileDto>();
         }
     }
 
@@ -604,7 +619,7 @@ public class UserService : IUserService
     /// </summary>
     /// <param name="userId">ID của user cần xóa</param>
     /// <returns>Kết quả xóa</returns>
-    public async Task<BusinessResult> DeleteUserAsync(int userId)
+    public async Task<bool> DeleteUserAsync(int userId)
     {
         try
         {
@@ -612,7 +627,7 @@ public class UserService : IUserService
             var user = await _userRepository.GetByIdAsync(userId);
             if (user == null)
             {
-                return BusinessResult.Failure("User not found");
+                return false;
             }
 
             // Soft delete by setting status to Deleted
@@ -623,12 +638,12 @@ public class UserService : IUserService
             await _userRepository.UpdateAsync(user);
 
             _logger.LogInformation("User deleted (soft delete): {Username}", user.Username);
-            return BusinessResult.Success();
+            return true;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error deleting user: {UserId}", userId);
-            return BusinessResult.Failure("An error occurred while deleting the user");
+            return false;
         }
     }
 
@@ -850,5 +865,115 @@ public class UserService : IUserService
             IsEmailVerified = user.IsEmailVerified,
             EmailVerificationToken = user.EmailVerificationToken
         };
+    }
+
+    public async Task<List<UserProfileDto>> SearchUsersAsync(string searchTerm)
+    {
+        try
+        {
+            var users = await _userRepository.SearchAsync(searchTerm);
+            var userProfiles = users.Select(u => new UserProfileDto
+            {
+                Id = u.UserID,
+                Username = u.Username,
+                Email = u.Email ?? string.Empty,
+                FullName = u.FullName,
+                Role = u.Role,
+                Status = u.Status,
+                CreatedAt = u.CreatedAt,
+                LastLoginAt = u.LastLoginAt,
+                TotalLogins = 0, // TODO: Implement method to get login count
+                IsEmailVerified = u.IsEmailVerified,
+                AvatarUrl = null, // Not in the current schema
+                Bio = null // Not in the current schema
+            }).ToList();
+
+            return userProfiles;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error searching users: {SearchTerm}", searchTerm);
+            return new List<UserProfileDto>();
+        }
+    }
+
+    public async Task<bool> ToggleUserStatusAsync(int userId)
+    {
+        try
+        {
+            // Get user
+            var user = await _userRepository.GetByIdAsync(userId);
+            if (user == null)
+            {
+                return false;
+            }
+
+            // Toggle status
+            user.Status = user.Status == EsportsManager.DAL.Models.UsersStatus.Active
+                ? EsportsManager.DAL.Models.UsersStatus.Inactive
+                : EsportsManager.DAL.Models.UsersStatus.Active;
+
+            user.UpdatedAt = DateTime.UtcNow;
+
+            // Save to database
+            await _userRepository.UpdateAsync(user);
+
+            _logger.LogInformation("User {Username} status toggled to {Status}", user.Username, user.Status);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error toggling user status: {UserId}", userId);
+            return false;
+        }
+    }
+
+    public async Task<string> ResetPasswordAsync(int userId)
+    {
+        try
+        {
+            // Generate a new random password
+            string newPassword = GenerateRandomPassword();
+
+            // Hash the new password
+            string passwordHash = PasswordHasher.HashPassword(newPassword);
+
+            // Get user
+            var user = await _userRepository.GetByIdAsync(userId);
+            if (user == null)
+            {
+                return "User not found";
+            }
+
+            // Update password
+            bool success = await _userRepository.UpdatePasswordAsync(user.UserID, passwordHash);
+            if (!success)
+            {
+                return "Failed to reset password";
+            }
+
+            // TODO: Send new password via email or other means
+
+            _logger.LogInformation("Password reset for user: {Username}", user.Username);
+            return "Password has been reset successfully";
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error resetting password for user: {UserId}", userId);
+            return "An error occurred while resetting the password";
+        }
+    }
+
+    /// <summary>
+    /// Generate a random password
+    /// </summary>
+    /// <returns>Randomly generated password</returns>
+    private string GenerateRandomPassword()
+    {
+        const int length = 8;
+        const string validChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
+        var random = new Random();
+        return new string(Enumerable.Repeat(validChars, length)
+          .Select(s => s[random.Next(s.Length)]).ToArray());
     }
 }

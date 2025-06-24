@@ -43,10 +43,8 @@ namespace EsportsManager.DAL.Configuration
         /// <summary>
         /// Lấy cấu hình
         /// </summary>
-        public static IConfiguration Configuration => _configuration;
-
-        /// <summary>
-        /// Lấy chuỗi kết nối từ cấu hình
+        public static IConfiguration Configuration => _configuration;        /// <summary>
+        /// Lấy chuỗi kết nối MySQL từ cấu hình
         /// </summary>
         public static string GetConnectionString()
         {
@@ -55,16 +53,10 @@ namespace EsportsManager.DAL.Configuration
             if (!string.IsNullOrEmpty(envConnectionString))
                 return envConnectionString;
 
-            // Lấy từ cấu hình
-            var dbType = Environment.GetEnvironmentVariable("ESPORTS_DB_TYPE")?.ToLower() ??
-                         _configuration.GetValue<string>("Database:Type")?.ToLower() ??
-                         "sqlserver";
-
-            return dbType switch
-            {
-                "mysql" => _configuration.GetConnectionString("MySqlConnection") ?? DatabaseConfig.MySqlConnectionString,
-                "sqlserver" or _ => _configuration.GetConnectionString("DefaultConnection") ?? DatabaseConfig.DefaultConnectionString
-            };
+            // Lấy từ cấu hình MySQL
+            return _configuration.GetConnectionString("MySqlConnection") ?? 
+                   _configuration.GetConnectionString("DefaultConnection") ?? 
+                   DatabaseConfig.MySqlConnectionString;
         }
 
         /// <summary>

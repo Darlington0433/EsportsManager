@@ -686,5 +686,30 @@ namespace EsportsManager.DAL.Repositories
                 throw;
             }
         }
+
+        /// <summary>
+        /// Tìm kiếm user theo từ khóa
+        /// </summary>
+        public async Task<IEnumerable<Users>> SearchAsync(string searchTerm)
+        {
+            try
+            {
+                using var connection = _context.CreateConnection();
+                const string sql = @"
+                    SELECT UserID, Username, Email, FullName, Role, Status
+                    FROM Users
+                    WHERE (Username LIKE @SearchTerm OR Email LIKE @SearchTerm OR FullName LIKE @SearchTerm)
+                      AND Status != 'Deleted'";
+
+                var users = await connection.QueryAsync<Users>(sql, new { SearchTerm = $"%{searchTerm}%" });
+                _logger.LogDebug("Search users with term: {SearchTerm}, Found: {Count}", searchTerm, users.AsList().Count);
+                return users;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error searching users with term: {SearchTerm}", searchTerm);
+                throw;
+            }
+        }
     }
 }

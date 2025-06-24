@@ -1,9 +1,8 @@
-// Context quản lý truy cập dữ liệu
-// Cung cấp connection string và database connectivity
+// Context quản lý truy cập dữ liệu MySQL
+// Cung cấp connection string và database connectivity cho MySQL
 
 using System;
 using System.Data;
-using System.Data.SqlClient;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -84,57 +83,35 @@ public class DataContext : IDisposable
         var connectionString = DatabaseConfig.GetConnectionString();
         _logger.LogDebug("Using connection string from configuration");
         return connectionString;
-    }
-
-    /// <summary>
-    /// Xác định loại database đang sử dụng
+    }    /// <summary>
+    /// Xác định loại database đang sử dụng - chỉ hỗ trợ MySQL
     /// </summary>
-    /// <returns>Loại database (mysql hoặc sqlserver)</returns>
+    /// <returns>Luôn trả về "mysql"</returns>
     public string GetDatabaseType()
     {
-        var dbType = Environment.GetEnvironmentVariable("ESPORTS_DB_TYPE")?.ToLower() ??
-                     _configuration.GetValue<string>("Database:Type")?.ToLower() ??
-                     "mysql"; // Default to MySQL for our EsportsManager application
-
-        return dbType;
-    }
-
-    /// <summary>
-    /// Tạo database connection mới dựa trên loại database đã cấu hình
+        return "mysql"; // Chỉ hỗ trợ MySQL
+    }/// <summary>
+    /// Tạo database connection mới - chỉ hỗ trợ MySQL
     /// </summary>
-    /// <returns>IDbConnection đã được configure</returns>
+    /// <returns>MySqlConnection đã được configure</returns>
     public IDbConnection CreateConnection()
     {
         try
         {
             var connectionString = GetConnectionString();
-            var dbType = GetDatabaseType();
-
-            IDbConnection connection;
-
-            if (dbType == "mysql")
-            {
-                connection = new MySqlConnection(connectionString);
-                _logger.LogDebug("MySQL database connection created");
-            }
-            else
-            {
-                connection = new SqlConnection(connectionString);
-                _logger.LogDebug("SQL Server database connection created");
-            }
-
-            _logger.LogDebug("Database connection created successfully");
+            _logger.LogDebug("Creating MySQL database connection...");
+            
+            var connection = new MySqlConnection(connectionString);
+            _logger.LogDebug("MySQL database connection created successfully");
             return connection;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to create database connection");
-            throw new InvalidOperationException("Cannot create database connection", ex);
+            _logger.LogError(ex, "❌ Không thể kết nối đến cơ sở dữ liệu MySQL. Vui lòng kiểm tra: 1) MySQL Server đã chạy chưa? 2) Connection string có đúng không? 3) Database 'EsportsManager' đã tồn tại chưa?");
+            throw new InvalidOperationException("❌ Lỗi kết nối cơ sở dữ liệu MySQL. Vui lòng kiểm tra cấu hình và đảm bảo MySQL Server đang chạy.", ex);
         }
-    }
-
-    /// <summary>
-    /// Kiểm tra kết nối database
+    }    /// <summary>
+    /// Kiểm tra kết nối database MySQL
     /// </summary>
     /// <returns>True nếu kết nối thành công</returns>
     public async Task<bool> TestConnectionAsync()
@@ -142,20 +119,20 @@ public class DataContext : IDisposable
         try
         {
             using var connection = CreateConnection();
-            if (connection is SqlConnection sqlConnection)
+            if (connection is MySqlConnection mysqlConnection)
             {
-                await sqlConnection.OpenAsync();
+                await mysqlConnection.OpenAsync();
             }
             else
             {
                 connection.Open();
             }
-            _logger.LogInformation("Database connection test successful");
+            _logger.LogInformation("✅ Kết nối cơ sở dữ liệu MySQL thành công");
             return true;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Database connection test failed");
+            _logger.LogError(ex, "❌ Kiểm tra kết nối cơ sở dữ liệu MySQL thất bại");
             return false;
         }
     }
@@ -184,26 +161,11 @@ public class DataContext : IDisposable
                 {
                     command.Parameters.Add(parameter);
                 }
-            }
-            var adapter = GetDataAdapter(command);
+            }            var adapter = GetDataAdapter(command);
 
-            if (adapter is MySqlDataAdapter mysqlAdapter)
+            using (adapter as MySqlDataAdapter)
             {
-                using (mysqlAdapter)
-                {
-                    mysqlAdapter.Fill(dataTable);
-                }
-            }
-            else if (adapter is SqlDataAdapter sqlAdapter)
-            {
-                using (sqlAdapter)
-                {
-                    sqlAdapter.Fill(dataTable);
-                }
-            }
-            else
-            {
-                throw new InvalidOperationException("Unsupported data adapter type");
+                ((MySqlDataAdapter)adapter).Fill(dataTable);
             }
 
             _logger.LogDebug($"Successfully executed stored procedure: {procedureName}");
@@ -252,60 +214,32 @@ public class DataContext : IDisposable
             _logger.LogError(ex, $"Error executing non-query procedure: {procedureName}");
             throw new InvalidOperationException($"Error executing non-query procedure: {procedureName}", ex);
         }
-    }
-
-    /// <summary>
-    /// Tạo tham số cho stored procedure tùy theo loại database
+    }    /// <summary>
+    /// Tạo tham số cho stored procedure MySQL
     /// </summary>
     /// <param name="name">Tên tham số</param>
     /// <param name="value">Giá trị của tham số</param>
     /// <param name="direction">Hướng tham số (Input, Output, etc)</param>
-    /// <returns>IDbDataParameter phù hợp với loại database</returns>
+    /// <returns>MySqlParameter cho MySQL</returns>
     public IDbDataParameter CreateParameter(string name, object value, ParameterDirection direction = ParameterDirection.Input)
     {
-        var dbType = GetDatabaseType();
-
-        if (dbType == "mysql")
+        var param = new MySqlParameter(name, value ?? DBNull.Value)
         {
-            var param = new MySqlParameter(name, value ?? DBNull.Value)
-            {
-                Direction = direction
-            };
-            return param;
-        }
-        else
-        {
-            var param = new SqlParameter(name, value ?? DBNull.Value)
-            {
-                Direction = direction
-            };
-            return param;
-        }
+            Direction = direction
+        };
+        return param;
     }    /// <summary>
-         /// Tạo DataAdapter phù hợp với loại database
-         /// </summary>
-         /// <param name="command">Command để tạo adapter</param>
-         /// <returns>IDataAdapter phù hợp</returns>
+    /// Tạo DataAdapter cho MySQL
+    /// </summary>
+    /// <param name="command">MySqlCommand để tạo adapter</param>
+    /// <returns>MySqlDataAdapter</returns>
     private IDbDataAdapter GetDataAdapter(IDbCommand command)
     {
-        var dbType = GetDatabaseType();
-
-        if (dbType == "mysql")
+        if (command is not MySqlCommand mysqlCommand)
         {
-            if (command is not MySqlCommand mysqlCommand)
-            {
-                throw new ArgumentException("Expected MySqlCommand for MySQL database");
-            }
-            return new MySqlDataAdapter(mysqlCommand);
+            throw new ArgumentException("Expected MySqlCommand for MySQL database");
         }
-        else
-        {
-            if (command is not SqlCommand sqlCommand)
-            {
-                throw new ArgumentException("Expected SqlCommand for SQL Server database");
-            }
-            return new SqlDataAdapter(sqlCommand);
-        }
+        return new MySqlDataAdapter(mysqlCommand);
     }
 
     #endregion

@@ -5,16 +5,6 @@ namespace EsportsManager.BL.DTOs
 {
 
     /// <summary>
-    /// DTO tạo team mới
-    /// </summary>
-    public class TeamCreateDto
-    {
-        public required string Name { get; set; }
-        public string? Description { get; set; }
-        public string? Logo { get; set; }
-    }
-
-    /// <summary>
     /// DTO cập nhật thông tin team
     /// </summary>
     public class TeamUpdateDto

@@ -101,4 +101,9 @@ public interface IUsersRepository : IRepository<Users, int>
     /// Lấy số lượng user theo vai trò
     /// </summary>
     Task<int> GetCountByRoleAsync(string role);
+
+    /// <summary>
+    /// Tìm kiếm user theo từ khóa
+    /// </summary>
+    Task<IEnumerable<Users>> SearchAsync(string searchTerm);
 }
