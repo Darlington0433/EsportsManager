@@ -2,29 +2,19 @@
 # ESPORTS MANAGER - CUSTOM IGNORE PATTERNS
 # ============================================
 
-# Solution files (keep only main .sln)
-*.sln
-!EsportsManager.sln
-
-# Project files at root (old structure)
-*.csproj
-Program.cs
-appsettings.json
-
-# Build artifacts
+# Build artifacts and scripts
 build-and-run.bat
 quick-test.bat
 
-# Old folders (legacy structure)
-BL/
-DAL/
-UI/
-
-# Database files (if sensitive)
+# Database files (if sensitive) - only local dev files
 database/*.db
 database/*.sqlite
 database/*.mdf
 database/*.ldf
+
+# Temporary files
+*.tmp
+*.temp
 
 # ============================================
 # STANDARD .NET GITIGNORE

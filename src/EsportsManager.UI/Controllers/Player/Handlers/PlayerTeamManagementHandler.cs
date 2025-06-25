@@ -92,11 +92,18 @@ namespace EsportsManager.UI.Controllers.Player.Handlers
         {
             Console.Clear();
             ConsoleRenderingService.DrawBorder($"TEAM: {team.Name}", 100, 20);
-            Console.WriteLine($"📝 Mô tả: {team.Description}");
-            Console.WriteLine($"📅 Ngày tạo: {team.CreatedAt:dd/MM/yyyy}");
-            Console.WriteLine($"👥 Số thành viên: {team.MemberCount}/{team.MaxMembers}");
-
-            Console.WriteLine("\nPress any key to continue...");
+            
+            var (left, top, contentWidth) = ConsoleRenderingService.GetBorderContentPosition(100, 20);
+            
+            string[] teamInfo = {
+                $"📝 Mô tả: {team.Description}",
+                $"📅 Ngày tạo: {team.CreatedAt:dd/MM/yyyy}",
+                $"👥 Số thành viên: {team.MemberCount}/{team.MaxMembers}",
+                "",
+                "Press any key to continue..."
+            };
+            
+            ConsoleRenderingService.WriteMultipleInBorder(teamInfo, left, top, 0);
             Console.ReadKey(true);
         }
     }

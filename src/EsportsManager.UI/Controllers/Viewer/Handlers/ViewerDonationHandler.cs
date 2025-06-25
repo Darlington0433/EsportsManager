@@ -107,17 +107,24 @@ namespace EsportsManager.UI.Controllers.Viewer.Handlers
                     
                     Console.Clear();
                     ConsoleRenderingService.DrawBorder("DONATION THÀNH CÔNG", 80, 12);
-                    Console.WriteLine($"✅ Đã donation {amount:N0} VND cho {selectedPlayer.Item1}!");
-                    Console.WriteLine($"💌 Lời nhắn: {(string.IsNullOrEmpty(message) ? "Không có" : message)}");
-                    Console.WriteLine($"🏷️ Mã giao dịch: DN{DateTime.Now:yyyyMMddHHmm}");
-                    Console.WriteLine($"⏰ Thời gian: {DateTime.Now:dd/MM/yyyy HH:mm}");
+                    
+                    var (left, top, contentWidth) = ConsoleRenderingService.GetBorderContentPosition(80, 12);
                     
                     // Hiển thị số dư mới
                     var newBalance = mockBalance - amount;
-                    Console.WriteLine($"💰 Số dư ví còn lại: {newBalance:N0} VND");
                     
-                    Console.WriteLine("\nCảm ơn bạn đã ủng hộ player!");
-                    Console.WriteLine("Nhấn Enter để tiếp tục...");
+                    string[] successInfo = {
+                        $"✅ Đã donation {amount:N0} VND cho {selectedPlayer.Item1}!",
+                        $"💌 Lời nhắn: {(string.IsNullOrEmpty(message) ? "Không có" : message)}",
+                        $"🏷️ Mã giao dịch: DN{DateTime.Now:yyyyMMddHHmm}",
+                        $"⏰ Thời gian: {DateTime.Now:dd/MM/yyyy HH:mm}",
+                        $"💰 Số dư ví còn lại: {newBalance:N0} VND",
+                        "",
+                        "Cảm ơn bạn đã ủng hộ player!",
+                        "Nhấn Enter để tiếp tục..."
+                    };
+                    
+                    ConsoleRenderingService.WriteMultipleInBorder(successInfo, left, top, 0);
                     Console.ReadLine();
                 }
                 else

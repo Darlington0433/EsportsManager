@@ -38,14 +38,26 @@ namespace EsportsManager.UI.Controllers.Player.Handlers
                 Console.Clear();
                 ConsoleRenderingService.DrawBorder("THÔNG TIN CÁ NHÂN", 80, 15);
 
+                // Tính vị trí để hiển thị data bên trong border
+                int borderLeft = (Console.WindowWidth - 80) / 2;
+                int borderTop = (Console.WindowHeight - 15) / 4;
+                
+                Console.SetCursorPosition(borderLeft + 2, borderTop + 2);
                 Console.WriteLine($"👤 ID: {userInfo.Id}");
+                Console.SetCursorPosition(borderLeft + 2, borderTop + 3);
                 Console.WriteLine($"📧 Username: {userInfo.Username}");
+                Console.SetCursorPosition(borderLeft + 2, borderTop + 4);
                 Console.WriteLine($"✉️ Email: {userInfo.Email ?? "Chưa cập nhật"}");
+                Console.SetCursorPosition(borderLeft + 2, borderTop + 5);
                 Console.WriteLine($"🎭 Role: {userInfo.Role}");
+                Console.SetCursorPosition(borderLeft + 2, borderTop + 6);
                 Console.WriteLine($"📅 Ngày tạo: {userInfo.CreatedAt:dd/MM/yyyy HH:mm}");
+                Console.SetCursorPosition(borderLeft + 2, borderTop + 7);
                 Console.WriteLine($"🕐 Lần đăng nhập cuối: {userInfo.LastLoginAt?.ToString("dd/MM/yyyy HH:mm") ?? "Chưa có"}");
 
-                ConsoleRenderingService.PauseWithMessage();
+                Console.SetCursorPosition(borderLeft + 2, borderTop + 12);
+                Console.WriteLine("Nhấn phím bất kỳ để tiếp tục...");
+                Console.ReadKey(true);
             }
             catch (Exception ex)
             {

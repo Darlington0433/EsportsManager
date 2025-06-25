@@ -364,5 +364,40 @@ namespace EsportsManager.UI.ConsoleUI.Utilities
             Console.WriteLine("\nNhấn phím bất kỳ để tiếp tục...");
             Console.ReadKey(true);
         }
+
+        /// <summary>
+        /// Tính toán vị trí border và trả về thông tin để hiển thị data bên trong
+        /// </summary>
+        public static (int left, int top, int contentWidth) GetBorderContentPosition(int borderWidth, int borderHeight)
+        {
+            int windowWidth = Console.WindowWidth;
+            int windowHeight = Console.WindowHeight;
+            int left = Math.Max(0, (windowWidth - borderWidth) / 2);
+            int top = Math.Max(0, (windowHeight - borderHeight) / 4);
+            int contentWidth = borderWidth - 4; // Trừ 4 cho padding trái/phải
+            
+            return (left + 2, top + 2, contentWidth); // +2 để cách border 2 ký tự
+        }
+
+        /// <summary>
+        /// Hiển thị text tại vị trí cụ thể bên trong border
+        /// </summary>
+        public static void WriteInBorder(string text, int borderLeft, int borderTop, int line)
+        {
+            Console.SetCursorPosition(borderLeft, borderTop + line);
+            Console.WriteLine(text);
+        }
+
+        /// <summary>
+        /// Hiển thị nhiều dòng text bên trong border
+        /// </summary>
+        public static void WriteMultipleInBorder(string[] lines, int borderLeft, int borderTop, int startLine = 0)
+        {
+            for (int i = 0; i < lines.Length; i++)
+            {
+                Console.SetCursorPosition(borderLeft, borderTop + startLine + i);
+                Console.WriteLine(lines[i]);
+            }
+        }
     }
 }

@@ -35,17 +35,25 @@ namespace EsportsManager.UI.Controllers.Shared
                     return;
                 }
 
-                Console.WriteLine($"{"STT",-5} {"Tên giải đấu",-35} {"Trạng thái",-15} {"Phí tham gia",-15}");
-                Console.WriteLine(new string('=', 70));
+                // Sử dụng helper method để tính vị trí
+                var (left, top, contentWidth) = ConsoleRenderingService.GetBorderContentPosition(100, 20);
+                
+                // Header
+                ConsoleRenderingService.WriteInBorder($"{"STT",-5} {"Tên giải đấu",-35} {"Trạng thái",-15} {"Phí tham gia",-15}", left, top, 0);
+                ConsoleRenderingService.WriteInBorder(new string('=', 96), left, top, 1);
 
-                for (int i = 0; i < tournaments.Count; i++)
+                // Data rows (giới hạn 14 dòng để vừa border)
+                for (int i = 0; i < Math.Min(tournaments.Count, 14); i++)
                 {
                     var tournament = tournaments[i];
-                    Console.WriteLine($"{i + 1,-5} {tournament.Name,-35} {tournament.Status,-15} {tournament.EntryFee:N0,-15}");
+                    string row = $"{i + 1,-5} {tournament.Name,-35} {tournament.Status,-15} {tournament.EntryFee:N0,-15}";
+                    ConsoleRenderingService.WriteInBorder(row, left, top, 2 + i);
                 }
 
-                Console.WriteLine(new string('=', 70));
-                ConsoleRenderingService.PauseWithMessage();
+                // Footer
+                ConsoleRenderingService.WriteInBorder($"Tổng cộng: {tournaments.Count} giải đấu", left, top, 15);
+                ConsoleRenderingService.WriteInBorder("Nhấn phím bất kỳ để tiếp tục...", left, top, 16);
+                Console.ReadKey(true);
             }
             catch (Exception ex)
             {

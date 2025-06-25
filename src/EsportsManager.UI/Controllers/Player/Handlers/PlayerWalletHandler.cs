@@ -29,8 +29,13 @@ namespace EsportsManager.UI.Controllers.Player.Handlers
                     Console.Clear();
                     ConsoleRenderingService.DrawBorder("QUẢN LÝ VÍ ĐIỆN TỬ", 80, 15);
 
+                    // Tính vị trí để hiển thị data bên trong border
+                    int borderLeft = (Console.WindowWidth - 80) / 2;
+                    int borderTop = (Console.WindowHeight - 15) / 4;
+                    
                     // Mock wallet balance for demonstration
                     decimal mockBalance = 250000;
+                    Console.SetCursorPosition(borderLeft + 2, borderTop + 2);
                     Console.WriteLine($"💰 Số dư hiện tại: {mockBalance:N0} VND");
 
                     var walletOptions = new[]
