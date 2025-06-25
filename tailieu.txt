@@ -1,0 +1,1487 @@
+# PROJECT REPORT
+## Esport Manager
+
+[cite_start]**Semester:** Programming Fundamentals 
+[cite_start]**Class:** PF1127 
+[cite_start]**Group:** ProjectReportFile_G1 
+[cite_start]**Instructor:** Tran Phong Vuong 
+[cite_start]**Group Members:** Phan Nhat Quan, Dang Tien Dat, Hoang Tien Dat, Cao Xuan Minh 
+
+## Index
+1.  [cite_start][Project Introduction](#project-introduction) 
+2.  [cite_start][Proposed System](#proposed-system) 
+3.  [cite_start][Scope of the Project](#the-scope-of-the-project-to-be-applied) 
+4.  [cite_start][System Name](#system-name) 
+5.  [cite_start][Deployment Environment](#deployment-environment) 
+6.  [cite_start][Development Tools](#development-tools) 
+7.  [cite_start][Customer Requirements](#customer-requirements) 
+8.  [cite_start][Analyze System Requirements](#analyze-system-requirements) 
+    * [cite_start][Use Case Diagram](#use-case-diagram) 
+    * [cite_start][Activity Diagram](#activity-diagram)
+9.  [cite_start][Technical Architecture](#technical-architecture)
+    * [cite_start][System Architecture](#system-architecture)
+    * [cite_start][Database Design](#database-design)
+    * [cite_start][Class Diagrams](#class-diagrams)
+10. [cite_start][Implementation Details](#implementation-details)
+    * [cite_start][Code Structure](#code-structure)
+    * [cite_start][Technologies Used](#technologies-used)
+    * [cite_start][Key Components](#key-components)
+11. [cite_start][Deployment Diagram](#deployment-diagram)
+12. [cite_start][Installation Steps](#installation-steps)
+    * [cite_start][Install Database](#install-database)
+    * [cite_start][Install .NET Runtime](#install-net-runtime)
+    * [cite_start][Install and Configure Application](#install-and-configure-application)
+    * [cite_start][Verify Installation](#verify-installation)
+13. [cite_start][Appendix](#appendix)
+    * [cite_start][Terms and Abbreviations](#terms-and-abbreviations)
+    * [cite_start][References](#references)
+    * [cite_start][Other Issues](#other-issues)
+14. [cite_start][Development and Contribution Guidelines](#development-and-contribution-guidelines)
+    * [cite_start][Development Process](#development-process)
+    * [cite_start][Contribution Rules](#contribution-rules)
+    * [cite_start][Roadmap](#roadmap)
+    * [cite_start][Development Log](#development-log)
+9.  [cite_start][Design Details](#design-details) 
+    * [cite_start][UI Design](#ui-design) 
+    * [cite_start][Code Design (Class Diagram)](#code-design-class-diagram) 
+    * [cite_start][Sequence Diagram](#sequence-diagram) 
+    * [cite_start][Database Design](#database-design) 
+        * [cite_start][Entity Relationship Diagram](#entity-relationship-diagram) 
+        * [cite_start][Database Design Details](#database-design-details) 
+10. [cite_start][Test](#test) 
+11. [cite_start][Task Assignment](#task-assignment-to-each-group-member) 
+12. [cite_start][Installation Instructions](#installation-instructions) 
+    * [cite_start][Deployment Diagram](#deployment-diagram) 
+    * [cite_start][Installation Steps](#installation-steps) 
+        * [cite_start][Install Database](#install-database) 
+        * [cite_start][Install Server](#install-server) 
+        * [cite_start][Install Application](#install-application) 
+13. [cite_start][Appendix](#appendix) 
+    * [cite_start][Terms and Abbreviations](#terms-and-abbreviations) 
+    * [cite_start][References](#references) 
+    * [cite_start][Other Issues](#other-issues) 
+
+---
+
+## Project Introduction
+[cite_start]The EsportManager System is a console-based application designed to manage esports tournaments, supporting three user roles: Admin, Player, and Viewer. [cite_start]It provides functionalities for account management, tournament registration, team collaboration, e-wallet donations, voting, feedback, and performance tracking. [cite_start]Built with a 3-layer architecture (UI, BL, DAL) and utilizing a SQL database (MySQL or SQL Server), the system ensures secure and efficient management of esports events.
+
+## Proposed System
+[cite_start]The system enables: 
+* [cite_start]**Admin:** Manage tournaments, approve user accounts, teams, and role change requests, assign achievements, and view statistics (donation profits, voting results, feedback).
+* [cite_start]**Player:** Register for tournaments, create/join teams, manage donation wallets, submit feedback, and view personal statistics.
+* [cite_start]**Viewer:** View tournaments, donate to players, vote for players/tournaments/sports, and manage e-wallets.
+
+## The Scope of the Project to be Applied
+* [cite_start]Support Admin, Player and Viewer roles.
+* [cite_start]Manage users, tournaments, team, wallets, donations, feedback and achievement.
+* [cite_start]Enable secure registration, login, role switching and password management.
+* [cite_start]Provide voting, donation tracking and statistical reporting.
+
+## System Name
+[cite_start]Esport Manager System 
+
+## Deployment Environment
+* [cite_start]Window 
+* [cite_start].Net Runtime installed 
+* [cite_start]MySQL 
+
+## Development Tools
+* [cite_start]**Language:** C# (Console Application) 
+* [cite_start]**Database:** MySQL 
+* [cite_start]**Architecture:** 3-layered (UI, BL, DAL) 
+* [cite_start]**Tools:** Visual Studio Code, MySQL Workbench, Draw.io (for diagrams) 
+
+## Customer Requirements
+* [cite_start]Manage tournaments and user securely 
+* [cite_start]Provide user-friendly console interface 
+* [cite_start]Allow donation and reward management 
+* [cite_start]Include voting features and statistics 
+
+## [cite_start]Analyze System Requirements 
+
+### Use Case Diagram
+**Mô tả Biểu đồ Use Case:**
+Biểu đồ này thể hiện các tương tác chính giữa ba tác nhân (Actor) là Viewer, Player và Admin với hệ thống.
+* **Viewer** có thể: `Donate to Player`, `Vote (Player/Tournament/Sport)`, `Wallet top-up` (mở rộng `Payment information`), `E-wallet management` (mở rộng `Wallet top-up`), `Login` (bao gồm `Update personal profile`, `View tournament standings`, `View tournament list`, `Forgot password`).
+* **Player** có thể: `Team Management (Create/Join/Leave Team)` (bao gồm `Personal information viewing`, `Register for the tournament`), `Submit tournament feedback`, `Donate wallet management` (mở rộng `Withdrawal`), `Login` (bao gồm `Update personal profile`, `View tournament standings`, `View tournament list`, `Forgot password`).
+* **Admin** có thể: `User/Tournament/Game Manager` (bao gồm `Donation profit statistics`, `Voting results`, `Player Achievements`, `Tournament feedback`), `Login` (bao gồm `Update personal profile`, `View tournament standings`, `View tournament list`, `Forgot password`), `Delete user (via UserID/Email/Phone number)`.
+* Use case `Login` là một use case `include` cho hầu hết các chức năng khác, nghĩa là người dùng cần đăng nhập để thực hiện các hành động đó. Một số use case `extend` các chức năng cơ bản, thể hiện các tùy chọn mở rộng.
+
+### [cite_start]1.1 Use Case Overview 
+
+| Use Case Name | Use Case ID | Description | Actor | Organizational Benefits | Triggers | Preconditions | Postconditions | Main Course | Alternate Courses | Exceptions |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Register Account | [cite_start]UC01  | [cite_start]Allows Player/Viewer to register with profile and security information.  | [cite_start]Player/ Viewer  | [cite_start]Expands user base with role-specific access and secure account creation  | [cite_start]User selects the "Register" option from the main menu  | [cite_start]User is not yet registered; the database is accessible  | [cite_start]Account is stored with "Pending" status, awaiting Admin approval  | 1. [cite_start]Enter Display Name, @ID, Email, Phone, Password, Security Q&amp;A.  [cite_start]<br> 2. System validates and stores with Pending status.  [cite_start]<br> 3. Account is stored in the Users table with "Pending" status.  [cite_start]<br> 4. Admin approves account  | [cite_start]AC1: User enters existing @ID/Email.  [cite_start]<br> 1. System displays "The ID/Email name already exists.”.  [cite_start]<br> 2. Users are prompted to re-enter information.  | [cite_start]EX1: Invalid input format (e.g., invalid email or phone).  [cite_start]<br> 1. System displays an error message and prompts re-entry.  [cite_start]<br> EX2: Database connection failure.  [cite_start]<br> 1. System displays errors and terminates the registration process.  |
+
+### [cite_start]1.2 Login description 
+
+| Use Case Name | Use Case ID | Description | Actor | Organizational Benefits | Triggers | Preconditions | Postconditions | Main Course | Alternate Courses | Exceptions |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Login | [cite_start]UC02  | [cite_start]Allows users to log into the system using their @ID and password  | [cite_start]Player/ Viewer  | [cite_start]Allows users to log into the system using their @ID and password  | [cite_start]User selects the "Login" option.  | [cite_start]Account exists and is "Approved".  | [cite_start]Users are redirected to the role-based main menu.  | 1. [cite_start]User enters @ID and password.  [cite_start]<br> 2. System validates credentials.  [cite_start]<br> 3. If correct, login is successful  | [cite_start]AC1: Invalid credentials.  [cite_start]<br> 1. System displays "Incorrect @ID or password".  [cite_start]<br> 2. Prompt re-entry.  | [cite_start]EX1: Database connection failure.  [cite_start]<br> 1. Show system error and terminate login  |
+
+### [cite_start]1.3 Search tournaments 
+
+| Use Case Name | Use Case ID | Description | Actor | Organizational Benefits | Triggers | Preconditions | Postconditions | Main Course | Alternate Courses | Exceptions |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Search Tournaments | [cite_start]UC03  | [cite_start]Enables users to search for tournaments by name, game, or date.  | [cite_start]Player/ Viewer  | [cite_start]Facilitates easier navigation and event discovery.  | [cite_start]User selects "View Tournament List"  | [cite_start]User is logged in.  | [cite_start]Matching tournament list is displayed.  | 1. [cite_start]User enters search keyword or filters.  [cite_start]<br> 2. System returns matching tournaments.  | [cite_start]AC1: No filters → Show all tournaments.  | [cite_start]EX1: No tournaments found → System displays "No results found"  |
+
+### [cite_start]1.4 View tournament details 
+
+| Use Case Name | Use Case ID | Description | Actor | Organizational Benefits | Triggers | Preconditions | Postconditions | Main Course | Alternate Courses | Exceptions |
+|---|---|---|---|---|---|---|---|---|---|---|
+| View Tournament Details | [cite_start]UC04  | [cite_start]Allows users to view full details of a selected tournament  | [cite_start]Player/ Viewer  | [cite_start]Provides complete event visibility for informed decisions.  | [cite_start]User selects a tournament from the list.  | [cite_start]Tournament exists and is accessible.  | [cite_start]Tournament information is displayed.  | 1. [cite_start]User clicks on a tournament  [cite_start]<br> 2. System displays name, game, date, location, registration deadline  | [cite_start]-  | [cite_start]EX1: Tournament no longer exists → System displays error  |
+
+### [cite_start]1.5 Create registration 
+
+| Use Case Name | Use Case ID | Description | Actor | Organizational Benefits | Triggers | Preconditions | Postconditions | Main Course | Alternate Courses | Exceptions |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Create Registration | [cite_start]UC05  | [cite_start]Allows a Player to register for a tournament.  | [cite_start]Player  | [cite_start]Enables participation and event tracking.  | [cite_start]Player selects “Register” on a tournament  | [cite_start]Tournament is still open for registration.  | [cite_start]Registration is saved with "Pending" status.  | 1. [cite_start]Player selects a tournament.  [cite_start]<br> 2. Confirms registration.  [cite_start]<br> 3. System saves record to Registrations table  | [cite_start]AC1: Already registered → System shows “You’ve already registered for this tournament”  | [cite_start]EX1: Deadline passed & → Display registration closed.  [cite_start]<br> EX2: Database error → Show system error  |
+
+### [cite_start]1.6 Donate (Payment) 
+
+| Use Case Name | Use Case ID | Description | Actor | Organizational Benefits | Triggers | Preconditions | Postconditions | Main Course | Alternate Courses | Exceptions |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Donate (Payment) | [cite_start]UC06  | [cite_start]Viewer donates money to Player through e-wallet.  | [cite_start]Viewer  | [cite_start]Supports monetization and engagement.  | [cite_start]Viewer selects the Player and enters the amount.  | [cite_start]Viewer has enough balance in the wallet.  | [cite_start]Transaction is saved and funds are distributed (70% Player, 30% Admin).  | 1. [cite_start]Viewer selects Player  [cite_start]<br> 2. Enters amount  [cite_start]<br> 3. System verifies and processes donation  | [cite_start]AC1: Insufficient balance → Show "Insufficient funds"  | [cite_start]EX1: Database or transaction error → Show error message  |
+
+### [cite_start]Activity Diagram: 
+
+#### [cite_start]Admin activity 
+
+##### 1.1 DeleteUser
+**Mô tả Biểu đồ Hoạt động: Xóa người dùng (DeleteUser)**
+* Bắt đầu từ một điểm khởi đầu.
+* Nhập `userID/email`.
+* Kiểm tra `user exists?` (người dùng có tồn tại không?).
+    * Nếu `yes` (có): `delete user and related data` (xóa người dùng và dữ liệu liên quan).
+    * Nếu `no` (không): `error: user not found` (lỗi: không tìm thấy người dùng).
+* Kết thúc tại một điểm kết thúc.
+
+##### 1.2 AddTournament/Game
+**Mô tả Biểu đồ Hoạt động: Thêm giải đấu/trò chơi (AddTournament/Game)**
+* Bắt đầu từ một điểm khởi đầu.
+* Nhập `input tournament details` (nhập chi tiết giải đấu).
+* Kiểm tra `data valid` (dữ liệu hợp lệ không?).
+    * Nếu `yes` (có): `save to tournaments` (lưu vào bảng tournaments).
+    * Nếu `no` (không): `error: invalid data` (lỗi: dữ liệu không hợp lệ).
+* Kết thúc tại một điểm kết thúc.
+
+##### 1.3 ApproveTournamentRegistration
+**Mô tả Biểu đồ Hoạt động: Phê duyệt đăng ký giải đấu (ApproveTournamentRegistration)**
+* Bắt đầu từ một điểm khởi đầu.
+* Xem `view pending registrations` (xem các đăng ký đang chờ xử lý).
+* Chọn `select registrationID` (chọn ID đăng ký).
+    * Nếu tìm thấy ID: Kiểm tra `approve or reject?` (phê duyệt hay từ chối?).
+        * Nếu `set approve` (đặt là phê duyệt): `save to registration` (lưu vào bảng đăng ký).
+        * Nếu `set reject` (đặt là từ chối): `save to registration` (lưu vào bảng đăng ký).
+    * Nếu không tìm thấy ID: `error teamID/memberID not found` (lỗi không tìm thấy ID đội/ID thành viên).
+* Kết thúc tại một điểm kết thúc.
+
+##### 1.4 ApproveTeam/Member
+**Mô tả Biểu đồ Hoạt động: Phê duyệt đội/thành viên (ApproveTeam/Member)**
+* Bắt đầu từ một điểm khởi đầu.
+* Xem `view pending team` (xem các đội đang chờ xử lý).
+* Chọn `select teamID/memberID` (chọn ID đội/ID thành viên).
+    * Nếu tìm thấy ID: Kiểm tra `approve or reject?` (phê duyệt hay từ chối?).
+        * Nếu `set approve` (đặt là phê duyệt): `save to teams/teamMembers` (lưu vào bảng teams/teamMembers).
+        * Nếu `set reject` (đặt là từ chối): `save to teams/teamMembers` (lưu vào bảng teams/teamMembers).
+    * Nếu không tìm thấy ID: `error: teamID/memberID not found` (lỗi: không tìm thấy ID đội/ID thành viên).
+* Kết thúc tại một điểm kết thúc.
+
+##### 1.5 PlayerAchievements
+**Mô tả Biểu đồ Hoạt động: Thành tích người chơi (PlayerAchievements)**
+* Bắt đầu từ một điểm khởi đầu.
+* Nhập `input playerID achievement details` (nhập ID người chơi và chi tiết thành tích).
+* Kiểm tra `playerID exists?` (ID người chơi có tồn tại không?).
+    * Nếu `yes` (có): `save to achievements` (lưu vào bảng achievements).
+    * Nếu `no` (không): `error. Player not found` (lỗi. Không tìm thấy người chơi).
+* Kết thúc tại một điểm kết thúc.
+
+##### 1.6 ViewFeedback
+**Mô tả Biểu đồ Hoạt động: Xem phản hồi (ViewFeedback)**
+* Bắt đầu từ một điểm khởi đầu.
+* Nhập `input tournament feedback` (nhập phản hồi giải đấu).
+* Kiểm tra `data exists?` (dữ liệu có tồn tại không?).
+    * Nếu `yes` (có): `display feedback, rating, comments` (hiển thị phản hồi, đánh giá, bình luận).
+    * Nếu `no` (không): `error: no feedback` (lỗi: không có phản hồi).
+* Kết thúc tại một điểm kết thúc.
+
+##### 1.7 ViewDonationProfit
+**Mô tả Biểu đồ Hoạt động: Xem lợi nhuận từ quyên góp (ViewDonationProfit)**
+* Bắt đầu từ một điểm khởi đầu.
+* Thực hiện `calculate profit` (tính toán lợi nhuận).
+* Kiểm tra `data exists?` (dữ liệu có tồn tại không?).
+    * Nếu `yes` (có): `display profit 30% for donations` (hiển thị 30% lợi nhuận từ quyên góp).
+    * Nếu `no` (không): `error: no profit` (lỗi: không có lợi nhuận).
+* Kết thúc tại một điểm kết thúc.
+
+##### 1.8 ApproveWithdrawal
+**Mô tả Biểu đồ Hoạt động: Phê duyệt yêu cầu rút tiền (ApproveWithdrawal)**
+* Bắt đầu từ một điểm khởi đầu.
+* Xem `view pending withdrawals` (xem các yêu cầu rút tiền đang chờ xử lý).
+* Chọn `select withdrawalID` (chọn ID yêu cầu rút tiền).
+    * Nếu tìm thấy ID: Kiểm tra `sufficient balance?` (số dư có đủ không?).
+        * Nếu `yes` (có): Kiểm tra `approve or reject?` (phê duyệt hay từ chối?).
+            * Nếu `set approved deduct balance` (đặt là phê duyệt, trừ số dư): `set to withdrawals` (lưu vào bảng withdrawals).
+            * Nếu `set rejected` (đặt là từ chối): `set to withdrawals` (lưu vào bảng withdrawals).
+        * Nếu `no` (không): `error: insufficient balance` (lỗi: số dư không đủ). Sau đó `set to withdrawals` (lưu vào bảng withdrawals).
+    * Nếu không tìm thấy ID: `error: withdrawalID not found` (lỗi: không tìm thấy ID yêu cầu rút tiền). Sau đó `set to withdrawals` (lưu vào bảng withdrawals).
+* Kết thúc tại một điểm kết thúc.
+
+##### 1.9 ViewVotingResults
+**Mô tả Biểu đồ Hoạt động: Xem kết quả bỏ phiếu (ViewVotingResults)**
+* Bắt đầu từ một điểm khởi đầu.
+* Nhập `input voting` (nhập bỏ phiếu).
+* Kiểm tra `data exists?` (dữ liệu có tồn tại không?).
+    * Nếu `yes` (có): `display voting results` (hiển thị kết quả bỏ phiếu).
+    * Nếu `no` (không): `error: no votes` (lỗi: không có phiếu bầu).
+* Kết thúc tại một điểm kết thúc.
+
+#### Activity Diagram login
+**Mô tả Biểu đồ Hoạt động: Đăng nhập (Login)**
+* Bắt đầu từ một điểm khởi đầu.
+* Nhập `username/password` (tên người dùng/mật khẩu).
+* Kiểm tra `valid information` (thông tin hợp lệ)?
+    * Nếu `[Invalid]` (Không hợp lệ): `Display error message` (Hiển thị thông báo lỗi) và quay lại bước `Input username/password`.
+    * Nếu `[Valid]` (Hợp lệ): Kiểm tra `Database exist` (Tồn tại trong cơ sở dữ liệu)?
+        * Nếu `[Not exist in database]` (Không tồn tại trong cơ sở dữ liệu): `Display message: "incorrect username password"` (Hiển thị thông báo: "tên người dùng hoặc mật khẩu không đúng").
+        * Nếu `[Exists in database]` (Tồn tại trong cơ sở dữ liệu): Kiểm tra `account type` (loại tài khoản).
+            * Nếu là `Player` (Người chơi): `Maps to player dashboard` (Điều hướng đến bảng điều khiển người chơi).
+            * Nếu là `Admin` (Quản trị viên): `Maps to admin dashboard` (Điều hướng đến bảng điều khiển quản trị viên).
+* Kết thúc tại một điểm kết thúc (hai nhánh Player và Admin đều có điểm kết thúc riêng).
+
+#### Activity Diagram register
+**Mô tả Biểu đồ Hoạt động: Đăng ký (Register)**
+* Bắt đầu từ một điểm khởi đầu.
+* Nhập `Input username/password` (Nhập tên người dùng/mật khẩu).
+* Kiểm tra `valid information` (thông tin hợp lệ)?
+    * Nếu `[Invalid]` (Không hợp lệ): `Display error message` (Hiển thị thông báo lỗi) và quay lại bước `Input username/password`.
+    * Nếu `[Valid]` (Hợp lệ): Kiểm tra `Database exist` (Tồn tại trong cơ sở dữ liệu)?
+        * Nếu `[Exist in database]` (Tồn tại trong cơ sở dữ liệu): `Display message: "Username password used"` (Hiển thị thông báo: "Tên người dùng đã được sử dụng").
+        * Nếu `[Not exists in database]` (Không tồn tại trong cơ sở dữ liệu): Chuyển đến `Login menu` (Menu đăng nhập).
+* Kết thúc tại một điểm kết thúc.
+
+#### Forgot Password
+**Mô tả Biểu đồ Hoạt động: Quên mật khẩu (Forgot Password)**
+* Bắt đầu từ một điểm khởi đầu.
+* Nhập `Enter Username` (Nhập tên người dùng).
+* Kiểm tra `exists database` (tên người dùng có tồn tại trong cơ sở dữ liệu không)?
+    * Nếu `[Not exists]` (Không tồn tại): `Show message: "Username not found"` (Hiển thị thông báo: "Không tìm thấy tên người dùng"). Kết thúc.
+    * Nếu `[Exists]` (Tồn tại): `Send question to user` (Gửi câu hỏi bảo mật cho người dùng).
+    * Kiểm tra `Answer matches database` (Câu trả lời có khớp với cơ sở dữ liệu không)?
+        * Nếu `[Wrong]` (Sai): `Show message: "Wrong answer try again"` (Hiển thị thông báo: "Câu trả lời sai, thử lại") và quay lại bước `Send question to user`.
+        * Nếu `[Correct]` (Đúng): `Enter new password` (Nhập mật khẩu mới).
+            * `Confirm password` (Xác nhận mật khẩu).
+            * Kiểm tra `Password match` (Mật khẩu có khớp không)?
+                * Nếu `No` (Không): `Show message: "Password do not match"` (Hiển thị thông báo: "Mật khẩu không khớp"). Chuyển đến `Return new password` (Trả về mật khẩu mới). Kết thúc.
+                * Nếu `Yes` (Có): `Update password` (Cập nhật mật khẩu). `Show message: "Password reset successful"` (Hiển thị thông báo: "Đặt lại mật khẩu thành công"). `Redirect to login` (Chuyển hướng đến đăng nhập). Kết thúc.
+
+#### Tournament view
+**Mô tả Biểu đồ Hoạt động: Xem giải đấu (Tournament view)**
+* Bắt đầu từ một điểm khởi đầu.
+* `Login` (Đăng nhập).
+* `View tournament list` (Xem danh sách giải đấu).
+* Kiểm tra `Ranking type` (Loại xếp hạng)?
+    * Nếu `yes` (có): `View by tournament` (Xem theo giải đấu).
+    * Nếu `no` (không): Kiểm tra `Game type` (Loại trò chơi)?
+        * Nếu `yes` (có): `View by game` (Xem theo trò chơi).
+        * Nếu `no` (không): `View all rankings` (Xem tất cả xếp hạng).
+* Sau khi xem danh sách/xếp hạng, các hoạt động tiếp theo (có một thanh đồng bộ hóa):
+    * `Register tournament` (Đăng ký giải đấu).
+    * `View personal tournament history` (Xem lịch sử giải đấu cá nhân).
+        * Kiểm tra `History type` (Loại lịch sử)?
+            * Nếu `no` (không): Kiểm tra `Upcoming` (Sắp tới)?
+                * Nếu `yes` (có): `View upcoming` (Xem sắp tới).
+                * Nếu `no` (không): `View completed` (Xem đã hoàn thành).
+            * Nếu `yes` (có): `View all history` (Xem tất cả lịch sử).
+* `Submit tournament feedback` (Gửi phản hồi giải đấu).
+* Kết thúc tại một điểm kết thúc.
+
+#### Profile & Logout
+**Mô tả Biểu đồ Hoạt động: Hồ sơ & Đăng xuất (Profile & Logout)**
+* Bắt đầu từ một điểm khởi đầu.
+* `Update personal profile` (Cập nhật hồ sơ cá nhân).
+* Hành động `Update` (Cập nhật) dẫn đến các lựa chọn sau:
+    * Cập nhật `name`: `Update display name` (Cập nhật tên hiển thị).
+    * Cập nhật `Email`: `Update email` (Cập nhật email).
+    * Cập nhật `Phone number`: `Update phone numbers` (Cập nhật số điện thoại).
+    * Cập nhật `password`: `Update password` (Cập nhật mật khẩu).
+* Sau khi hoàn tất các cập nhật, tất cả các nhánh đều hội tụ lại.
+* Tiếp theo là `Request role change` (Yêu cầu thay đổi vai trò).
+* Cuối cùng là `Logout` (Đăng xuất).
+* Kết thúc tại một điểm kết thúc.
+
+#### Wallet Top-up - Viewer
+**Mô tả Biểu đồ Hoạt động: Nạp tiền vào ví - Người xem (Wallet Top-up - Viewer)**
+* Bắt đầu từ một điểm khởi đầu.
+* `Login` (Đăng nhập).
+* `Choose payment method` (Chọn phương thức thanh toán). Có ba nhánh song song:
+    * **Bank transfer** (Chuyển khoản ngân hàng):
+        * `Display bank account information` (Hiển thị thông tin tài khoản ngân hàng).
+        * `Enter transfer amount` (Nhập số tiền chuyển khoản).
+        * `User input OTP` (Người dùng nhập OTP).
+        * `System verifies transfer` (Hệ thống xác minh chuyển khoản).
+            * Nếu `yes Verification successful` (Xác minh thành công): `Add amount to wallet` (Thêm số tiền vào ví).
+            * Nếu `no` (không): Không có hành động cụ thể được ghi rõ sau "no".
+        * `Generate top-up receipt` (Tạo biên lai nạp tiền).
+    * **Credit card** (Thẻ tín dụng):
+        * `Enter card details` (Nhập chi tiết thẻ).
+        * `Enter top-up amount` (Nhập số tiền nạp).
+        * `Process card payment` (Xử lý thanh toán thẻ).
+        * `Payment authorized` (Thanh toán được ủy quyền)?
+            * Nếu `yes` (có): `Add amount to wallet` (Thêm số tiền vào ví).
+            * Nếu `no` (không): Không có hành động cụ thể được ghi rõ sau "no".
+        * `Generate top-up receipt` (Tạo biên lai nạp tiền).
+    * **E-Wallet** (Ví điện tử):
+        * `Redirect to e-wallet` (Chuyển hướng đến ví điện tử).
+        * `Enter top-up amount` (Nhập số tiền nạp).
+        * `Confirm on e-wallet platform` (Xác nhận trên nền tảng ví điện tử).
+        * `E-wallet payment successful` (Thanh toán ví điện tử thành công)?
+            * Nếu `yes` (có): `Add amount to wallet` (Thêm số tiền vào ví).
+            * Nếu `no` (không): Không có hành động cụ thể được ghi rõ sau "no".
+        * `Generate top-up receipt` (Tạo biên lai nạp tiền).
+* Tất cả các nhánh thanh toán hội tụ lại và kết thúc tại một điểm kết thúc.
+
+#### Wallet Withdrawal - Player
+**Mô tả Biểu đồ Hoạt động: Rút tiền từ ví - Người chơi (Wallet Withdrawal - Player)**
+* Bắt đầu từ một điểm khởi đầu.
+* `Login` (Đăng nhập).
+* `Select withdrawal` (Chọn rút tiền).
+* `Choose receiving method` (Chọn phương thức nhận).
+* `Enter amount to withdraw` (Nhập số tiền muốn rút).
+* Kiểm tra `valid amount/sufficient balance` (số tiền hợp lệ/số dư đủ)?
+    * Nếu `yes` (có): `Enter receiving account information` (Nhập thông tin tài khoản nhận).
+        * `Confirm transaction` (Xác nhận giao dịch).
+        * Kiểm tra `Authentication successful` (Xác thực thành công)?
+            * Nếu `yes` (có): `Update wallet balance` (Cập nhật số dư ví).
+            * Nếu `no` (không): `Display error message` (Hiển thị thông báo lỗi) và quay lại bước `Enter amount to withdraw`.
+        * `Display receipt` (Hiển thị biên lai).
+    * Nếu `no` (không): `Display error message` (Hiển thị thông báo lỗi) và quay lại bước `Enter amount to withdraw`.
+* Kết thúc tại một điểm kết thúc.
+
+#### Donation - Viewer
+**Mô tả Biểu đồ Hoạt động: Quyên góp - Người xem (Donation - Viewer)**
+* Bắt đầu từ một điểm khởi đầu.
+* `Search for player` (Tìm kiếm người chơi).
+* `Select player to donate to` (Chọn người chơi để quyên góp).
+* `Enter donation amount` (Nhập số tiền quyên góp).
+* Kiểm tra `valid amount/sufficient balance` (số tiền hợp lệ/số dư đủ)?
+    * Nếu `yes` (có): `Enter message (optional)` (Nhập tin nhắn (tùy chọn)).
+        * `Confirm donation` (Xác nhận quyên góp).
+        * Kiểm tra `Authentication successful` (Xác thực thành công)?
+            * Nếu `yes` (có): `Update wallet balance` (Cập nhật số dư ví).
+            * Nếu `no` (không): `Display error message` (Hiển thị thông báo lỗi) và quay lại bước `Enter donation amount`.
+        * `Send notification to player` (Gửi thông báo cho người chơi).
+        * `Display confirmation` (Hiển thị xác nhận).
+    * Nếu `no` (không): `Display error message` (Hiển thị thông báo lỗi) và quay lại bước `Enter donation amount`.
+* Kết thúc tại một điểm kết thúc.
+
+#### Payment Information Management - Viewer/Player
+**Mô tả Biểu đồ Hoạt động: Quản lý thông tin thanh toán - Người xem/Người chơi (Payment Information Management - Viewer/Player)**
+* Bắt đầu từ một điểm khởi đầu.
+* `Select payment information management` (Chọn quản lý thông tin thanh toán).
+* Kiểm tra `Action selected` (Hành động đã chọn)? Có ba nhánh:
+    * **Add payment method** (Thêm phương thức thanh toán):
+        * `Enter new payment method information` (Nhập thông tin phương thức thanh toán mới).
+        * `Verify information` (Xác minh thông tin).
+            * Nếu `yes Verification successful` (Xác minh thành công): `Save new information` (Lưu thông tin mới).
+            * Nếu `no` (không): `Display error message` (Hiển thị thông báo lỗi).
+    * **Delete payment method** (Xóa phương thức thanh toán):
+        * `Select payment method to delete` (Chọn phương thức thanh toán để xóa).
+        * `Confirm deletion` (Xác nhận xóa).
+        * `Update payment methods list` (Cập nhật danh sách phương thức thanh toán).
+    * **Select payment method to update** (Chọn phương thức thanh toán để cập nhật):
+        * `Enter new information` (Nhập thông tin mới).
+        * `Verify information` (Xác minh thông tin).
+        * `Save updated information` (Lưu thông tin đã cập nhật).
+* Tất cả các nhánh hội tụ lại và kết thúc tại một điểm kết thúc.
+
+#### Transaction Processing - System
+**Mô tả Biểu đồ Hoạt động: Xử lý giao dịch - Hệ thống (Transaction Processing - System)**
+* Bắt đầu từ một điểm khởi đầu.
+* `Receive transaction request` (Nhận yêu cầu giao dịch).
+* `Verify transaction information` (Xác minh thông tin giao dịch).
+* Kiểm tra `Check transaction type` (Kiểm tra loại giao dịch). Có ba nhánh chính:
+    * **Top-up** (Nạp tiền):
+        * `Connect to payment gateway` (Kết nối với cổng thanh toán).
+        * `Process payment` (Xử lý thanh toán).
+        * Kiểm tra `Payment successful` (Thanh toán thành công)?
+            * Nếu `yes` (có): `Update balance` (Cập nhật số dư).
+            * Nếu `no` (không): `Log error` (Ghi lỗi).
+        * `Log transaction` (Ghi lại giao dịch).
+        * `Display error message` (Hiển thị thông báo lỗi) - Lưu ý: nhánh này xuất hiện ở cả hai trường hợp thành công và lỗi, có thể là lỗi trong biểu đồ hoặc để hiển thị thông báo chung sau mọi luồng phụ.
+    * **Withdrawal** (Rút tiền):
+        * `Check balance` (Kiểm tra số dư).
+        * `Process withdrawal` (Xử lý rút tiền).
+        * Kiểm tra `Withdrawal successful` (Rút tiền thành công)?
+            * Nếu `yes` (có): `Update balance` (Cập nhật số dư).
+            * Nếu `no` (không): `Log error` (Ghi lỗi).
+        * `Log transaction` (Ghi lại giao dịch).
+        * `Display error message` (Hiển thị thông báo lỗi).
+    * **Transfer** (Chuyển khoản - có thể hiểu là quyên góp trong ngữ cảnh này):
+        * `Check donor's balance` (Kiểm tra số dư của người quyên góp).
+        * `Process money transfer` (Xử lý chuyển tiền).
+        * Kiểm tra `Transfer successful` (Chuyển khoản thành công)?
+            * Nếu `yes` (có): `Update both parties' balance` (Cập nhật số dư của cả hai bên).
+            * Nếu `no` (không): `Log error` (Ghi lỗi).
+        * `Log transaction` (Ghi lại giao dịch).
+        * `Display error message` (Hiển thị thông báo lỗi).
+        * `Notify recipient` (Thông báo cho người nhận).
+* Tất cả các nhánh giao dịch hội tụ lại và kết thúc tại một điểm kết thúc.
+
+## [cite_start]Design Details 
+
+### [cite_start]UI Design 
+* [cite_start]Menu 
+* [cite_start]Admin Login 
+* [cite_start]Admin Panel 
+* [cite_start]User Management 
+* [cite_start]1.5 tournament management 
+* [cite_start]1.6 team management 
+* [cite_start]1.7 system statistics 
+* [cite_start]1.8 system configuration 
+
+**Mô tả chi tiết:** (Để phần này đầy đủ hơn, bạn có thể bổ sung các mô tả cụ thể về giao diện console cho từng mục, ví dụ: các menu chính, các tùy chọn trong từng màn hình quản lý.)
+
+### [cite_start]Code Design (Class Diagram) 
+**Mô tả Biểu đồ Lớp (Class Diagram):**
+Biểu đồ lớp này trình bày cấu trúc các lớp chính trong hệ thống Esport Manager, bao gồm các thuộc tính, phương thức và mối quan hệ giữa chúng, được tổ chức theo kiến trúc 3 lớp (UI, BL, DAL). Do biểu đồ rất chi tiết và phức tạp với nhiều mối quan hệ, tôi sẽ mô tả các lớp chính và mối quan hệ quan trọng.
+
+**Các Lớp Chính:**
+
+* **Users:** Lớp này đại diện cho người dùng trong hệ thống.
+    * **Thuộc tính:** UserID (PK), UserName, PasswordHash, Email, PhoneNumber, DisplayName, Role, IsActive, CreatedAt, LastLogin, SecurityQuestion, SecurityAnswer.
+    * **Mối quan hệ:**
+        * Quan hệ với `Wallets` (1-1): Mỗi User có một Wallet.
+        * Quan hệ với `Feedback` (1-n): Một User có thể gửi nhiều Feedback.
+        * Quan hệ với `Donations` (n-n thông qua FromUserID và ToUserID): User có thể gửi hoặc nhận Donations.
+        * Quan hệ với `Withdrawals` (1-n): Một User có thể tạo nhiều yêu cầu Withdrawal.
+        * Quan hệ với `Achievements` (1-n): Một User có thể có nhiều Achievements.
+        * Quan hệ với `Votes` (1-n): Một User có thể tạo nhiều Votes.
+        * Quan hệ với `Teams` (1-n): Một User có thể là Leader của nhiều Team (Team Leader).
+        * Quan hệ với `TeamMembers` (1-n): Một User có thể là thành viên của nhiều Team.
+        * Quan hệ với `Tournaments` (1-n thông qua CreatedBy): Một User (Admin) có thể tạo nhiều Tournaments.
+        * Quan hệ với `TournamentResults` (1-n thông qua PlayerID): Một User (Player) có thể có nhiều TournamentResults.
+
+* **Wallets:** Lớp quản lý ví điện tử của người dùng.
+    * **Thuộc tính:** WalletID (PK), UserID (FK), Balance, LastUpdated.
+    * **Mối quan hệ:**
+        * Quan hệ với `Users` (1-1).
+        * Quan hệ với `WalletHistory` (1-n): Mỗi Wallet có nhiều WalletHistory (lịch sử giao dịch).
+
+* **WalletHistory:** Lớp ghi lại lịch sử giao dịch của ví.
+    * **Thuộc tính:** HistoryID (PK), WalletID (FK), Amount, Type, ReferenceID, State, CreatedAt, ProcessedAt.
+    * **Mối quan hệ:** Quan hệ với `Wallets` (n-1).
+
+* **Donations:** Lớp đại diện cho các giao dịch quyên góp.
+    * **Thuộc tính:** DonationID (PK), FromUserID (FK), ToUserID (FK), Amount, Message, DonationDate, Status.
+    * **Mối quan hệ:** Quan hệ với `Users` (thông qua FromUserID và ToUserID).
+
+* **Withdrawals:** Lớp quản lý các yêu cầu rút tiền.
+    * **Thuộc tính:** WithdrawalID (PK), UserID (FK), Amount, BankAccountNumber, BankName, AccountHolderName, Status, RequestDate, ProcessedBy (FK), ProcessedDate, Notes.
+    * **Mối quan hệ:** Quan hệ với `Users` (thông qua UserID và ProcessedBy).
+
+* **Games:** Lớp đại diện cho các trò chơi esports.
+    * **Thuộc tính:** GameID (PK), GameName, Description, IsActive, CreatedAt.
+    * **Mối quan hệ:** Quan hệ với `Tournaments` (1-n): Một Game có thể có nhiều Tournaments.
+
+* **Tournaments:** Lớp quản lý các giải đấu.
+    * **Thuộc tính:** TournamentID (PK), Name, Description, GameID (FK), StartDate, EndDate, EntryFee, PrizePool, MaxTeams, MinTeamSize, Status, CreatedBy (FK), CreatedAt.
+    * **Mối quan hệ:**
+        * Quan hệ với `Games` (n-1).
+        * Quan hệ với `TournamentResults` (1-n): Một Tournament có nhiều TournamentResults.
+        * Quan hệ với `Feedback` (1-n): Một Tournament có thể nhận nhiều Feedback.
+        * Quan hệ với `Registrations` (1-n): Một Tournament có nhiều Registrations.
+
+* **TournamentResults:** Lớp ghi lại kết quả của các giải đấu.
+    * **Thuộc tính:** ResultID (PK), TournamentID (FK), PlayerID (FK), TeamID (FK), Rank, PrizeMoney, Notes, CreatedAt.
+    * **Mối quan hệ:** Quan hệ với `Tournaments` (n-1), `Users` (n-1), `Teams` (n-1).
+
+* **Teams:** Lớp quản lý các đội.
+    * **Thuộc tính:** TeamID (PK), TeamName, Description, CreatedBy (FK), CreatedAt, Status, Position.
+    * **Mối quan hệ:**
+        * Quan hệ với `Users` (1-1 thông qua CreatedBy, người tạo là Leader).
+        * Quan hệ với `TeamMembers` (1-n): Một Team có nhiều TeamMembers.
+        * Quan hệ với `TournamentResults` (1-n): Một Team có thể có nhiều TournamentResults.
+
+* **TeamMembers:** Lớp thể hiện mối quan hệ thành viên giữa người chơi và đội.
+    * **Thuộc tính:** TeamMemberID (PK), TeamID (FK), UserID (FK), JoinDate, IsLeader, Status.
+    * **Mối quan hệ:** Quan hệ với `Teams` (n-1), `Users` (n-1).
+
+* **Registrations:** Lớp quản lý việc đăng ký tham gia giải đấu của người chơi/đội.
+    * **Thuộc tính:** RegistrationID (PK), TournamentID (FK), UserID (FK), TeamID (FK), RegistrationDate, Status.
+    * **Mối quan hệ:** Quan hệ với `Tournaments` (n-1), `Users` (n-1), `Teams` (n-1).
+
+* **Feedback:** Lớp thu thập phản hồi về giải đấu.
+    * **Thuộc tính:** FeedbackID (PK), UserID (FK), TournamentID (FK), Rating, Comment, CreatedAt.
+    * **Mối quan hệ:** Quan hệ với `Users` (n-1), `Tournaments` (n-1).
+
+* **Achievements:** Lớp quản lý các thành tích của người chơi.
+    * **Thuộc tính:** AchievementID (PK), UserID (FK), Title, Description, AchievementDate, AwardedBy (FK), Status.
+    * **Mối quan hệ:** Quan hệ với `Users` (thông qua UserID và AwardedBy).
+
+* **Votes:** Lớp quản lý các phiếu bầu trong hệ thống.
+    * **Thuộc tính:** VoteID (PK), UserID (FK), VoteType, TargetID, Rating, CreatedAt.
+    * **Mối quan hệ:** Quan hệ với `Users` (n-1).
+
+**Cấu trúc chung:**
+Biểu đồ được chia thành các phần liên quan đến User/Wallet, Tournament/Game/Team, và các yếu tố tương tác như Feedback, Achievement, Votes. Các mũi tên và đường nối thể hiện mối quan hệ giữa các lớp, bao gồm các mối quan hệ một-nhiều (1-*) và nhiều-nhiều (*-*), cùng với các khóa ngoại (FK) liên kết các bảng.
+
+### [cite_start]Sequence Diagram 
+
+##### 3.1 1 Account Registration
+**Mô tả Biểu đồ trình tự: Đăng ký tài khoản (Account Registration)**
+* **Actor (User)** chọn "Register" trên `Console UI`.
+* `Console UI` yêu cầu thông tin người dùng (`Request for user information`). User `Submit information`.
+* `Console UI` gửi `Send registration data` đến `Business Logic Layer`.
+* `Business Logic Layer` thực hiện tham chiếu (`ref`) để `Check if @UserID and Email exist?`.
+    * `Business Logic Layer` gửi `SELECT FROM Users WHERE Username=@UserID OR Email=@Email` đến `Data Access Layer`.
+    * `Data Access Layer` truy vấn `Database` và `Return result`.
+    * `Data Access Layer` gửi `Send result` về `Business Logic Layer`.
+* Khối `alt` (alternative) xử lý kết quả kiểm tra:
+    * **Nếu `@UserID or Email already exists.`:** `Business Logic Layer` gửi `Return error "UserID or Email already exists."` đến `Console UI`.
+    * **Nếu không tồn tại:** `Business Logic Layer` thực hiện tham chiếu (`ref`) để `Hash Password and Security Answer`.
+        * `Business Logic Layer` gửi `Request to create new user with Status: 'Pending'` đến `Data Access Layer`.
+        * `Data Access Layer` thực hiện `INSERT INTO Users (...) VALUES (...)` vào `Database` và `Confirm creation success`.
+        * `Data Access Layer` gửi `Return confirmation` về `Business Logic Layer`.
+        * `Business Logic Layer` gửi `Return success message` đến `Console UI`.
+* Kết thúc luồng.
+
+##### 3.2 2 Admin Approves Account
+**Mô tả Biểu đồ trình tự: Admin Phê duyệt tài khoản (Admin Approves Account)**
+* **Actor (Admin)** chọn `Select "Approve new account registrations"` trên `Console UI`.
+* `Console UI` gửi `Request list of pending accounts` đến `Business Logic Layer`.
+* `Business Logic Layer` gửi `Get list of Users with Status = 'Pending'` đến `Data Access Layer`.
+* `Data Access Layer` truy vấn `SELECT * FROM Users WHERE Status='Pending'` từ `Database` và `Return account list`.
+* `Data Access Layer` gửi `Send list` về `Business Logic Layer`.
+* `Business Logic Layer` gửi `Send list` đến `Console UI`.
+* `Console UI` hiển thị `Display list of pending accounts`.
+* `Console UI` chọn `Select an account to approve (UserID)`.
+* `Console UI` gửi `Send approval request with UserID` đến `Business Logic Layer` (trong một vòng lặp `loop` - có thể hiểu là Admin có thể phê duyệt nhiều tài khoản trong cùng một phiên).
+* `Business Logic Layer` gửi `Request to update account status` đến `Data Access Layer`.
+* `Data Access Layer` thực hiện `UPDATE Users SET Status = 'Approved' WHERE UserID=@UserID` trên `Database` và `Confirm update`.
+* `Data Access Layer` gửi `Return confirmation` về `Business Logic Layer`.
+* `Business Logic Layer` gửi `Return success message` đến `Console UI`.
+* Kết thúc luồng.
+
+##### 3.3 3 Login
+**Mô tả Biểu đồ trình tự: Đăng nhập (Login)**
+* **Actor (User)** nhập `@UserID and Password` trên `Console UI`.
+* `Console UI` gửi `Send credentials for validation` đến `Business Logic Layer`.
+* `Business Logic Layer` gửi `Get user data by @UserID` đến `Data Access Layer`.
+* `Data Access Layer` truy vấn `SELECT UserID, Password, Role, Status FROM Users WHERE Username=@UserID` từ `Database` và `Return user record (or null if not found)`.
+* `Data Access Layer` gửi `Send user record` về `Business Logic Layer`.
+* Khối `alt` (alternative) xử lý các trường hợp:
+    * **Nếu `User record is null (user not found)`:** `Business Logic Layer` gửi `Return error "Invalid UserID or password"` đến `Console UI`.
+    * **Nếu `User record exists`:**
+        * `Business Logic Layer` thực hiện `Hash input password and compare with stored hash`.
+        * **Nếu `Password is correct`:**
+            * `Business Logic Layer` kiểm tra `Check if User Status is 'Approved'`.
+            * **Nếu `Status is 'Approved'`:** `Business Logic Layer` gửi `Return success with User Role` đến `Console UI`.
+            * **Nếu `Status is 'Pending'`:** `Business Logic Layer` gửi `Return error "Account is pending approval"` đến `Console UI`.
+        * **Nếu `Password is incorrect`:** `Business Logic Layer` gửi `Return error "Invalid UserID or password"` đến `Console UI`.
+* `Console UI` hiển thị `Display final result (Menu or Error Message)`.
+* Kết thúc luồng.
+
+##### 3.4 4 Forgot Password
+**Mô tả Biểu đồ trình tự: Quên mật khẩu (Forgot Password)**
+* **Actor (User)** chọn `Select "Forgot Password" enter @UserID` trên `Console UI`.
+* `Console UI` gửi `Send @UserID` đến `Business Logic Layer`.
+* `Business Logic Layer` gửi `Get security info for user (@UserID)` đến `Data Access Layer`.
+* `Data Access Layer` truy vấn `SELECT SecurityQuestion, SecurityAnswer FROM Users WHERE Username=@UserID` từ `Database` và `Return Security question and hashed Answer`.
+* `Data Access Layer` gửi `Send security info` về `Business Logic Layer`.
+* `Business Logic Layer` gửi `Display security question` đến `Console UI`.
+* `Console UI` hiển thị `Display security question` và `Enter answer`.
+* `Console UI` gửi `Send answer` đến `Business Logic Layer`.
+* `Business Logic Layer` thực hiện `Hash the input answer and compare with the hashed answer from DAL`.
+* Khối `alt` (alternative) xử lý kết quả so sánh:
+    * **Nếu `Correct` (đúng):** `Business Logic Layer` thực hiện `Hash the new password "player123"`.
+        * `Business Logic Layer` gửi `Request to update new password` đến `Data Access Layer`.
+        * `Data Access Layer` thực hiện `UPDATE Users SET Password=@HashedNewPassword WHERE Username=@UserID` trên `Database` và `Confirm update`.
+        * `Data Access Layer` gửi `Return confirmation` về `Business Logic Layer`.
+        * `Business Logic Layer` gửi `Send success message` đến `Console UI`.
+    * **Nếu `Wrong` (sai):** `Business Logic Layer` gửi `Return error` đến `Console UI`.
+* Kết thúc luồng.
+
+##### 3.5 5 Request to Change Role
+**Mô tả Biểu đồ trình tự: Yêu cầu thay đổi vai trò (Request to Change Role)**
+* **Actor (Player/Viewer)** chọn `Select "Request to change role"` trên `Console UI`.
+* Trong một vòng lặp `loop`:
+    * `Console UI` gửi `Send role change request (UserID, RequestedRole)` đến `Business Logic Layer`.
+    * `Business Logic Layer` gửi `Request to create a RoleChangeRequest` đến `Data Access Layer`.
+    * `Data AccessLayer` thực hiện `INSERT INTO RoleChangeRequests (UserID, RequestedRole, Status, RequestDate) VALUES (...)` vào `Database` và `Confirm creation success`.
+    * `Data Access Layer` gửi `Send confirmation` về `Business Logic Layer`.
+    * `Business Logic Layer` gửi `Send success message` đến `Console UI`.
+* Kết thúc luồng.
+
+##### 3.6 6 Admin Deletes User
+**Mô tả Biểu đồ trình tự: Admin xóa người dùng (Admin Deletes User)**
+* **Actor (Admin)** chọn `Select "Delete User"` trên `Console UI`.
+* `Console UI` yêu cầu `Request for UserID, Email, or Phone`.
+* `Console UI` cung cấp `Provide identifier` và gửi `Send deletion request with identifier` đến `Business Logic Layer`.
+* `Business Logic Layer` gửi `Find corresponding UserID` đến `Data Access Layer`.
+* `Data Access Layer` truy vấn `SELECT UserID FROM Users WHERE UserID=@UserID OR Email=@Email OR Phone=@Phone` từ `Database` và `Return UserID`.
+* `Data Access Layer` gửi `Send UserID` về `Business Logic Layer`.
+* Khối `alt` (alternative) xử lý kết quả tìm kiếm UserID:
+    * **Nếu tìm thấy UserID:** `Business Logic Layer` gửi `Request to delete user and all related data` đến `Data Access Layer`.
+        * `Data Access Layer` `Begin Transaction`.
+        * `Data Access Layer` thực hiện `Delete data from related tables` (ví dụ: `DELETE FROM WHERE UserID=@UserID`) và `DELETE FROM WHERE UserID=@UserID` (có thể lặp lại cho các bảng khác) trên `Database`.
+        * `Data Access Layer` `Commit Transaction`.
+        * `Data Access Layer` gửi `Confirm deletion success` về `Business Logic Layer`.
+        * `Business Logic Layer` gửi `Send success message` đến `Console UI`.
+    * **Nếu không tìm thấy UserID:** `Business Logic Layer` gửi `Send error message` đến `Console UI`.
+* Kết thúc luồng.
+
+##### 3.7 7 Viewer Deposits Money into Wallet
+**Mô tả Biểu đồ trình tự: Người xem nạp tiền vào ví (Viewer Deposits Money into Wallet)**
+* **Actor (Viewer)** chọn `Select "Deposit to Wallet"` trên `Console UI`.
+* `Console UI` yêu cầu `Request for amount` và `Enter amount`.
+* `Console UI` gửi `Send deposit request (ViewerID, Amount)` đến `Business Logic Layer`.
+* Khối `alt` (alternative) xử lý yêu cầu nạp tiền:
+    * `Business Logic Layer` gửi `Request to update wallet balance` đến `Data Access Layer`.
+    * `Data Access Layer` thực hiện `UPDATE Wallets SET Balance = Balance + @Amount WHERE UserID=@ViewerID` trên `Database` và `Confirm update`.
+    * `Data Access Layer` gửi `Send confirmation` về `Business Logic Layer`.
+    * `Business Logic Layer` gửi `Send success message` đến `Console UI`.
+    * (Trường hợp lỗi không được mô tả rõ ràng, nhưng có một tin nhắn `Send error message` trở lại Console UI).
+* Kết thúc luồng.
+
+##### 3.8 8 Viewer Donates to Player
+**Mô tả Biểu đồ trình tự: Người xem quyên góp cho người chơi (Viewer Donates to Player)**
+* **Actor (Viewer)** chọn `Select "Donate to Player"` trên `Console UI`.
+* `Console UI` yêu cầu `Request for Player's @UserID and amount`, và `Enter donation info`.
+* `Console UI` gửi `Send donation request` đến `Business Logic Layer`.
+* `Business Logic Layer` gửi `Get Viewer's wallet balance` đến `Data Access Layer`.
+* `Data Access Layer` truy vấn `SELECT Balance FROM Wallets WHERE UserID=@ViewerID` từ `Database` và `Return balance`.
+* `Data Access Layer` gửi `Send balance` về `Business Logic Layer`.
+* Khối `alt` (alternative) xử lý logic:
+    * **Nếu `Balance >= Amount` (có đủ số dư):** `Business Logic Layer` thực hiện `Calculate 70% for Player, 30% for Admin`.
+        * `Business Logic Layer` gửi `Request to process donation transaction` đến `Data Access Layer`.
+        * `Data Access Layer` `Begin Transaction`.
+        * `Data Access Layer` thực hiện `Deduct from Viewer's wallet`, `Add 70% to Player's wallet`, `Log transaction in Donations table` trên `Database`.
+        * `Data Access Layer` `Commit Transaction`.
+        * `Data Access Layer` gửi `Confirm transaction success` về `Business Logic Layer`.
+        * `Business Logic Layer` gửi `Send success message` đến `Console UI`.
+    * **Nếu `Insufficient balance` (số dư không đủ):** `Business Logic Layer` gửi `Return error "Insufficient balance"` đến `Console UI`.
+* Kết thúc luồng.
+
+##### 3.9 9 Player Withdraws Money from Donate Wallet
+**Mô tả Biểu đồ trình tự: Người chơi rút tiền từ ví quyên góp (Player Withdraws Money from Donate Wallet)**
+* **Actor (Player)** chọn `Select "Withdraw from donate wallet"` trên `Console UI`.
+* `Console UI` yêu cầu `Request for withdrawal amount` và `Enter amount`.
+* `Console UI` gửi `Send withdrawal request (PlayerID, Amount)` đến `Business Logic Layer`.
+* `Business Logic Layer` gửi `Get Player's wallet balance` đến `Data Access Layer`.
+* `Data Access Layer` truy vấn `SELECT Balance FROM Wallets WHERE UserID=@PlayerID` từ `Database` và `Return balance`.
+* `Data Access Layer` gửi `Send balance` về `Business Logic Layer`.
+* Khối `alt` (alternative) xử lý logic:
+    * **Nếu `Balance >= Amount` (có đủ số dư):**
+        * `Business Logic Layer` gửi `Request to create a Withdrawal Request` đến `Data Access Layer`.
+        * `Data Access Layer` thực hiện `INSERT INTO Withdrawals (PlayerID, Amount, Status, RequestDate) VALUES (...)` vào `Database` và `Confirm creation`.
+        * `Data Access Layer` gửi `Send confirmation` về `Business Logic Layer`.
+        * `Business Logic Layer` gửi `Send success message` đến `Console UI`.
+    * **Nếu `Balance < Amount` (số dư không đủ):** `Business Logic Layer` gửi `Return error "Insufficient balance"` đến `Console UI`.
+* Sau đó, Admin (có một lifeline Admin mới xuất hiện, có thể là luồng riêng hoặc liên quan đến Admin phê duyệt):
+    * **Actor (Admin)** gửi `Request list of pending withdrawal requests` đến `Business Logic Layer`.
+    * `Business Logic Layer` gửi `Get list of Withdrawals with Status = 'Pending'` đến `Data Access Layer`.
+    * `Data Access Layer` truy vấn `SELECT * FROM Withdrawals WHERE Status='Pending'` từ `Database` và `Return list`.
+    * `Data Access Layer` gửi `Send list` về `Business Logic Layer`.
+    * `Business Logic Layer` gửi `Send list` đến `Console UI`.
+    * `Console UI` hiển thị `Display list of requests`.
+    * `Console UI` chọn `Select a request` và `Approve`.
+    * `Console UI` gửi `Send approval request (WithdrawalID)` đến `Business Logic Layer`.
+    * `Business Logic Layer` gửi `Request to update status and balance` đến `Data Access Layer`.
+    * `Data Access Layer` `Begin Transaction`.
+    * `Data Access Layer` thực hiện `UPDATE Withdrawals SET Status = 'Approved' WHERE WithdrawalID=@WithdrawalID` và `UPDATE Wallets SET Balance = @Amount WHERE UserID=@PlayerID` trên `Database`.
+    * `Data Access Layer` `Commit Transaction`.
+    * `Data Access Layer` gửi `Confirm success` về `Business Logic Layer`.
+    * `Business Logic Layer` gửi `Send success message` đến `Console UI`.
+* Kết thúc luồng.
+
+##### 3.10 10 Player Creates a New Team
+**Mô tả Biểu đồ trình tự: Người chơi tạo đội mới (Player Creates a New Team)**
+* **Actor (Player)** chọn `Select "Team Management" -> "Create Team"` trên `Console UI`.
+* `Console UI` yêu cầu `Request for Team Name and Description`, và `Submit team info`.
+* `Console UI` gửi `Send create team data` đến `Business Logic Layer`.
+* `Business Logic Layer` gửi `Check if team name exists?` đến `Data Access Layer`.
+* `Data Access Layer` truy vấn `SELECT TeamID FROM Teams WHERE TeamName=@TeamName` từ `Database` và `Return result`.
+* `Data Access Layer` gửi `Send result` về `Business Logic Layer`.
+* Khối `alt` (alternative) xử lý kết quả kiểm tra tên đội:
+    * **Nếu `Team name already exists`:** `Business Logic Layer` gửi `Return error "Team name already exists."` đến `Console UI`.
+    * **Nếu tên đội chưa tồn tại:** `Business Logic Layer` gửi `Request to create new team (Status: Pending, LeaderID: PlayerID)` đến `Data Access Layer`.
+        * `Data Access Layer` thực hiện `INSERT INTO Teams (TeamName, Description, LeaderID, Status) VALUES (...)` vào `Database` và `Confirm creation`.
+        * `Data Access Layer` gửi `Send confirmation` về `Business Logic Layer`.
+        * `Business Logic Layer` gửi `Send success message` đến `Console UI`.
+* Kết thúc luồng.
+
+##### 3.11 11 Player Joins a Team
+**Mô tả Biểu đồ trình tự: Người chơi tham gia đội (Player Joins a Team)**
+* **Actor (Player)** chọn `Select "Team Management" -> "Join Team"` trên `Console UI`.
+* `Console UI` yêu cầu `Request for TeamID or Team Name` và `Submit info`.
+* `Console UI` gửi `Send join request (PlayerID, TeamIdentifier)` đến `Business Logic Layer`.
+* `Business Logic Layer` thực hiện `Validate team and create join request`.
+* `Business Logic Layer` gửi `INSERT INTO TeamMembers (TeamID, PlayerID, JoinDate, Status) VALUES (@TeamID, @PlayerID, GETDATE(), 'Pending')` đến `Data Access Layer`.
+* `Data Access Layer` `Confirm success`.
+* `Data Access Layer` gửi `Send confirmation` về `Business Logic Layer`.
+* `Business Logic Layer` gửi `Send success message` đến `Console UI`.
+* Kết thúc luồng.
+
+##### 3.12 12 Player Leaves a Team
+**Mô tả Biểu đồ trình tự: Người chơi rời đội (Player Leaves a Team)**
+* **Actor (Player)** chọn `Select "Team Management" -> "Leave Team"` trên `Console UI`.
+* `Console UI` gửi `Send leave team request (PlayerID, TeamID)` đến `Business Logic Layer`.
+* `Business Logic Layer` gửi `Get team leader info (TeamID)` đến `Data Access Layer`.
+* `Data Access Layer` truy vấn `SELECT LeaderID FROM Teams WHERE TeamID=@TeamID` từ `Database` và `Return LeaderID`.
+* `Data Access Layer` gửi `Send LeaderID` về `Business Logic Layer`.
+* Khối `alt` (alternative) xử lý logic:
+    * **Nếu `Player is Leader` (người chơi là Leader của đội):**
+        * `Business Logic Layer` gửi `Request to disband team (TeamID)` đến `Data Access Layer`.
+        * `Data Access Layer` `Begin Transaction`.
+        * `Data Access Layer` thực hiện `DELETE FROM TeamMembers WHERE TeamID=@TeamID` và `DELETE FROM Teams WHERE TeamID=@TeamID` trên `Database`.
+        * `Data Access Layer` `Commit Transaction`.
+        * `Data Access Layer` gửi `Report team disbanded` về `Business Logic Layer`.
+        * `Business Logic Layer` gửi `Send team disbanded message` đến `Console UI`.
+    * **Nếu `Player is not Leader` (người chơi không phải là Leader):**
+        * `Business Logic Layer` gửi `Request to remove member (PlayerID, TeamID)` đến `Data Access Layer`.
+        * `Data Access Layer` thực hiện `DELETE FROM TeamMembers WHERE PlayerID=@PlayerID AND TeamID=@TeamID` trên `Database` và `Confirm deletion success`.
+        * `Data Access Layer` gửi `Report left team successfully` về `Business Logic Layer`.
+        * `Business Logic Layer` gửi `Send left team success message` đến `Console UI`.
+* Kết thúc luồng.
+
+##### 3.13 13 Admin Adds a New Tournament
+**Mô tả Biểu đồ trình tự: Admin thêm giải đấu mới (Admin Adds a New Tournament)**
+* **Actor (Admin)** chọn `Select "Add New Tournament"` trên `Console UI`.
+* `Console UI` yêu cầu `Request for tournament information` và `Submit info`.
+* `Console UI` gửi `Send tournament data` đến `Business Logic Layer`.
+* `Business Logic Layer` thực hiện `Validate data (dates, etc.)`.
+* `Business Logic Layer` gửi `Request to create new tournament` đến `Data Access Layer`.
+* `Data Access Layer` thực hiện `INSERT INTO Tournaments (Name, Game, Date, Location, RegistrationDeadline) VALUES (...)` vào `Database` và `Confirm creation`.
+* `Data Access Layer` gửi `Send confirmation` về `Business Logic Layer`.
+* `Business Logic Layer` gửi `Send success message` đến `Console UI`.
+* Kết thúc luồng.
+
+##### 3.14 14 Player Submits Tournament Feedback
+**Mô tả Biểu đồ trình tự: Người chơi gửi phản hồi giải đấu (Player Submits Tournament Feedback)**
+* **Actor (Player)** chọn `Select "Submit Feedback" and enter data` trên `Console UI`.
+* `Console UI` gửi `Send feedback data (PlayerID, TournamentID, Rating, Comments)` đến `Business Logic Layer`.
+* `Business Logic Layer` gửi `Get tournament date (TournamentID)` đến `Data Access Layer`.
+* `Data Access Layer` truy vấn `SELECT Date FROM Tournaments WHERE TournamentID=@TournamentID` từ `Database` và `Return tournament date`.
+* `Data Access Layer` gửi `Send tournament date` về `Business Logic Layer`.
+* Khối `alt` (alternative) xử lý logic:
+    * **Nếu `Tournament has finished (Current Date > Tournament Date)` (Giải đấu đã kết thúc):**
+        * `Business Logic Layer` gửi `Request to save feedback` đến `Data Access Layer`.
+        * `Data Access Layer` thực hiện `INSERT INTO Feedback (...) VALUES (...)` vào `Database` và `Confirm save`.
+        * `Data Access Layer` gửi `Send confirmation` về `Business Logic Layer`.
+        * `Business Logic Layer` gửi `Return success message` đến `Console UI`.
+    * **Nếu `Tournament has not finished` (Giải đấu chưa kết thúc):** `Business Logic Layer` gửi `Return error "Cannot submit feedback for an unfinished tournament."` đến `Console UI`.
+* `Console UI` hiển thị `Display final result (Success or Error Message)`.
+* Kết thúc luồng.
+
+##### 3.15 15 Viewer Votes
+**Mô tả Biểu đồ trình tự: Người xem bình chọn (Viewer Votes)**
+* **Actor (Viewer)** chọn `Select "Vote"` trên `Console UI`.
+* `Console UI` yêu cầu `Request to select category and target`, và `Select selection`.
+* `Console UI` gửi `Send vote request (UserID, Category, TargetID)` đến `Business Logic Layer`.
+* `Business Logic Layer` gửi `Check if Viewer already voted in this category` đến `Data Access Layer`.
+* `Data Access Layer` truy vấn `SELECT EXISTS FROM Votes WHERE UserID=@UserID AND Category=@Category AND TargetID=@TargetID` từ `Database` và `Return result`.
+* `Data Access Layer` gửi `Send result` về `Business Logic Layer`.
+* Khối `alt` (alternative) xử lý logic:
+    * **Nếu `Viewer has not already voted` (Người xem chưa bỏ phiếu):**
+        * `Business Logic Layer` gửi `Request to save vote` đến `Data Access Layer`.
+        * `Data Access Layer` thực hiện `INSERT INTO Votes (UserID, Category, TargetID) VALUES (...)` vào `Database` và `Confirm save`.
+        * `Data Access Layer` gửi `Send confirmation` về `Business Logic Layer`.
+        * `Business Logic Layer` gửi `Send success message` đến `Console UI`.
+    * **Nếu `Viewer has already voted` (Người xem đã bỏ phiếu):** `Business Logic Layer` gửi `Return error "You have already voted for this item."` đến `Console UI`.
+* Kết thúc luồng.
+
+##### 3.16 16 Player Registers for a Tournament
+**Mô tả Biểu đồ trình tự: Người chơi đăng ký giải đấu (Player Registers for a Tournament)**
+* **Actor (Player)** chọn `Select "Submit Feedback" and enter data` trên `Console UI` (Lưu ý: Tiêu đề hình ảnh là "Player Registers for a Tournament" nhưng nội dung bên trong lại là Submit Feedback, có thể đây là một lỗi dán nhầm hình ảnh hoặc tiêu đề trong tài liệu gốc).
+* `Console UI` gửi `Send feedback data (PlayerID, TournamentID, Rating, Comments)` đến `Business Logic Layer`.
+* `Business Logic Layer` gửi `Get tournament data (TournamentID)` đến `Data Access Layer`.
+* `Data Access Layer` truy vấn `SELECT Date FROM Tournaments WHERE TournamentID=@TournamentID` từ `Database` và `Return tournament date`.
+* `Data Access Layer` gửi `Send tournament date` về `Business Logic Layer`.
+* Khối `alt` (alternative) xử lý logic:
+    * **Nếu `Tournament has finished (Current Date > Tournament Date)` (Giải đấu đã kết thúc):**
+        * `Business Logic Layer` gửi `Request to save feedback` đến `Data Access Layer`.
+        * `Data Access Layer` thực hiện `INSERT INTO Feedback (...) VALUES (...)` vào `Database` và `Confirm save`.
+        * `Data Access Layer` gửi `Send confirmation` về `Business Logic Layer`.
+        * `Business Logic Layer` gửi `Return success message` đến `Console UI`.
+    * **Nếu `Tournament has not finished` (Giải đấu chưa kết thúc):** `Business Logic Layer` gửi `Return error "Cannot submit feedback for an unfinished tournament."` đến `Console UI`.
+* `Console UI` hiển thị `Display final result (Success or Error Message)`.
+* Kết thúc luồng.
+
+### [cite_start]Database Design 
+#### [cite_start]Entity Relationship Diagram 
+**Mô tả Biểu đồ Thực thể Quan hệ (ERD - Phiên bản 1: Oval & Diamond):**
+Biểu đồ ERD này sử dụng ký hiệu Chen/Crow's Foot để thể hiện các thực thể, thuộc tính và mối quan hệ.
+
+* **Entities (Hình chữ nhật):**
+    * `Games`: Có các thuộc tính GameID, GameName, IsActive.
+    * `Tournaments`: Có các thuộc tính TournamentID, TournamentName, StartDate, EndDate, EntryFee, PrizePool, Status.
+    * `TournamentResults`: Có các thuộc tính ResultID, Position, PrizeMoney, Notes.
+    * `Users`: Có các thuộc tính PasswordHash, Email, FullName, PhoneNumber, SecurityAnswer, SecurityQuestion, Role, DisplayName, IsLeader.
+    * `Teams`: Có các thuộc tính TeamID, TeamName.
+    * `Registrations`: Có các thuộc tính RegistrationID, RegistrationDate.
+    * `Wallets`: Có các thuộc tính WalletID, Balance.
+    * `WalletTransactions`: Có các thuộc tính WalletID, TransactionID, TransactionType, Amount.
+    * `Withdrawals`: Có các thuộc tính WithdrawalID, BankAccountNumber, BankName, AccountHolderName.
+    * `Donations`: Có các thuộc tính DonationID, Amount, Message, ToUserID, FromUserID.
+
+* **Relationships (Hình kim cương):**
+    * `Games` **Have** `Tournaments`: Một Game có thể có nhiều Tournaments.
+    * `Tournaments` **Have** `TournamentResults`: Một Tournament có thể có nhiều TournamentResults.
+    * `Teams` **Have** `Registrations`: Một Team có thể có nhiều Registrations.
+    * `Teams` **Have** `TeamMembers` (thông qua `Users`): Một Team có nhiều TeamMembers (là Users).
+    * `Users` **Have** `Wallets`: Một User có một Wallet.
+    * `Wallets` **Have** `WalletTransactions`: Một Wallet có nhiều WalletTransactions.
+    * `Users` **Have** `Withdrawals`: Một User có nhiều yêu cầu Withdrawal.
+    * `Users` **Have** `Donations` (thông qua FromUserID và ToUserID): Users có thể tham gia vào các giao dịch Donations (gửi hoặc nhận).
+    * `Users` **Have** `Teams` (người dùng có thể là Leader của một Team).
+    * `Users` **Write** `Feedback`: Một User có thể viết nhiều Feedback.
+    * `Users` **Write** `Votes`: Một User có thể tạo nhiều Votes.
+    * `Registrations` **Belong to** `Users` và `Tournaments`.
+
+**Mô tả Biểu đồ Thực thể Quan hệ (ERD - Phiên bản 2: Chi tiết bảng):**
+Phiên bản này giống với một lược đồ cơ sở dữ liệu chi tiết hơn, thể hiện các bảng, khóa chính (PK), khóa ngoại (FK) và kiểu dữ liệu của các cột.
+
+* **Users:** (PK: UserID) Chứa thông tin người dùng cơ bản.
+    * Quan hệ 1-n với `Achievements`, `Feedback`, `Votes`, `Wallets`, `Withdrawals`, `Teams` (CreatedBy), `TeamMembers`, `Tournaments` (CreatedBy), `TournamentResults` (PlayerID).
+* **Games:** (PK: GameID) Thông tin về các trò chơi.
+    * Quan hệ 1-n với `Tournaments`.
+* **Tournaments:** (PK: TournamentID) Thông tin về các giải đấu.
+    * Quan hệ 1-n với `TournamentResults`, `Registrations`, `Feedback`.
+* **TournamentResults:** (PK: ResultID) Kết quả giải đấu.
+* **Teams:** (PK: TeamID) Thông tin về các đội.
+    * Quan hệ 1-n với `TeamMembers`, `TournamentResults`.
+* **TeamMembers:** (PK: TeamMemberID) Thành viên đội.
+* **Wallets:** (PK: WalletID) Ví điện tử của người dùng.
+    * Quan hệ 1-n với `WalletHistory`.
+* **WalletHistory:** (PK: HistoryID) Lịch sử giao dịch ví.
+* **Donations:** (PK: DonationID) Thông tin quyên góp.
+* **Withdrawals:** (PK: WithdrawalID) Yêu cầu rút tiền.
+* **Feedback:** (PK: FeedbackID) Phản hồi từ người dùng.
+* **Achievements:** (PK: AchievementID) Thành tích người chơi.
+* **Votes:** (PK: VoteID) Phiếu bầu.
+
+#### [cite_start]Database Design Details 
+Phiên bản này cung cấp một cái nhìn rõ ràng hơn về cấu trúc bảng, các khóa chính (PK), khóa ngoại (FK), kiểu dữ liệu (Data Type), ràng buộc (Constraints) và mô tả (Description) cho từng cột. [cite_start]Các chỉ mục (Indexes) cũng được thể hiện.
+
+* [cite_start]**Users** 
+    * [cite_start]UserID (int, Primary Key, Auto Increment, Unique identifier for the user) 
+    * [cite_start]UserName (varchar(50), Unique, NOT NULL, User's unique handle (@UserID or @adminName)) 
+    * [cite_start]PasswordHash (varchar(255), NOT NULL, Hashed/Encrypted password) 
+    * [cite_start]Email (varchar(100), Unique, NOT NULL, User's email address) 
+    * [cite_start]PhoneNumber (varchar(20), User's phone number) 
+    * [cite_start]DisplayName (nvarchar(100), NOT NULL, User's full name) 
+    * [cite_start]Role (ENUM(...), NOT NULL, User's role (e.g., Admin, Player, Viewer)) 
+    * [cite_start]IsActive (tinyint, NOT NULL, Default 1, Active status (1=active, 0=inactive)) 
+    * [cite_start]CreatedAt (timestamp, NOT NULL, Timestamp of account creation) 
+    * [cite_start]LastLogin (datetime, NOT NULL, Timestamp of the last login) 
+    * [cite_start]SecurityQuestion (varchar(255), Security question for password recovery) 
+    * [cite_start]SecurityAnswer (varchar(255), Hashed/Encrypted security answer) 
+    * [cite_start]*Indexes* 
+
+* [cite_start]**Games** 
+    * [cite_start]GameID (int, Primary Key, Auto Increment, Unique identifier for the game/discipline) 
+    * [cite_start]GameName (varchar(100), Unique, NOT NULL, Name of the game/discipline) 
+    * [cite_start]Description (text, Detailed description of the game) 
+    * [cite_start]IsActive (tinyint, NOT NULL, Default 1, Status (1=supported, 0=unsupported)) 
+    * [cite_start]CreatedAt (timestamp, Timestamp of creation) 
+    * [cite_start]*Indexes* 
+
+* [cite_start]**Tournaments** 
+    * [cite_start]TournamentID (int, Primary Key, Auto Increment, Unique identifier for the game/discipline) 
+    * [cite_start]Name (varchar(100), NOT NULL, Name of the tournament) 
+    * [cite_start]Description (text, Detailed description of the tournament) 
+    * [cite_start]GameID (int, Foreign Key to Games(GameID), NOT NULL, ID of the game featured in the tournament) 
+    * [cite_start]StartDate (datetime, NOT NULL, Start date and time of the tournament) 
+    * [cite_start]EndDate (datetime, End date and time of the tournament) 
+    * [cite_start]EntryFee (decimal(18,2), Default 0, Fee to enter the tournament) 
+    * [cite_start]PrizePool (decimal(18,2), Total prize pool amount) 
+    * [cite_start]MaxTeams (int, Maximum number of teams allowed) 
+    * [cite_start]MinTeamSize (int, Default 1, Minimum number of members per team) 
+    * [cite_start]Status (enum(...), NOT NULL, Status of the tournament (e.g., Upcoming, Ongoing, Finished)) 
+    * [cite_start]CreatedBy (int, Foreign Key to Users(UserID), ID of the Admin who created the tournament) 
+    * [cite_start]CreatedAt (timestamp, Timestamp of creation) 
+    * [cite_start]*Indexes* 
+
+* [cite_start]**TournamentResults** 
+    * [cite_start]ResultID (int, Primary Key, Auto Increment, Unique identifier for a result entry) 
+    * [cite_start]TournamentID (int, Foreign Key to Tournaments(TournamentID), ID of the tournament) 
+    * [cite_start]PlayerID (int, Foreign Key to Users(UserID), ID of the player (for individual tournaments)) 
+    * [cite_start]TeamID (int, Foreign Key to Teams(TeamID), ID of the team (for team-based tournaments)) 
+    * [cite_start]Rank (int, NOT NULL, The final rank achieved) 
+    * [cite_start]PrizeMoney (decimal(18,2), Prize money awarded for this rank) 
+    * [cite_start]Notes (text, Additional notes about the result) 
+    * [cite_start]CreatedAt (timestamp, Timestamp when the result was recorded) 
+    * [cite_start]*Indexes* 
+
+* [cite_start]**Feedback** 
+    * [cite_start]FeedbackID (int, Primary Key, Auto Increment, Unique identifier for the feedback) 
+    * [cite_start]UserID (int, Foreign Key to Users(UserID), NOT NULL, ID of the user who submitted the feedback) 
+    * [cite_start]TournamentID (int, Foreign Key to Tournaments(TournamentID), ID of the tournament being reviewed) 
+    * [cite_start]Rating (int, Rating score (e.g., 1-5 stars)) 
+    * [cite_start]Comment (text, Detailed comment or review) 
+    * [cite_start]CreatedAt (timestamp, Timestamp when the feedback was submitted) 
+    * [cite_start]*Indexes* 
+
+* [cite_start]**Achievements** 
+    * [cite_start]AchievementID (int, Primary Key, Auto Increment, Unique identifier for the achievement) 
+    * [cite_start]UserID (int, Foreign Key to Users(UserID), NOT NULL, ID of the Player who earned the achievement) 
+    * [cite_start]Title (varchar(200), NOT NULL, Name of the achievement (e.g., "MVP of Tournament X")) 
+    * [cite_start]Description (text, Detailed description of the achievement) 
+    * [cite_start]AchievementDate (timestamp, NOT NULL, Date the achievement was earned) 
+    * [cite_start]AwardedBy (int, Foreign Key to Users(UserID), ID of the Admin who granted the achievement) 
+    * [cite_start]Status (enum(...), Status (e.g., Awarded, Revoked)) 
+    * [cite_start]*Indexes* 
+
+* [cite_start]**Wallets** 
+    * [cite_start]WalletID (int, Primary Key, Auto Increment, Unique identifier for the wallet) 
+    * [cite_start]UserID (int, Foreign Key to Users(UserID), Unique, NOT NULL, ID of the user who owns the wallet) 
+    * [cite_start]Balance (decimal(18,2), NOT NULL, Default 0, The current balance in the wallet) 
+    * [cite_start]LastUpdated (timestamp, Timestamp of the last balance update) 
+    * [cite_start]*Indexes* 
+
+* [cite_start]**WalletHistory** 
+    * [cite_start]HistoryID (int, Primary Key, Auto Increment, Unique identifier for the transaction record) 
+    * [cite_start]WalletID (int, Foreign Key to Wallets(WalletID), NOT NULL, ID of the wallet involved in the transaction) 
+    * [cite_start]Amount (decimal(18,2), NOT NULL, Transaction amount (can be negative or positive)) 
+    * [cite_start]Type (enum(...), NOT NULL, Transaction type (e.g., DEPOSIT, WITHDRAW, DONATE_SENT, DONATE_RECEIVED)) 
+    * [cite_start]ReferenceID (int, Foreign key to the source record (e.g., DonationID, WithdrawalID)) 
+    * [cite_start]State (enum(...), Transaction state (e.g., Pending, Completed, Failed)) 
+    * [cite_start]CreatedAt (timestamp, Timestamp when the transaction was created) 
+    * [cite_start]ProcessedAt (datetime, Timestamp when the transaction was processed) 
+    * [cite_start]*Indexes* 
+
+* [cite_start]**Donations** 
+    * [cite_start]DonationID (int, Primary Key, Auto Increment, Unique identifier for the donation) 
+    * [cite_start]FromUserID (int, Foreign Key to Users(UserID), NOT NULL, ID of the sender (Viewer)) 
+    * [cite_start]ToUserID (int, Foreign Key to Users(UserID), NOT NULL, ID of the receiver (Player)) 
+    * [cite_start]Amount (decimal(18,2), NOT NULL, The amount of money donated) 
+    * [cite_start]Message (text, A message included with the donation) 
+    * [cite_start]DonationDate (timestamp, Timestamp when the donation was made) 
+    * [cite_start]Status (enum(...), Status of the donation (e.g., Completed, Refunded)) 
+    * [cite_start]*Indexes* 
+
+* [cite_start]**Withdrawals** 
+    * [cite_start]WithdrawalID (int, Primary Key, Auto Increment, Unique identifier for the withdrawal request) 
+    * [cite_start]UserID (int, Foreign Key to Users(UserID), NOT NULL, ID of the user requesting the withdrawal) 
+    * [cite_start]Amount (decimal(18,2), NOT NULL, The amount of money requested) 
+    * [cite_start]BankAccountNumber (varchar(50), NOT NULL, Recipient's bank account number) 
+    * [cite_start]BankName (varchar(100), NOT NULL, Name of the recipient's bank) 
+    * [cite_start]AccountHolderName (varchar(100), NOT NULL, Name of the bank account holder) 
+    * [cite_start]Status (enum(...), NOT NULL, Status of the request (e.g., Pending, Approved, Rejected)) 
+    * [cite_start]RequestDate (timestamp, Timestamp when the request was submitted) 
+    * [cite_start]ProcessedBy (int, Foreign Key to Users(UserID), ID of the Admin who processed the request) 
+    * [cite_start]ProcessedDate (datetime, Timestamp when the request was processed) 
+    * [cite_start]Notes (text, Notes from the Admin regarding the request) 
+    * [cite_start]*Indexes* 
+
+* [cite_start]**Votes** 
+    * [cite_start]VoteID (int, Primary Key, Auto Increment, Unique identifier for the vote) 
+    * [cite_start]UserID (int, Foreign Key to Users(UserID), NOT NULL, ID of the user who cast the vote) 
+    * [cite_start]VoteType (enum(...), NOT NULL, The category of the vote (e.g., Player, Game, Tournament)) 
+    * [cite_start]TargetID (int, NOT NULL, ID of the entity being voted for) 
+    * [cite_start]Rating (int, An optional rating score) 
+    * [cite_start]CreatedAt (timestamp, Timestamp when the vote was cast) 
+    * [cite_start]*Indexes* 
+
+## [cite_start]Test 
+### [cite_start]1.1 SendFeedBack 
+| Test Case Number | Test Case Name | Test Case Description | Preconditions | Test Case Input | Test Case Expected Output | Test Case Steps | Default Value Preserving |
+|---|---|---|---|---|---|---|---|
+| FB-001 | [cite_start]SendFeedback_Success()  | [cite_start]Checks if a Player can submit feedback for a tournament they participated in.  | [cite_start]Player 25 is logged in and has completed Tournament 1.  [cite_start]| playerID: 25, tournamentID: 1, rating: 5, comment: "Great tournament!"  | Success message. [cite_start]A new record is created in the Feedback table.  | 1. Call SendFeedback() method. <br> 2. Verify success message. [cite_start]<br> 3. Query DB to confirm the new feedback record exists.  | [cite_start]New feedback is available for Admin review.  |
+
+### [cite_start]1.2 ViewFeedbacl Admin 
+| Test Case Number | Test Case Name | Test Case Description | Preconditions | Test Case Input | Test Case Expected Output | Test Case Steps | Default Value Preserving |
+|---|---|---|---|---|---|---|---|
+| FB-002 | [cite_start]ViewFeedback_Admin_Success()  | [cite_start]Checks if an Admin can approve a new 'Pending' user account.  | [cite_start]Admin is logged in. User @NewUser exists with Status = 'Pending'.  [cite_start]| userID: ID of @NewUser, action: "Approve"  | Success message. [cite_start]The user's status is updated to Approved in the DB.  | 1. Call ApproveAccount() method. <br> 2. Verify success message. [cite_start]<br> 3. Query DB to confirm status change.  | [cite_start]User is now able to log in.  |
+
+### [cite_start]2.1 Approve New Account 
+| Test Case Number | Test Case Name | Test Case Description | Preconditions | Test Case Input | Test Case Expected Output | Test Case Steps | Default Value Preserving |
+|---|---|---|---|---|---|---|---|
+| ADM-001 | [cite_start]ApproveNewAccount_Success()  | [cite_start]Checks if an Admin can approve a new 'Pending' user account.  | [cite_start]Admin is logged in. User @NewUser exists with Status = 'Pending'.  [cite_start]| userID: ID of @NewUser, action: "Approve"  | Success message. [cite_start]The user's status is updated to Approved in the DB.  | 1. Call ApproveAccount() method. <br> 2. Verify success message. [cite_start]<br> 3. Query DB to confirm status change.  | [cite_start]User is now able to log in  |
+
+### [cite_start]2.2 Approve Registration 
+| Test Case Number | Test Case Name | Test Case Description | Preconditions | Test Case Input | Test Case Expected Output | Test Case Steps | Default Value Preserving |
+|---|---|---|---|---|---|---|---|
+| ADM-002 | [cite_start]ApproveRegistration_Success()  | [cite_start]Checks if an Admin can approve a Player's pending tournament registration.  | [cite_start]Admin is logged in. A registration with Status = 'Pending' exists.  [cite_start]| registrationID: 12, action: "Approve"  | Success message. [cite_start]The registration's status is updated to Approved.  | 1. Call ApproveRegistration() method. <br> 2. Verify success message. [cite_start]<br> 3. Query DB to confirm status change.  | [cite_start]Player is officially registered for the tournament  |
+
+### [cite_start]2.3 Approve Team 
+| Test Case Number | Test Case Name | Test Case Description | Preconditions | Test Case Input | Test Case Expected Output | Test Case Steps | Default Value Preserving |
+|---|---|---|---|---|---|---|---|
+| ADM-003 | [cite_start]ApproveTeam_Success()  | [cite_start]Checks if an Admin can approve a new 'Pending' team.  | [cite_start]Admin is logged in. A team with Status = 'Pending' exists.  [cite_start]| teamID: 5, action: "Approve"  | Success message. [cite_start]The team's status is updated to Approved.  | 1. Call ApproveTeam() method. <br> 2. Verify success message. [cite_start]<br> 3. Query DB to confirm status change.  | [cite_start]The team is now active.,  |
+
+### [cite_start]2.3 Apprve Role Change 
+| Test Case Number | Test Case Name | Test Case Description | Preconditions | Test Case Input | Test Case Expected Output | Test Case Steps | Default Value Preserving |
+|---|---|---|---|---|---|---|---|
+| ADM-004 | [cite_start]ApproveRoleChange_Success()  | [cite_start]Checks if an Admin can approve a user's role change request.  | [cite_start]Admin is logged in. A RoleChangeRequest with Status = 'Pending' exists for a Player wanting to be a Viewer.  [cite_start]| requestID: 3, action: "Approve"  | Success message. The request status is updated to Approved. [cite_start]The user's Role in the Users table is updated to 'Viewer'.  | 1. Call ApproveRoleChange() method. <br> 2. Verify success message. [cite_start]<br> 3. Query DB to confirm the user's new role.  | [cite_start]User's role has been changed.  |
+
+### [cite_start]2.4 Approve Withdrawal 
+| Test Case Number | Test Case Name | Test Case Description | Preconditions | Test Case Input | Test Case Expected Output | Test Case Steps | Default Value Preserving |
+|---|---|---|---|---|---|---|---|
+| ADM-005 | [cite_start]ApproveWithdrawal_Success()  | [cite_start]Checks if an Admin can approve a Player's withdrawal request.  | Admin is logged in. A Withdrawal request with Status = 'Pending' exists. [cite_start]Player has sufficient funds.  [cite_start]| withdrawalID: 7, action: "Approve"  | Success message. Request status becomes Approved. [cite_start]Player's wallet balance is reduced.  | 1. Call ApproveWithdrawal() method. <br> 2. Verify success message. [cite_start]<br> 3. Query DB to confirm status change and new balance.  | [cite_start]Withdrawal is processed.,  |
+
+### [cite_start]2.6 Add Tournament Result 
+| Test Case Number | Test Case Name | Test Case Description | Preconditions | Test Case Input | Test Case Expected Output | Test Case Steps | Default Value Preserving |
+|---|---|---|---|---|---|---|---|
+| ADM-006 | [cite_start]AddTournamentResult_Success()  | [cite_start]Checks if an Admin can add results for a completed tournament.  | [cite_start]Admin is logged in. Tournament 1 is complete.  [cite_start]| tournamentID: 1, playerID: 25, rank: 1, prizeMoney: 1000  | Success message. [cite_start]A new record is created in the TournamentResults table.  | 1. Call AddResult() method. <br> 2. Verify success message. [cite_start]<br> 3. Query DB to confirm new result record.  | [cite_start]Tournament results are recorded and viewable.  |
+
+### [cite_start]2.7 Assign Achievement 
+| Test Case Number | Test Case Name | Test Case Description | Preconditions | Test Case Input | Test Case Expected Output | Test Case Steps | Default Value Preserving |
+|---|---|---|---|---|---|---|---|
+| ADM-007 | [cite_start]AssignAchievement_Success()  | [cite_start]Checks if an Admin can grant a custom achievement to a Player.  | [cite_start]Admin is logged in. Player 25 exists.  [cite_start]| playerID: 25, title: "Tournament MVP", description: "Most Valuable Player of Summer Skirmish"  | Success message. [cite_start]A new record is created in the Achievements table for the player.  | 1. Call AssignAchievement() method. <br> 2. Verify success message. [cite_start]<br> 3. Query DB to confirm new achievement.  | [cite_start]Player has a new achievement on their profile.,  |
+
+### [cite_start]2.8 Create Tournament 
+| Test Case Number | Test Case Name | Test Case Description | Preconditions | Test Case Input | Test Case Expected Output | Test Case Steps | Default Value Preserving |
+|---|---|---|---|---|---|---|---|
+| ADM-008 | [cite_start]CreateTournament_Success()  | [cite_start]Checks if an Admin can successfully create a new tournament.  | [cite_start]Admin is logged in.  | [cite_start]Name: "Winter Championship", GameID: 2, StartDate: "2025-12-01"  | Success message. [cite_start]A new record is created in the Tournaments table.  | 1. Call CreateTournament() method. <br> 2. Verify success message. [cite_start]<br> 3. Query DB to confirm new tournament.  | [cite_start]A new tournament is created in the system.  |
+
+### [cite_start]2.9 Update Touranmentl Info 
+| Test Case Number | Test Case Name | Test Case Description | Preconditions | Test Case Input | Test Case Expected Output | Test Case Steps | Default Value Preserving |
+|---|---|---|---|---|---|---|---|
+| ADM-009 | [cite_start]UpdateTournamentInfo_Success()  | [cite_start]Checks if an Admin can update the details of an existing tournament.  | [cite_start]Admin is logged in. Tournament 1 exists.  [cite_start]| tournamentID: 1, newPrizePool: 7500  | Success message. [cite_start]The PrizePool for tournament 1 is updated in the DB.  | 1. Call UpdateTournament() method. <br> 2. Verify success message. [cite_start]<br> 3. Query DB to confirm the update.  | [cite_start]Tournament details are updated.  |
+
+### [cite_start]2.10 Delte Tournament 
+| Test Case Number | Test Case Name | Test Case Description | Preconditions | Test Case Input | Test Case Expected Output | Test Case Steps | Default Value Preserving |
+|---|---|---|---|---|---|---|---|
+| ADM-010 | [cite_start]DeleteTournament_Success()  | [cite_start]Checks if an Admin can delete a tournament.  | [cite_start]Admin is logged in. Tournament 9 exists and has no critical dependencies preventing deletion.  [cite_start]| tournamentID: 9  | Success message. [cite_start]The record for tournament 9 and its related data (registrations, results) are deleted.  | 1. Call DeleteTournament() method. <br> 2. Verify success message. [cite_start]<br> 3. Query DB to confirm the tournament is gone.  | [cite_start]The tournament is removed from the system.  |
+
+### [cite_start]2.11 Delete User 
+| Test Case Number | Test Case Name | Test Case Description | Preconditions | Test Case Input | Test Case Expected Output | Test Case Steps | Default Value Preserving |
+|---|---|---|---|---|---|---|---|
+| ADM-011 | [cite_start]DeleteUser_Success()  | [cite_start]Checks if an Admin can delete a user account and all their related data.  | [cite_start]Admin is logged in. User 50 exists.  [cite_start]| userID: 50  | Success message. [cite_start]The record for user 50 and all their related records (donations, votes, feedback, etc.) are deleted.  | 1. Call DeleteUser() method. <br> 2. Verify success message. [cite_start]<br> 3. Query Users and other tables to confirm deletion.  | [cite_start]The user is completely removed from the system.  |
+
+### [cite_start]2.12 View System Statistics 
+| Test Case Number | Test Case Name | Test Case Description | Preconditions | Test Case Input | Test Case Expected Output | Test Case Steps | Default Value Preserving |
+|---|---|---|---|---|---|---|---|
+| ADM-012 | [cite_start]ViewSystemStatistics_Success()  | [cite_start]Checks if an Admin can view system-wide statistics, such as profit from donations.  | [cite_start]Admin is logged in. There are donation records in the database.  | [cite_start]N/A  | [cite_start]A summary of statistics is displayed, including total profit calculated from the Donations table.  | 1. Call ViewStatistics() method. [cite_start]<br> 2. Verify that the displayed data is a correct summary of the database state.  | [cite_start]Admin has reviewed system statistics.  |
+
+### [cite_start]Login Test 
+#### [cite_start]1.1 Login test 1 
+| Test Case Number | Test Case Name | Test Case Description | Preconditions | Test Case Input | Test Case Expected Output | Test Case Steps | Default Value Preserving |
+|---|---|---|---|---|---|---|---|
+| ACC-001 | [cite_start]Login_Success()  | [cite_start]This test case checks if a valid, existing user can log in successfully.  | [cite_start]User with username @Player01 and password password123 exists and is Approved.  [cite_start]| username: "@Player01", password: "password123"  | Login is successful. The system returns the User object with Role = 'Player'. [cite_start]The Player main menu is displayed.  | 1. Instantiate UserBL.<br>2. Call Login() method with input.<br>3. Compare the returned User object's role with the expected output.<br>4. [cite_start]Verify the correct menu is shown.  | [cite_start]User's LastLogin timestamp is updated in the database.  |
+
+#### [cite_start]1.2 Login test 2 
+| Test Case Number | Test Case Name | Test Case Description | Preconditions | Test Case Input | Test Case Expected Output | Test Case Steps | Default Value Preserving |
+|---|---|---|---|---|---|---|---|
+| ACC-002 | [cite_start]Login_Failure_IncorrectPassword()  | [cite_start]This test case checks if the system prevents login with an incorrect password.  | [cite_start]User with username @Player01 exists.  [cite_start]| username: "@Player01", password: "wrongpassword"  | Login fails. [cite_start]An error message like "Invalid username or password" is returned.  | Login fails. [cite_start]An error message like "Invalid username or password" is returned.  | No changes in the database. [cite_start]The user is not logged in.  |
+
+### [cite_start]Register Account test 
+#### [cite_start]2.1 Register test 1 
+| Test Case Number | Test Case Name | Test Case Description | Preconditions | Test Case Input | Test Case Expected Output | Test Case Steps | Default Value Preserving |
+|---|---|---|---|---|---|---|---|
+| ACC-003 | [cite_start]Register_Success_NewUser()  | [cite_start]This test case checks if a new user can register with valid and unique information.  | [cite_start]The username @NewUser and email new@user.com do not exist in the database.  [cite_start]| username: "@NewUser", email: "new@user.com", password: "securepass", etc.  | A success message ("Registration successful, awaiting approval.") is displayed. [cite_start]A new record is created in the Users table with Status = 'Pending'.  | 1. Call Register() method with input.<br>2. Verify the success message.<br>3. [cite_start]Query the database to confirm the new user exists with the correct status.  | [cite_start]A new user record exists in the database.  |
+
+#### [cite_start]2.2 Register test 2 
+| Test Case Number | Test Case Name | Test Case Description | Preconditions | Test Case Input | Test Case Expected Output | Test Case Steps | Default Value Preserving |
+|---|---|---|---|---|---|---|---|
+| ACC-004 | [cite_start]Register_Success_NewUser()  | [cite_start]This test case checks if the system prevents registration with a username that already exists.  | [cite_start]A user with username @Player01 already exists in the database.  [cite_start]| username: "@Player01",<br>email: "new.email@example.com",<br>password: "password123"  | An error message is returned, e.g., "Username already exists." [cite_start]No new user is created.  | 1. Call Register() method with the specified input.<br>2. Verify that the system returns an error.<br>3. [cite_start]Query the database to confirm that no new user record was created.  | [cite_start]The Users table remains unchanged.  |
+
+#### [cite_start]2.3 Register test 3 
+| Test Case Number | Test Case Name | Test Case Description | Preconditions | Test Case Input | Test Case Expected Output | Test Case Steps | Default Value Preserving |
+|---|---|---|---|---|---|---|---|
+| ACC-005 | [cite_start]Register_Failure_DuplicateEmail()  | [cite_start]This test case checks if the system prevents registration with an email that already exists.  | [cite_start]A user with email player01@example.com already exists in the database.  [cite_start]| username: "@NewPlayer99",<br>email: "player01@example.com",<br>password: "password123"  | An error message is returned, e.g., "Email already exists." [cite_start]No new user is created.  | 1. Call Register() method with the specified input.<br>2. Verify that the system returns an error.<br>3. [cite_start]Query the database to confirm that no new user record was created.  | [cite_start]The Users table remains unchanged.  |
+
+#### [cite_start]2.4 Register test 4 
+| Test Case Number | Test Case Name | Test Case Description | Preconditions | Test Case Input | Test Case Expected Output | Test Case Steps | Default Value Preserving |
+|---|---|---|---|---|---|---|---|
+| ACC-006 | [cite_start]Register_Failure_InvalidPassword()  | [cite_start]This test case checks if the system rejects a password that is too short or weak.  | [cite_start]System rules require a password to be at least 8 characters long.  [cite_start]| username: "@NewPlayer99",<br>email: "new99@example.com",<br>password: "123"  | [cite_start]An error message is returned, e.g., "Password must be at least 8 characters long."  | 1. Call Register() method with the specified input.<br>2. [cite_start]Verify that the system returns the correct validation error.  | [cite_start]No user account is created.  |
+
+### [cite_start]Search & View Information 
+#### [cite_start]3.1 SearchTournament 
+| Test Case Number | Test Case Name | Test Case Description | Preconditions | Test Case Input | Test Case Expected Output | Test Case Steps | Default Value Preserving |
+|---|---|---|---|---|---|---|---|
+| VIEW-001 | [cite_start]SearchTournament_Found()  | [cite_start]Checks if a user can find a tournament by searching for a keyword in its name.  | [cite_start]A tournament named "Summer Championship" exists.  [cite_start]| keyword: "Summer"  | [cite_start]A list containing the "Summer Championship" tournament is displayed.  | [cite_start]A list containing the "Summer Championship" tournament is displayed.  | [cite_start]Search results are displayed to the user.  |
+
+#### [cite_start]3.2 ViewTournamentDetails 
+| Test Case Number | Test Case Name | Test Case Description | Preconditions | Test Case Input | Test Case Expected Output | Test Case Steps | Default Value Preserving |
+|---|---|---|---|---|---|---|---|
+| VIEW-002 | [cite_start]ViewTournamentDetails_Success()  | [cite_start]Checks if the full details of a specific tournament can be viewed.  | [cite_start]A tournament with TournamentID=1 exists.  [cite_start]| tournamentID: 1  | [cite_start]All details (name, game, date, prize pool, etc.) of tournament 1 are displayed.  | 1. Call GetTournamentDetails() method. [cite_start]<br> 2. Verify that the displayed details match the data in the database.  | [cite_start]User has viewed the tournament details.  |
+
+#### [cite_start]3.3 SearchPlayer 
+| Test Case Number | Test Case Name | Test Case Description | Preconditions | Test Case Input | Test Case Expected Output | Test Case Steps | Default Value Preserving |
+|---|---|---|---|---|---|---|---|
+| VIEW-003 | [cite_start]SearchPlayer_Found()  | [cite_start]Checks if a user can find a player by searching for their name.  | [cite_start]A player with DisplayName = “John Doe”exists  [cite_start]| keyword: "John"  | [cite_start]A list containing the player "John Doe" is displayed.  | 1. Call SearchPlayer() method. [cite_start]<br> 2. Verify the returned list contains the expected player.  | [cite_start]Search results are displayed to the user.  |
+
+#### [cite_start]3.4 ViewPlayerProfile 
+| Test Case Number | Test Case Name | Test Case Description | Preconditions | Test Case Input | Test Case Expected Output | Test Case Steps | Default Value Preserving |
+|---|---|---|---|---|---|---|---|
+| VIEW-004 | [cite_start]ViewPlayerProfile_Success()  | [cite_start]Checks if a user can view the full profile of a specific player, including stats and achievements.  | [cite_start]A player with UserID=25 exists.  [cite_start]| userID: 25  | [cite_start]The profile for user 25 is displayed, including their name, achievements, and tournament history.  | 1. Call ViewPlayerProfile() method. [cite_start]<br> 2. Verify that the displayed information is correct.  | [cite_start]User has viewed the player's profile.  |
+
+#### [cite_start]3.5 ViewTeamInfo 
+| Test Case Number | Test Case Name | Test Case Description | Preconditions | Test Case Input | Test Case Expected Output | Test Case Steps | Default Value Preserving |
+|---|---|---|---|---|---|---|---|
+| VIEW-005 | [cite_start]ViewTeamInfo_Success()  | [cite_start]Checks if a user can view the information of a specific team, including its members.  | [cite_start]A team with TeamID=5 exists and has members.  [cite_start]| teamID: 5  | [cite_start]The details for team 5 are displayed, including team name, leader, and a list of members.  | 1. Call ViewTeamInfo() method. [cite_start]<br> 2. Verify the displayed team information is correct.  | [cite_start]User has viewed the team's information.  |
+
+### [cite_start]Tournament & Achievements 
+#### [cite_start]4.1 View Match Schedule 
+| Test Case Number | Test Case Name | Test Case Description | Preconditions | Test Case Input | Test Case Expected Output | Test Case Steps | Default Value Preserving |
+|---|---|---|---|---|---|---|---|
+| VIEW-006 | [cite_start]ViewMatchSchedule_Success()  | [cite_start]Checks if a user can view the match schedule for a tournament.  | [cite_start]A tournament with TournamentID=1 exists and has a schedule.  [cite_start]| tournamentID: 1  | [cite_start]A list of matches with players/teams and times is displayed.  | 1. Call ViewMatchSchedule() method. [cite_start]<br> 2. Verify the schedule is displayed.  | [cite_start]User is informed of the match schedule.  |
+
+#### [cite_start]4.2 View Match Schedule 
+| Test Case Number | Test Case Name | Test Case Description | Preconditions | Test Case Input | Test Case Expected Output | Test Case Steps | Default Value Preserving |
+|---|---|---|---|---|---|---|---|
+| VIEW-007 | [cite_start]ViewMatchSchedule_Success()  | [cite_start]Checks if a user can view the match schedule for a tournament.  | [cite_start]A tournament with TournamentID=1 exists and has a schedule.  [cite_start]| tournamentID: 1  | [cite_start]A list of matches with players/teams and times is displayed.  | 1. Call ViewMatchSchedule() method. [cite_start]<br> 2. Verify the schedule is displayed.  | [cite_start]User is informed of the match schedule.  |
+
+#### [cite_start]4.3 View Tournament Ranking 
+| Test Case Number | Test Case Name | Test Case Description | Preconditions | Test Case Input | Test Case Expected Output | Test Case Steps | Default Value Preserving |
+|---|---|---|---|---|---|---|---|
+| VIEW-008 | [cite_start]ViewTournamentRanking_Success()  | [cite_start]Checks if a user can view the final ranking for a completed tournament.  | [cite_start]Tournament 1 is completed and results have been entered.  [cite_start]| tournamentID: 1  | [cite_start]A ranked list of players/teams for tournament 1 is displayed.  | 1. Call ViewTournamentRanking() method. [cite_start]<br> 2. Verify the list is correctly ranked.  | [cite_start]User has viewed the tournament ranking.  |
+
+### [cite_start]Registration & Participation 
+#### [cite_start]5.1 Create Registration 
+| Test Case Number | Test Case Name | Test Case Description | Preconditions | Test Case Input | Test Case Expected Output | Test Case Steps | Postconditions |
+|---|---|---|---|---|---|---|---|
+| REG-001 | [cite_start]CreateRegistration_Success()  | [cite_start]Checks if a Player can successfully register for an open tournament.  | Player is logged in. Tournament (ID=5) is open for registration. [cite_start]Player is not already registered.  [cite_start]| playerID: 25, tournamentID: 5  | Success message. [cite_start]A new record is created in the Registrations table with Status = 'Pending'.  | 1. Call CreateRegistration() method. <br> 2. Verify success message. [cite_start]<br> 3. Query Registrations table to confirm.  | [cite_start]Player has a pending registration for the tournament.  |
+
+#### [cite_start]5.2 Cancel Registration 
+| Test Case Number | Test Case Name | Test Case Description | Preconditions | Test Case Input | Test Case Expected Output | Test Case Steps | Postconditions |
+|---|---|---|---|---|---|---|---|
+| REG-002 | [cite_start]CancelRegistration_Success()  | [cite_start]Checks if a Player can cancel their existing tournament registration.  | [cite_start]Player 25 has a registration (RegistrationID=12) for a tournament that has not yet started.  [cite_start]| registrationID: 12  | [cite_start]The system displays the status "Approved".  | 1. Call CancelRegistration() method. <br> 2. Verify success message. [cite_start]<br> 3. Query DB to confirm the registration is gone or its status has changed..  | [cite_start]The player is removed from the tournament registration.  |
+
+#### [cite_start]5.3 View Registration Status 
+| Test Case Number | Test Case Name | Test Case Description | Preconditions | Test Case Input | Test Case Expected Output | Test Case Steps | Postconditions |
+|---|---|---|---|---|---|---|---|
+| REG-003 | [cite_start]ViewRegistrationStatus_Success()  | [cite_start]Checks if a Player can view the status of their registration.  | [cite_start]Player 25 has a registration (RegistrationID=12) with status 'Approved'.  [cite_start]| playerID: 25, tournamentID: 5  | Success message. [cite_start]A new record is created in the Registrations table with Status = 'Pending'.  | 1. Call CreateRegistration() method. <br> 2. Verify success message. [cite_start]<br> 3. Query Registrations table to confirm.  | [cite_start]Player has a pending registration for the tournament.  |
+
+### [cite_start]Participation 
+
+#### [cite_start]6.1 Create Team 
+| Test Case Number | Test Case Name | Test Case Description | Preconditions | Test Case Input | Test Case Expected Output | Test Case Steps | Postconditions |
+|---|---|---|---|---|---|---|---|
+| TEAM-001 | [cite_start]CreateTeam_Success()  | Checks if a Player can create a new team. [cite_start]The creator becomes the leade  | [cite_start]Player 25 is logged in. The team name "New Legends" is unique.  [cite_start]| teamName: "New Legends", description: "A new team"  | Success message. [cite_start]A new record is created in the Teams table with Status = 'Pending'.  | 1. Call CreateTeam() method. <br> 2. Verify success message. [cite_start]<br> 3. Query DB to confirm new team exists.  | [cite_start]A new team awaits Admin approval.  |
+
+#### [cite_start]6.2 Join Team 
+| Test Case Number | Test Case Name | Test Case Description | Preconditions | Test Case Input | Test Case Expected Output | Test Case Steps | Postconditions |
+|---|---|---|---|---|---|---|---|
+| TEAM-002 | [cite_start]JoinTeam_Success()  | [cite_start]Checks if a Player can send a request to join an existing team.  | Player 26 is logged in. Team 5 ("Titans") exists and is approved. [cite_start]Player 26 is not a member.  [cite_start]| playerID: 26, teamID: 5  | Success message. [cite_start]A new record is created in the TeamMembers table with Status = 'Pending'.  | 1. Call JoinTeam() method. <br> 2. Verify success message. [cite_start]<br> 3. Query DB to confirm the pending member request.  | [cite_start]A request to join the team awaits approval.  |
+
+#### [cite_start]6.3 Leave Team 
+| Test Case Number | Test Case Name | Test Case Description | Preconditions | Test Case Input | Test Case Expected Output | Test Case Steps | Postconditions |
+|---|---|---|---|---|---|---|---|
+| TEAM-003 | [cite_start]LeaveTeam_Success_Member()  | [cite_start]Checks if a regular member can leave a team.  | [cite_start]Player 26 is a member of Team 5. Player 26 is not the team leader.  [cite_start]| playerID: 26, teamID: 5  | Success message. [cite_start]The record for Player 26 in the TeamMembers table for Team 5 is deleted.  | 1. Call CancelRegistration() method. <br> 2. Verify success message. [cite_start]<br> 3. Query DB to confirm the registration is gone or its status has changed..  | [cite_start]The player is removed from the team.  |
+
+### [cite_start]7. 
+#### [cite_start]7.1 View Wallet Balance 
+| Test Case Number | Test Case Name | Test Case Description | Preconditions | Test Case Input | Test Case Expected Output | Test Case Steps | Postconditions |
+|---|---|---|---|---|---|---|---|
+| WLT-001 | [cite_start]ViewWalletBalance_Success()  | [cite_start]Checks if a user can view their current wallet balance.  | [cite_start]User 10 is logged in. Their wallet balance is 200.  [cite_start]| userID: 10  | [cite_start]The system displays the balance "200".  | 1. Call ViewWalletBalance() method. [cite_start]<br> 2. Verify the displayed balance is correct.  | [cite_start]User is informed of their wallet balance.  |
+
+#### [cite_start]7.2 deposit Money 
+| Test Case Number | Test Case Name | Test Case Description | Preconditions | Test Case Input | Test Case Expected Output | Test Case Steps | Postconditions |
+|---|---|---|---|---|---|---|---|
+| WLT-002 | [cite_start]DepositMoney_Success()  | [cite_start]Checks if a Viewer can successfully deposit money into their wallet.  | [cite_start]Viewer 10 is logged in. Their initial balance is 200.  [cite_start]| userID: 10, amount: 100  | Success message. [cite_start]The user's wallet balance in the Wallets table is updated to 300.  | 1. Call DepositMoney() method. <br> 2. Verify success message. [cite_start]<br> 3. Call ViewWalletBalance() to confirm the new balance.  | [cite_start]User's wallet balance is increased.  |
+
+#### [cite_start]7.3 Withdraw Money 
+| Test Case Number | Test Case Name | Test Case Description | Preconditions | Test Case Input | Test Case Expected Output | Test Case Steps | Postconditions |
+|---|---|---|---|---|---|---|---|
+| WLT-003 | [cite_start]WithdrawMoney_Request_Success()  | [cite_start]Checks if a Player can successfully submit a withdrawal request.  | [cite_start]Player 25 is logged in with a balance of >= 500.  [cite_start]| userID: 25, amount: 500, bankInfo: {...}  | Success message. [cite_start]A new record is created in Withdrawals with Status = 'Pending'.  | 1. Call RequestWithdrawal() method. <br> 2. Verify success message. [cite_start]<br> 3. Query DB to confirm the pending withdrawal request.  | [cite_start]A withdrawal request awaits Admin approval.  |
+
+#### [cite_start]7.4 Donete To Player 
+| Test Case Number | Test Case Name | Test Case Description | Preconditions | Test Case Input | Test Case Expected Output | Test Case Steps | Postconditions |
+|---|---|---|---|---|---|---|---|
+| WLT-004 | [cite_start]DonateToPlayer_Success()  | Checks a successful donation from a Viewer to a Player.  | [cite_start]Viewer 10 has a balance of >= 100. Player 25 exists.  [cite_start]| fromUserID: 10, toUserID: 25, amount: 100  | Success message. [cite_start]Viewer's balance decreases by 100. Player's balance increases by 70. A record is created in Donations.  | 1. Call ProcessDonation() method. <br> 2. Verify success message. [cite_start]<br> 3. Query DB to check final balances and new records.  | [cite_start]Balances are updated, transaction is logged.  |
+
+#### [cite_start]7.5 View Donation History 
+| Test Case Number | Test Case Name | Test Case Description | Preconditions | Test Case Input | Test Case Expected Output | Test Case Steps | Postconditions |
+|---|---|---|---|---|---|---|---|
+| WLT-005 | [cite_start]ViewDonationHistory_Success()  | [cite_start]Checks if a user can view their donation history (sent or received).  | [cite_start]User 10 has made or received donations.  [cite_start]| userID: 10  | [cite_start]A list of donation records involving User 10 is displayed.  | 1. Call ViewDonationHistory() method. [cite_start]<br> 2. Verify the displayed list is correct.records.  | [cite_start]User has viewed their donation history.  |
+
+## [cite_start]Task Assignment (To Each Group Member) 
+
+| Group Name | Project Name |
+|---|---|
+| **No** | **Task name** | **Description** | **Start Date** | **End Date** | **Member** | **Self-Assessment** |
+| 1 | [cite_start]Write reports |  | [cite_start]07 May  | [cite_start]07/06  | [cite_start]Quan  [cite_start]|  |
+| 2 | [cite_start]Code |  [cite_start]|  | [cite_start]20/06  | [cite_start]All  [cite_start]|  |
+| 3 | [cite_start]|  [cite_start]|  | [cite_start]?  [cite_start]|  [cite_start]|  |
+| 4 | [cite_start]Draw diagram |  [cite_start]|  | [cite_start]?  | [cite_start]H.Dat, Minh  [cite_start]|  |
+| 5 | [cite_start]Control |  [cite_start]|  | [cite_start]?  | [cite_start]Quan, D. Dat  [cite_start]|  |
+
+## [cite_start]Installation Instructions 
+### Deployment Diagram
+**Mô tả Biểu đồ Triển khai (Deployment Diagram):**
+Biểu đồ này thể hiện cách các thành phần phần mềm của hệ thống Esport Manager được triển khai trên các nút phần cứng.
+
+* **Client Machine (Windows):** Đây là nút mà ứng dụng người dùng cuối sẽ chạy.
+    * Chứa `EsportManager.exe`: Tệp thực thi của ứng dụng Esport Manager.
+    * `EsportManager.exe` yêu cầu `.NET Runtime` để chạy.
+
+* **Database Server:** Đây là một nút riêng biệt, nơi cơ sở dữ liệu được lưu trữ.
+    * Chứa `MySQL Server`: Máy chủ cơ sở dữ liệu MySQL.
+
+* **Kết nối:**
+    * `Client Machine (Windows)` kết nối với `Database Server` thông qua giao thức `(TCP/IP)`. Điều này cho thấy ứng dụng trên máy client sẽ giao tiếp với máy chủ cơ sở dữ liệu qua mạng sử dụng giao thức TCP/IP.
+
+### [cite_start]Installation Steps 
+
+#### 1. Install Database
+1. **Cài đặt MySQL Server:**
+   - Tải MySQL Community Server từ trang chủ MySQL: https://dev.mysql.com/downloads/mysql/
+   - Chạy bộ cài đặt và làm theo hướng dẫn
+   - Thiết lập mật khẩu cho tài khoản root
+
+2. **Tạo và cấu hình database:**
+   - Mở MySQL Command Line Client hoặc MySQL Workbench
+   - Đăng nhập với tài khoản root: `mysql -u root -p`
+   - Tạo database: `CREATE DATABASE esportsmanager;`
+   - Chọn database: `USE esportsmanager;`
+   - Import dữ liệu từ file SQL:
+     ```
+     mysql -u root -p esportsmanager < [đường_dẫn]/esportsmanager.sql
+     ```
+   - Hoặc mở file SQL trong MySQL Workbench và chạy script
+
+3. **Tạo tài khoản người dùng database:**
+   ```sql
+   CREATE USER 'esportsuser'@'localhost' IDENTIFIED BY 'password';
+   GRANT ALL PRIVILEGES ON esportsmanager.* TO 'esportsuser'@'localhost';
+   FLUSH PRIVILEGES;
+   ```
+
+#### 2. Cài đặt .NET Runtime
+1. **Cài đặt .NET Runtime:**
+   - Tải .NET 8.0 Runtime (hoặc phiên bản mới nhất) từ: https://dotnet.microsoft.com/download
+   - Chạy bộ cài đặt và làm theo hướng dẫn
+
+#### 3. Cài đặt và Cấu hình Ứng dụng
+1. **Tải và cài đặt ứng dụng EsportsManager:**
+   - Tải phiên bản mới nhất từ GitHub hoặc nguồn được cung cấp:
+     ```
+     git clone https://github.com/your-username/EsportsManager.git
+     ```
+   - Hoặc tải file ZIP và giải nén vào thư mục mong muốn
+
+2. **Compile ứng dụng từ mã nguồn (nếu cần):**
+   - Mở Command Prompt hoặc PowerShell
+   - Di chuyển đến thư mục gốc của dự án
+   - Chạy lệnh:
+     ```
+     dotnet build EsportsManager.sln --configuration Release
+     ```
+   - Các file thực thi sẽ được tạo trong thư mục `/bin/Release/net8.0/`
+
+3. **Cấu hình kết nối database:**
+   - Mở file `appsettings.json` trong thư mục EsportsManager.UI
+   - Cập nhật chuỗi kết nối theo thông tin cài đặt của bạn:
+   ```json
+   "ConnectionStrings": {
+     "DefaultConnection": "Server=localhost;Database=esportsmanager;User=esportsuser;Password=password;TrustServerCertificate=true;"
+   }
+   ```
+   - Đối với MySQL, sử dụng chuỗi kết nối:
+   ```json
+   "ConnectionStrings": {
+     "DefaultConnection": "Server=localhost;Database=esportsmanager;User=esportsuser;Password=password;Port=3306;"
+   }
+   ```
+
+4. **Chạy ứng dụng:**
+   - **Từ mã nguồn:**
+     - Mở Command Prompt hoặc PowerShell
+     - Di chuyển đến thư mục gốc của dự án
+     - Chạy lệnh: `dotnet run --project src/EsportsManager.UI/EsportsManager.UI.csproj`
+   
+   - **Từ bản build:**
+     - Mở Command Prompt hoặc PowerShell
+     - Di chuyển đến thư mục chứa file thực thi
+     - Chạy lệnh: `dotnet EsportsManager.UI.dll`
+     - Hoặc chạy file EsportsManager.exe (nếu đã build thành file thực thi)
+
+#### 4. Kiểm tra và Xác nhận Cài đặt
+1. **Kiểm tra kết nối database:**
+   - Khi ứng dụng khởi động, hệ thống sẽ tự động kiểm tra kết nối đến database
+   - Nếu có lỗi, kiểm tra lại thông tin trong `appsettings.json` và đảm bảo MySQL Server đang chạy
+
+2. **Đăng nhập thử nghiệm:**
+   - Sử dụng tài khoản mặc định để đăng nhập:
+     - **Admin:** username: `admin`, password: `admin123`
+     - **Player:** username: `player1`, password: `player123`
+     - **Viewer:** username: `viewer1`, password: `viewer123`
+
+3. **Khắc phục lỗi thường gặp:**
+   - **Lỗi kết nối database:** Kiểm tra chuỗi kết nối, trạng thái MySQL Server, firewall
+   - **Lỗi thiếu thư viện:** Chạy lệnh `dotnet restore` để cài đặt các package thiếu
+   - **Lỗi xác thực:** Kiểm tra người dùng MySQL có đủ quyền trên database
+
+## [cite_start]Appendix 
+### [cite_start]Terms and Abbreviations 
+| Thuật ngữ/Viết tắt | Mô tả |
+|-------------------|-------|
+| UI (User Interface) | Giao diện người dùng, tầng giao tiếp với người dùng cuối |
+| BL (Business Layer) | Tầng xử lý nghiệp vụ, chứa logic kinh doanh của ứng dụng |
+| DAL (Data Access Layer) | Tầng truy cập dữ liệu, chịu trách nhiệm tương tác với cơ sở dữ liệu |
+| DTO (Data Transfer Object) | Đối tượng trung gian dùng để chuyển dữ liệu giữa các layer |
+| PK (Primary Key) | Khóa chính trong cơ sở dữ liệu |
+| FK (Foreign Key) | Khóa ngoại trong cơ sở dữ liệu |
+| ERD (Entity Relationship Diagram) | Sơ đồ thực thể mối quan hệ |
+| API (Application Programming Interface) | Giao diện lập trình ứng dụng |
+| CRUD (Create, Read, Update, Delete) | Các thao tác cơ bản với dữ liệu: Tạo, Đọc, Cập nhật, Xóa |
+| DI (Dependency Injection) | Tiêm phụ thuộc, mô hình thiết kế giúp giảm sự phụ thuộc giữa các thành phần |
+| ORM (Object-Relational Mapping) | Công nghệ ánh xạ đối tượng quan hệ |
+| DBMS (Database Management System) | Hệ quản trị cơ sở dữ liệu |
+| UML (Unified Modeling Language) | Ngôn ngữ mô hình hóa thống nhất |
+| IDE (Integrated Development Environment) | Môi trường phát triển tích hợp |
+| JWT (JSON Web Token) | Token xác thực và ủy quyền dựa trên JSON |
+| RDBMS (Relational Database Management System) | Hệ quản trị cơ sở dữ liệu quan hệ |
+| MVP (Minimum Viable Product) | Sản phẩm khả thi tối thiểu |
+| DDD (Domain-Driven Design) | Thiết kế hướng miền, phương pháp phát triển phần mềm tập trung vào lĩnh vực kinh doanh |
+| CI/CD (Continuous Integration/Continuous Deployment) | Tích hợp liên tục/Triển khai liên tục |
+
+### [cite_start]References 
+1. Microsoft .NET Documentation
+   - URL: https://learn.microsoft.com/en-us/dotnet/
+   - Mô tả: Tài liệu chính thức của Microsoft về công nghệ .NET, C#, ASP.NET, và các thành phần liên quan
+
+2. MySQL Documentation
+   - URL: https://dev.mysql.com/doc/
+   - Mô tả: Tài liệu chính thức về MySQL Server, cấu hình, tối ưu hóa và quản lý
+
+3. Dapper ORM Documentation
+   - URL: https://github.com/DapperLib/Dapper
+   - Mô tả: Tài liệu về Dapper, một micro-ORM đơn giản và hiệu suất cao cho .NET
+
+4. N-Layer Architecture Best Practices
+   - URL: https://docs.microsoft.com/en-us/dotnet/architecture/modern-web-apps-azure/common-web-application-architectures
+   - Mô tả: Tài liệu về các mô hình kiến trúc ứng dụng phổ biến, bao gồm kiến trúc n-tier
+
+5. C# Programming Guide
+   - URL: https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/
+   - Mô tả: Hướng dẫn lập trình C# từ Microsoft
+
+6. Esports Management Systems Research Papers
+   - Tác giả: Multiple authors
+   - Mô tả: Các bài báo nghiên cứu về hệ thống quản lý esports, xu hướng và thực tiễn tốt nhất trong ngành
+
+7. Books:
+   - "Clean Code: A Handbook of Agile Software Craftsmanship" - Robert C. Martin
+   - "Domain-Driven Design: Tackling Complexity in the Heart of Software" - Eric Evans
+   - "Patterns of Enterprise Application Architecture" - Martin Fowler
+
+8. Design Patterns Resources
+   - URL: https://refactoring.guru/design-patterns
+   - Mô tả: Tài liệu về các mẫu thiết kế phần mềm, ví dụ và hướng dẫn thực hiện
+
+9. Software Architecture Documentation Templates
+   - URL: https://arc42.org/
+   - Mô tả: Mẫu tài liệu kiến trúc phần mềm và hướng dẫn
+
+### [cite_start]Other Issues 
+
+#### 1. Thách thức kỹ thuật trong quá trình phát triển
+- **Tích hợp đa nền tảng:** Hệ thống được thiết kế để chạy trên nhiều nền tảng khác nhau (Windows, Linux), đòi hỏi phải xử lý các vấn đề tương thích.
+- **Tối ưu hóa hiệu suất:** Trong các giải đấu lớn với hàng nghìn người tham gia, việc tối ưu hiệu suất của hệ thống và cơ sở dữ liệu là một thách thức đáng kể.
+- **Bảo mật thông tin:** Việc bảo vệ thông tin cá nhân của người dùng, đặc biệt là thông tin liên quan đến giao dịch tài chính, đòi hỏi cơ chế bảo mật nghiêm ngặt.
+- **Xử lý đồng thời:** Quản lý đồng thời nhiều giải đấu, đội tuyển và người dùng đòi hỏi hệ thống phải xử lý tốt các vấn đề về đồng bộ hóa và xung đột dữ liệu.
+
+#### 2. Hạn chế hiện tại và hướng phát triển
+- **Giao diện người dùng:** Giao diện dòng lệnh hiện tại có thể khó sử dụng đối với người dùng không có kinh nghiệm kỹ thuật. Phát triển giao diện đồ họa (GUI) là một hướng cải tiến tiềm năng.
+- **Tích hợp API:** Hệ thống có thể được nâng cấp để cung cấp API cho các ứng dụng bên ngoài và tích hợp với các nền tảng mạng xã hội, streaming.
+- **Phân tích dữ liệu:** Phát triển hệ thống phân tích dữ liệu và báo cáo nâng cao để cung cấp thông tin chi tiết hơn cho các quyết định quản lý.
+- **Mở rộng hỗ trợ game:** Hỗ trợ thêm nhiều loại game và giải đấu, bao gồm các game mới xuất hiện trên thị trường.
+
+#### 3. Vấn đề về quản lý phiên bản và triển khai
+- **Quản lý phiên bản:** Sử dụng Git cho quản lý phiên bản, tuy nhiên một quy trình kiểm soát phiên bản và phát hành chính thức cần được thiết lập.
+- **Tự động hóa triển khai:** Xây dựng quy trình CI/CD để tự động hóa việc kiểm tra, xây dựng và triển khai hệ thống.
+- **Kiểm thử tự động:** Phát triển thêm các bộ kiểm thử tự động để đảm bảo chất lượng và tính ổn định của hệ thống.
+
+#### 4. Khả năng mở rộng trong tương lai
+- **Dịch vụ di động:** Phát triển ứng dụng di động cho iOS và Android để người dùng có thể truy cập hệ thống từ điện thoại thông minh và máy tính bảng.
+- **Tích hợp blockchain:** Khám phá khả năng sử dụng công nghệ blockchain cho các giao dịch tài chính và quản lý giải thưởng.
+- **Hỗ trợ đa ngôn ngữ:** Bổ sung hỗ trợ đa ngôn ngữ để mở rộng phạm vi tiếp cận người dùng trên toàn cầu.
+- **Phân tích dữ liệu lớn:** Tích hợp các công cụ phân tích dữ liệu lớn để cung cấp thông tin chi tiết và dự đoán về xu hướng esports.
+
+### [cite_start]Development and Contribution Guidelines
+
+#### 1. Quy trình phát triển
+1. **Chuẩn bị môi trường phát triển:**
+   - Cài đặt Visual Studio 2022 hoặc Visual Studio Code
+   - Cài đặt .NET SDK 8.0 hoặc phiên bản mới hơn
+   - Cài đặt MySQL Server và MySQL Workbench
+   - Cài đặt Git
+
+2. **Clone dự án:**
+   ```
+   git clone https://github.com/your-username/EsportsManager.git
+   cd EsportsManager
+   ```
+
+3. **Cài đặt các dependency:**
+   ```
+   dotnet restore
+   ```
+
+4. **Xây dựng dự án:**
+   ```
+   dotnet build
+   ```
+
+5. **Cấu hình database development:**
+   - Tạo database phát triển riêng
+   - Cập nhật file `appsettings.Development.json`
+
+6. **Chạy ứng dụng trong môi trường phát triển:**
+   ```
+   dotnet run --project src/EsportsManager.UI/EsportsManager.UI.csproj --environment Development
+   ```
+
+#### 2. Quy tắc đóng góp code
+1. **Tuân thủ coding standards:**
+   - Tuân thủ C# Coding Conventions của Microsoft
+   - Sử dụng PascalCase cho tên class, method, property
+   - Sử dụng camelCase cho tên biến cục bộ và tham số
+   - Sử dụng dấu cách thay vì tab, 4 dấu cách cho mỗi level thụt lề
+   - Tất cả các file phải sử dụng mã hóa UTF-8
+
+2. **Quy trình đóng góp:**
+   - Fork dự án
+   - Tạo nhánh mới cho tính năng hoặc sửa lỗi: `git checkout -b feature/your-feature-name`
+   - Thực hiện các thay đổi
+   - Commit với thông điệp rõ ràng: `git commit -m "Add feature: description"`
+   - Push lên fork của bạn: `git push origin feature/your-feature-name`
+   - Tạo Pull Request đến nhánh chính của dự án
+
+3. **Kiểm thử:**
+   - Viết unit test cho mọi tính năng mới
+   - Đảm bảo coverage ít nhất 80% cho code mới
+   - Chạy tất cả unit test trước khi commit: `dotnet test`
+
+4. **Code Review:**
+   - Mọi PR sẽ được review bởi ít nhất một thành viên khác trước khi merge
+   - Xử lý comments và yêu cầu thay đổi từ người review
+   - Đảm bảo CI/CD pipeline pass trước khi merge
+
+#### 3. Lộ trình phát triển (Roadmap)
+1. **Q1 2024:**
+   - Hoàn thiện tính năng quản lý giải đấu
+   - Cải thiện hệ thống xác thực và phân quyền
+   - Bổ sung unit test cho các thành phần cốt lõi
+
+2. **Q2 2024:**
+   - Phát triển API RESTful cho tích hợp với bên thứ ba
+   - Cải thiện hiệu suất database cho các truy vấn phức tạp
+   - Tối ưu hóa xử lý đồng thời
+
+3. **Q3 2024:**
+   - Phát triển giao diện web dựa trên Blazor
+   - Thêm tính năng phân tích và báo cáo
+   - Tích hợp với nền tảng streaming phổ biến
+
+4. **Q4 2024:**
+   - Phát hành phiên bản beta public
+   - Thu thập phản hồi và cải thiện UX/UI
+   - Lên kế hoạch cho tính năng mới năm 2025
+
+#### 4. Nhật ký phát triển (Development Log)
+| Ngày | Phiên bản | Thay đổi chính |
+|------|-----------|----------------|
+| 01/01/2024 | 0.1.0 | Khởi tạo dự án, cấu trúc N-layer |
+| 15/01/2024 | 0.2.0 | Thêm tính năng xác thực và phân quyền |
+| 01/02/2024 | 0.3.0 | Thêm quản lý người dùng và đội tuyển |
+| 15/02/2024 | 0.4.0 | Thêm quản lý giải đấu và lịch thi đấu |
+| 01/03/2024 | 0.5.0 | Thêm chức năng ví điện tử và donation |
+| 15/03/2024 | 0.6.0 | Thêm chức năng thống kê và báo cáo |
+| 01/04/2024 | 0.7.0 | Chuẩn hóa toàn bộ hệ thống theo tài liệu |
+| 15/04/2024 | 0.8.0 | Tối ưu hiệu suất và sửa lỗi |
