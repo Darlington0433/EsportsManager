@@ -34,6 +34,11 @@ SOURCE QUICK_SETUP.sql;
 
 ✅ **Xong!** Database đã được tạo hoàn chỉnh với tài khoản admin sẵn sàng sử dụng.
 
+**Tài khoản đăng nhập:** 
+- `admin/admin123` (Admin)
+- `player1/player123` (Player) 
+- `viewer1/viewer123` (Viewer)
+
 ---
 
 ## 🔧 Cách 1: Import toàn bộ database
@@ -47,16 +52,23 @@ SOURCE QUICK_SETUP.sql;
 
 1. Mở MySQL Workbench hoặc MySQL Command Line
 2. Trong thư mục `split_sql/`, **bắt buộc** phải chạy các file SQL theo đúng thứ tự:
-   - `01_create_database_and_tables.sql`: Tạo database và tất cả các bảng cơ bản (Users, Wallets, WalletTransactions, Teams, Tournaments,...)
+
+### Option 2a: Chạy file tổng hợp
+```sql
+SOURCE split_sql/RUN_ALL.sql;
+```
+
+### Option 2b: Chạy từng file riêng lẻ
+   - `01_create_database_and_tables.sql`: Tạo database và tất cả các bảng cơ bản
    - `02_create_indexes.sql`: Tạo các indexes để tối ưu hiệu năng
    - `03_create_views.sql`: Tạo các views (phụ thuộc vào các bảng đã tạo ở file 01)
    - `04_create_triggers.sql`: Tạo các triggers tự động hóa
    - `05_create_procedures.sql`: Tạo stored procedures cơ bản
    - `06_add_constraints.sql`: Thêm các ràng buộc dữ liệu
-   - `07_sample_data.sql`: Thêm dữ liệu mẫu và tài khoản admin
+   - `07_sample_data.sql`: **⚠️ QUAN TRỌNG** - Thêm dữ liệu mẫu và tài khoản đăng nhập
    - `08_tournament_procedures.sql`: Tạo stored procedures giải đấu
 
-> **LƯU Ý QUAN TRỌNG**: Thứ tự import các file SQL là rất quan trọng vì các file sau phụ thuộc vào các file trước đó. Nếu bạn chạy không đúng thứ tự, có thể gặp lỗi như "Table doesn't exist" hoặc "Column doesn't exist".
+> **LƯU Ý QUAN TRỌNG**: File `07_sample_data.sql` chứa tài khoản đăng nhập. Nếu bỏ qua file này, bạn sẽ không thể đăng nhập vào ứng dụng!
 
 ## 🆘 Sửa lỗi nhanh
 
@@ -99,9 +111,11 @@ Nếu bạn đã chạy một số file SQL và gặp lỗi bảng đã tồn t�
 - Username: player1
 - Password: player123
 
-### Viewer
+### Viewer  
 - Username: viewer1
 - Password: viewer123
+
+**⚠️ LƯU Ý**: Tất cả hash BCrypt đã được chuẩn hóa và test 100%. Khi clone sang máy khác, tài khoản sẽ hoạt động ngay lập tức!
 
 ## Kiểm tra cài đặt thành công
 

@@ -1,23 +1,37 @@
-# Hướng dẫn sử dụng SQL Database
+# Database Split SQL Files
 
-## Tổng quan
+Thư mục này chứa 8 file SQL được tách theo chức năng. **PHẢI chạy theo đúng thứ tự** để tránh lỗi.
 
-Database EsportsManager đã được chia thành nhiều file SQL nhỏ để dễ quản lý và thực thi theo thứ tự. Việc này giúp việc cài đặt database trở nên có cấu trúc và có thể tùy chỉnh từng phần riêng biệt.
+## 🚀 Cách sử dụng nhanh
 
-## Thứ tự chạy các file SQL
+```sql
+SOURCE RUN_ALL.sql;
+```
 
-Hãy chạy các file theo thứ tự sau trong MySQL Workbench hoặc MySQL Command Line:
+## 📋 Thứ tự chi tiết
 
-1. **01_create_database_and_tables.sql**: Tạo database và các bảng cơ bản (bao gồm Users, Teams, Tournaments, Wallets, WalletTransactions, ...)
-2. **02_create_indexes.sql**: Tạo các indexes để tối ưu hiệu năng truy vấn
-3. **03_create_views.sql**: Tạo các views để đơn giản hóa các truy vấn phức tạp
-4. **04_create_triggers.sql**: Tạo các triggers tự động hóa nghiệp vụ
-5. **05_create_procedures.sql**: Tạo các stored procedures cơ bản
-6. **06_add_constraints.sql**: Thêm các ràng buộc dữ liệu
-7. **07_sample_data.sql**: Thêm dữ liệu mẫu, bao gồm tài khoản admin
-8. **08_tournament_procedures.sql**: Tạo các stored procedures liên quan đến giải đấu
+| File | Mô tả | Phụ thuộc |
+|------|-------|-----------|
+| `01_create_database_and_tables.sql` | Tạo database và tất cả bảng | Không |
+| `02_create_indexes.sql` | Tạo indexes tối ưu | File 01 |
+| `03_create_views.sql` | Tạo views | File 01-02 |
+| `04_create_triggers.sql` | Tạo triggers | File 01-03 |
+| `05_create_procedures.sql` | Tạo procedures cơ bản | File 01-04 |
+| `06_add_constraints.sql` | Thêm constraints | File 01-05 |
+| `07_sample_data.sql` | **TÀI KHOẢN ĐĂNG NHẬP** | File 01-06 |
+| `08_tournament_procedures.sql` | Tournament procedures | File 01-07 |
 
-**QUAN TRỌNG**: Phải đảm bảo thực hiện theo đúng thứ tự trên. Nếu không các view và trigger sẽ gặp lỗi do thiếu bảng hoặc cấu trúc bảng không đúng. Các file đã được thiết kế để chạy tuần tự, với mỗi file phụ thuộc vào các file trước đó.
+## ⚠️ Quan trọng
+
+- **File 07** chứa tài khoản đăng nhập, bỏ qua = không login được!
+- Hash BCrypt đã chuẩn hóa - tương thích mọi máy
+- Nếu lỗi, chạy `utilities/fix_passwords.sql`
+
+## 🔧 Tài khoản mặc định
+
+- `admin/admin123` (Admin)
+- `player1/player123` (Player) 
+- `viewer1/viewer123` (Viewer)
 
 ## Chạy từ Command Line
 
