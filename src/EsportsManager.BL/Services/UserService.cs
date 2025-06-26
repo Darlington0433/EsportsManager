@@ -134,6 +134,11 @@ public class UserService : IUserService
             // Hash password
             string passwordHash = PasswordHasher.HashPassword(registerDto.Password);
 
+            // Hash security answer
+            string hashedSecurityAnswer = !string.IsNullOrEmpty(registerDto.SecurityAnswer)
+                ? PasswordHasher.HashPassword(registerDto.SecurityAnswer)
+                : string.Empty;
+
             // Create verification token
             string emailVerificationToken = Guid.NewGuid().ToString("N");
 
@@ -144,10 +149,12 @@ public class UserService : IUserService
                 Email = registerDto.Email,
                 PasswordHash = passwordHash,
                 FullName = registerDto.FullName,
-                Role = EsportsManager.DAL.Models.UsersRoles.Viewer, // Default role
-                Status = EsportsManager.DAL.Models.UsersStatus.Active,
+                Role = !string.IsNullOrEmpty(registerDto.Role) ? registerDto.Role : EsportsManager.DAL.Models.UsersRoles.Viewer, // Use provided role or default to Viewer
+                Status = EsportsManager.DAL.Models.UsersStatus.Pending, // Start as Pending for Admin approval
                 EmailVerificationToken = emailVerificationToken,
                 IsEmailVerified = false,
+                SecurityQuestion = registerDto.SecurityQuestion,
+                SecurityAnswer = hashedSecurityAnswer,
                 CreatedAt = DateTime.UtcNow
             };
 
@@ -616,8 +623,9 @@ public class UserService : IUserService
     /// Xóa người dùng (soft delete)
     /// </summary>
     /// <param name="userId">ID của user cần xóa</param>
+    /// <param name="currentUserId">ID của user thực hiện yêu cầu (không sử dụng trong method này)</param>
     /// <returns>Kết quả xóa</returns>
-    public async Task<bool> DeleteUserAsync(int userId)
+    public async Task<bool> DeleteUserAsync(int userId, int currentUserId = 0)
     {
         try
         {
@@ -642,6 +650,66 @@ public class UserService : IUserService
         {
             _logger.LogError(ex, "Error deleting user: {UserId}", userId);
             return false;
+        }
+    }
+
+    /// <summary>
+    /// Xóa người dùng với kiểm tra quyền (Admin không thể xóa chính mình hoặc Admin khác)
+    /// </summary>
+    /// <param name="userId">ID của user cần xóa</param>
+    /// <param name="requestUserId">ID của user thực hiện yêu cầu</param>
+    /// <returns>Kết quả xóa</returns>
+    public async Task<BusinessResult<bool>> DeleteUserWithPermissionCheckAsync(int userId, int requestUserId)
+    {
+        try
+        {
+            // Get user to be deleted
+            var targetUser = await _userRepository.GetByIdAsync(userId);
+            if (targetUser == null)
+            {
+                return BusinessResult<bool>.Failure("User not found");
+            }
+
+            // Get requesting user
+            var requestUser = await _userRepository.GetByIdAsync(requestUserId);
+            if (requestUser == null)
+            {
+                return BusinessResult<bool>.Failure("Request user not found");
+            }
+
+            // Admin cannot delete themselves
+            if (requestUser.Role == "Admin" && requestUserId == userId)
+            {
+                return BusinessResult<bool>.Failure("Admin cannot delete their own account");
+            }
+
+            // Admin can only delete Player/Viewer, not other Admins
+            if (requestUser.Role == "Admin" && targetUser.Role == "Admin")
+            {
+                return BusinessResult<bool>.Failure("Admin cannot delete other Admin accounts");
+            }
+
+            // Only Admin can delete users
+            if (requestUser.Role != "Admin")
+            {
+                return BusinessResult<bool>.Failure("Only Admin can delete users");
+            }
+
+            // Perform soft delete
+            targetUser.Status = EsportsManager.DAL.Models.UsersStatus.Deleted;
+            targetUser.UpdatedAt = DateTime.UtcNow;
+
+            await _userRepository.UpdateAsync(targetUser);
+
+            _logger.LogInformation("User deleted by admin: {Username} deleted by {AdminUsername}",
+                targetUser.Username, requestUser.Username);
+
+            return BusinessResult<bool>.Success(true);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error deleting user: {UserId} by user: {RequestUserId}", userId, requestUserId);
+            return BusinessResult<bool>.Failure("An error occurred while deleting the user");
         }
     }
 
@@ -790,8 +858,70 @@ public class UserService : IUserService
     private Models.ValidationResult ValidateRegisterData(RegisterDto registerDto)
     {
         var errors = new List<string>();
-        // Add validation logic
+
+        // Validate required fields
+        if (string.IsNullOrWhiteSpace(registerDto.Username))
+            errors.Add("Username is required");
+
+        if (string.IsNullOrWhiteSpace(registerDto.Email))
+            errors.Add("Email is required");
+
+        if (string.IsNullOrWhiteSpace(registerDto.Password))
+            errors.Add("Password is required");
+
+        if (string.IsNullOrWhiteSpace(registerDto.ConfirmPassword))
+            errors.Add("Confirm password is required");
+
+        if (string.IsNullOrWhiteSpace(registerDto.FullName))
+            errors.Add("Full name is required");
+
+        if (string.IsNullOrWhiteSpace(registerDto.SecurityQuestion))
+            errors.Add("Security question is required");
+
+        if (string.IsNullOrWhiteSpace(registerDto.SecurityAnswer))
+            errors.Add("Security answer is required");
+
+        // Validate password match
+        if (registerDto.Password != registerDto.ConfirmPassword)
+            errors.Add("Password and confirm password do not match");
+
+        // Validate email format
+        if (!string.IsNullOrWhiteSpace(registerDto.Email) && !IsValidEmail(registerDto.Email))
+            errors.Add("Invalid email format");
+
+        // Validate username length
+        if (!string.IsNullOrWhiteSpace(registerDto.Username) &&
+            (registerDto.Username.Length < 3 || registerDto.Username.Length > 50))
+            errors.Add("Username must be between 3 and 50 characters");
+
+        // Validate password strength
+        if (!string.IsNullOrWhiteSpace(registerDto.Password) && registerDto.Password.Length < 6)
+            errors.Add("Password must be at least 6 characters long");
+
+        // Validate role
+        if (!string.IsNullOrWhiteSpace(registerDto.Role) &&
+            registerDto.Role != "Player" && registerDto.Role != "Viewer")
+            errors.Add("Invalid role. Only Player and Viewer roles are allowed for registration");
+
         return errors.Any() ? Models.ValidationResult.Failure(errors) : Models.ValidationResult.Success();
+    }
+
+    /// <summary>
+    /// Validate email format
+    /// </summary>
+    /// <param name="email">Email to validate</param>
+    /// <returns>True if valid email format</returns>
+    private bool IsValidEmail(string email)
+    {
+        try
+        {
+            var addr = new System.Net.Mail.MailAddress(email);
+            return addr.Address == email;
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     /// <summary>
@@ -930,18 +1060,18 @@ public class UserService : IUserService
     {
         try
         {
-            // Generate a new random password
-            string newPassword = GenerateRandomPassword();
-
-            // Hash the new password
-            string passwordHash = PasswordHasher.HashPassword(newPassword);
-
-            // Get user
+            // Get user first to get their role
             var user = await _userRepository.GetByIdAsync(userId);
             if (user == null)
             {
                 return "User not found";
             }
+
+            // Generate a role-based password (role + "123")
+            string newPassword = GenerateRoleBasedPassword(user.Role);
+
+            // Hash the new password
+            string passwordHash = PasswordHasher.HashPassword(newPassword);
 
             // Update password
             bool success = await _userRepository.UpdatePasswordAsync(user.UserID, passwordHash);
@@ -953,7 +1083,7 @@ public class UserService : IUserService
             // TODO: Send new password via email or other means
 
             _logger.LogInformation("Password reset for user: {Username}", user.Username);
-            return "Password has been reset successfully";
+            return newPassword; // Return the actual new password for display
         }
         catch (Exception ex)
         {
@@ -963,7 +1093,17 @@ public class UserService : IUserService
     }
 
     /// <summary>
-    /// Generate a random password
+    /// Generate a role-based password (role + "123")
+    /// </summary>
+    /// <param name="role">User role</param>
+    /// <returns>Role-based password</returns>
+    private string GenerateRoleBasedPassword(string role)
+    {
+        return role.ToLower() + "123";
+    }
+
+    /// <summary>
+    /// Generate a random password (deprecated - keeping for backward compatibility)
     /// </summary>
     /// <returns>Randomly generated password</returns>
     private string GenerateRandomPassword()
@@ -973,5 +1113,101 @@ public class UserService : IUserService
         var random = new Random();
         return new string(Enumerable.Repeat(validChars, length)
           .Select(s => s[random.Next(s.Length)]).ToArray());
+    }
+
+    /// <summary>
+    /// Get all accounts with Pending status
+    /// </summary>
+    /// <returns>List of pending accounts</returns>
+    public async Task<BusinessResult<IEnumerable<UserDto>>> GetPendingAccountsAsync()
+    {
+        try
+        {
+            var users = await _userRepository.GetByStatusAsync("Pending");
+            var userDtos = users.Select(u => new UserDto
+            {
+                Id = u.UserID,
+                Username = u.Username,
+                Email = u.Email,
+                FullName = u.FullName,
+                Role = u.Role,
+                Status = u.Status,
+                CreatedAt = u.CreatedAt,
+                TotalLogins = 0, // TODO: Implement method to get login count
+                LastLoginAt = u.LastLoginAt
+            });
+
+            return new BusinessResult<IEnumerable<UserDto>>
+            {
+                IsSuccess = true,
+                Data = userDtos
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting pending accounts");
+            return new BusinessResult<IEnumerable<UserDto>>
+            {
+                IsSuccess = false,
+                ErrorMessage = "Failed to get pending accounts"
+            };
+        }
+    }
+
+    /// <summary>
+    /// Approve a pending account by changing status to Active
+    /// </summary>
+    /// <param name="userId">User ID to approve</param>
+    /// <returns>Success or failure result</returns>
+    public async Task<BusinessResult> ApproveAccountAsync(int userId)
+    {
+        try
+        {
+            var user = await _userRepository.GetByIdAsync(userId);
+            if (user == null)
+            {
+                return new BusinessResult
+                {
+                    IsSuccess = false,
+                    ErrorMessage = "User not found"
+                };
+            }
+
+            if (user.Status != "Pending")
+            {
+                return new BusinessResult
+                {
+                    IsSuccess = false,
+                    ErrorMessage = "User is not in pending status"
+                };
+            }
+
+            user.Status = "Active";
+            user.UpdatedAt = DateTime.Now;
+
+            var updatedUser = await _userRepository.UpdateAsync(user);
+            if (updatedUser != null)
+            {
+                _logger.LogInformation("Account approved for user: {Username}", user.Username);
+                return new BusinessResult { IsSuccess = true };
+            }
+            else
+            {
+                return new BusinessResult
+                {
+                    IsSuccess = false,
+                    ErrorMessage = "Failed to update user status"
+                };
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error approving account for user: {UserId}", userId);
+            return new BusinessResult
+            {
+                IsSuccess = false,
+                ErrorMessage = "An error occurred while approving the account"
+            };
+        }
     }
 }

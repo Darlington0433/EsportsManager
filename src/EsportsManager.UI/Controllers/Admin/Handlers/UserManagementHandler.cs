@@ -41,10 +41,10 @@ public class UserManagementHandler
             // Tính vị trí để hiển thị data bên trong border
             int borderLeft = (Console.WindowWidth - 80) / 2;
             int borderTop = (Console.WindowHeight - 20) / 4;
-            
+
             // Set cursor vào bên trong border (cách border 2 ký tự từ trái và 2 dòng từ trên)
             Console.SetCursorPosition(borderLeft + 2, borderTop + 2);
-            
+
             DisplayUsersTableInBorder(result.Data, borderLeft + 2, borderTop + 2, 76);
 
             // Hiển thị tổng số và thông báo ở cuối border
@@ -103,10 +103,10 @@ public class UserManagementHandler
             // Tính vị trí để hiển thị data bên trong border
             int borderLeft = (Console.WindowWidth - 80) / 2;
             int borderTop = (Console.WindowHeight - 20) / 4;
-            
+
             // Set cursor vào bên trong border
             Console.SetCursorPosition(borderLeft + 2, borderTop + 2);
-            
+
             DisplayUsersTableInBorder(filteredUsers, borderLeft + 2, borderTop + 2, 76);
 
             // Hiển thị tổng số và thông báo ở cuối border
@@ -243,7 +243,37 @@ public class UserManagementHandler
             Console.Write("\nNhập User ID cần xóa: ");
             if (int.TryParse(Console.ReadLine(), out int userId))
             {
-                Console.Write($"Xác nhận xóa user ID {userId}? (YES để xác nhận): ");
+                // Check if trying to delete their own account (Admin cannot delete themselves)
+                var currentUser = EsportsManager.UI.Services.UserSessionManager.CurrentUser;
+                if (currentUser != null && currentUser.Id == userId && currentUser.Role == "Admin")
+                {
+                    ConsoleRenderingService.ShowMessageBox("❌ Admin không thể xóa tài khoản của chính mình!", true, 3000);
+                    return;
+                }
+
+                // Get user details to check role
+                var userResult = await _userService.GetUserByIdAsync(userId);
+                if (!userResult.IsSuccess || userResult.Data == null)
+                {
+                    ConsoleRenderingService.ShowMessageBox("❌ Không tìm thấy người dùng!", true, 2000);
+                    return;
+                }
+
+                var targetUser = userResult.Data;
+
+                // Admin can only delete Player/Viewer, not other Admins
+                if (targetUser.Role == "Admin")
+                {
+                    ConsoleRenderingService.ShowMessageBox("❌ Admin không thể xóa tài khoản Admin khác!", true, 3000);
+                    return;
+                }
+
+                Console.WriteLine($"\nThông tin người dùng sẽ bị xóa:");
+                Console.WriteLine($"Username: {targetUser.Username}");
+                Console.WriteLine($"Email: {targetUser.Email}");
+                Console.WriteLine($"Role: {targetUser.Role}");
+
+                Console.Write($"\nXác nhận xóa user ID {userId}? (YES để xác nhận): ");
                 string confirmation = Console.ReadLine() ?? "";
 
                 if (confirmation.ToUpper() == "YES")
@@ -266,6 +296,218 @@ public class UserManagementHandler
             else
             {
                 ConsoleRenderingService.ShowMessageBox("ID không hợp lệ!", true, 2000);
+            }
+        }
+        catch (Exception ex)
+        {
+            ConsoleRenderingService.ShowMessageBox($"Lỗi: {ex.Message}", true, 3000);
+        }
+    }
+
+    /// <summary>
+    /// Phê duyệt tài khoản đang chờ xử lý
+    /// </summary>
+    public async Task ApprovePendingAccountsAsync()
+    {
+        try
+        {
+            Console.Clear();
+            ConsoleRenderingService.DrawBorder("PHÊ DUYỆT TÀI KHOẢN", 80, 20);
+
+            // Get pending accounts
+            var result = await _userService.GetPendingAccountsAsync();
+
+            if (!result.IsSuccess || result.Data == null || !result.Data.Any())
+            {
+                int centerX = (Console.WindowWidth - 30) / 2;
+                int centerY = Console.WindowHeight / 2;
+                Console.SetCursorPosition(centerX, centerY);
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine("Không có tài khoản nào đang chờ phê duyệt.");
+                Console.ResetColor();
+                Console.SetCursorPosition(centerX - 10, centerY + 2);
+                Console.WriteLine("Nhấn phím bất kỳ để tiếp tục...");
+                Console.ReadKey(true);
+                return;
+            }
+
+            // Display pending accounts
+            int borderLeft = (Console.WindowWidth - 80) / 2;
+            int borderTop = (Console.WindowHeight - 20) / 4;
+
+            Console.SetCursorPosition(borderLeft + 2, borderTop + 2);
+            Console.WriteLine("📋 Danh sách tài khoản đang chờ phê duyệt:");
+            Console.SetCursorPosition(borderLeft + 2, borderTop + 3);
+            Console.WriteLine(new string('─', 70));
+
+            int currentRow = borderTop + 4;
+            var pendingAccounts = result.Data.ToList();
+
+            for (int i = 0; i < pendingAccounts.Count && i < 10; i++)
+            {
+                var user = pendingAccounts[i];
+                Console.SetCursorPosition(borderLeft + 2, currentRow + i);
+                Console.WriteLine($"{i + 1}. ID: {user.Id} | {user.Username} | {user.Email} | Role: {user.Role}");
+            }
+
+            Console.SetCursorPosition(borderLeft + 2, currentRow + Math.Min(pendingAccounts.Count, 10) + 1);
+            Console.Write("Nhập số thứ tự tài khoản cần phê duyệt (0 để thoát): ");
+
+            if (int.TryParse(Console.ReadLine(), out int selection) && selection > 0 && selection <= pendingAccounts.Count)
+            {
+                var selectedUser = pendingAccounts[selection - 1];
+
+                Console.SetCursorPosition(borderLeft + 2, currentRow + Math.Min(pendingAccounts.Count, 10) + 3);
+                Console.WriteLine($"Phê duyệt tài khoản: {selectedUser.Username}");
+                Console.Write("Xác nhận phê duyệt? (y/n): ");
+
+                var confirmation = Console.ReadLine()?.ToLower();
+                if (confirmation == "y" || confirmation == "yes")
+                {
+                    var approveResult = await _userService.ApproveAccountAsync(selectedUser.Id);
+                    if (approveResult.IsSuccess)
+                    {
+                        ConsoleRenderingService.ShowMessageBox("✅ Đã phê duyệt tài khoản thành công!", false, 2000);
+                    }
+                    else
+                    {
+                        ConsoleRenderingService.ShowMessageBox($"❌ Phê duyệt thất bại: {approveResult.ErrorMessage}", true, 3000);
+                    }
+                }
+                else
+                {
+                    ConsoleRenderingService.ShowMessageBox("❌ Đã hủy thao tác", false, 1000);
+                }
+            }
+            else if (selection != 0)
+            {
+                ConsoleRenderingService.ShowMessageBox("❌ Lựa chọn không hợp lệ!", true, 2000);
+            }
+        }
+        catch (Exception ex)
+        {
+            ConsoleRenderingService.ShowMessageBox($"Lỗi: {ex.Message}", true, 3000);
+        }
+    }
+
+    /// <summary>
+    /// Gán thành tích cho người chơi
+    /// </summary>
+    public async Task AssignAchievementsAsync()
+    {
+        try
+        {
+            Console.Clear();
+            ConsoleRenderingService.DrawBorder("GÁN THÀNH TÍCH", 80, 20);
+
+            // Get all players
+            var playersResult = await _userService.GetUsersByRoleAsync("Player");
+            if (!playersResult.IsSuccess || playersResult.Data == null || !playersResult.Data.Any())
+            {
+                int centerX = (Console.WindowWidth - 30) / 2;
+                int centerY = Console.WindowHeight / 2;
+                Console.SetCursorPosition(centerX, centerY);
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine("Không có Player nào trong hệ thống.");
+                Console.ResetColor();
+                Console.SetCursorPosition(centerX - 10, centerY + 2);
+                Console.WriteLine("Nhấn phím bất kỳ để tiếp tục...");
+                Console.ReadKey(true);
+                return;
+            }
+
+            // Display players list
+            int borderLeft = (Console.WindowWidth - 80) / 2;
+            int borderTop = (Console.WindowHeight - 20) / 4;
+
+            Console.SetCursorPosition(borderLeft + 2, borderTop + 2);
+            Console.WriteLine("👤 Danh sách Players:");
+            Console.SetCursorPosition(borderLeft + 2, borderTop + 3);
+            Console.WriteLine(new string('─', 70));
+
+            int currentRow = borderTop + 4;
+            var players = playersResult.Data.ToList();
+
+            for (int i = 0; i < players.Count && i < 8; i++)
+            {
+                var player = players[i];
+                Console.SetCursorPosition(borderLeft + 2, currentRow + i);
+                Console.WriteLine($"{i + 1}. ID: {player.Id} | {player.Username} | {player.FullName ?? "N/A"}");
+            }
+
+            Console.SetCursorPosition(borderLeft + 2, currentRow + Math.Min(players.Count, 8) + 1);
+            Console.Write("Chọn Player (nhập số thứ tự, 0 để thoát): ");
+
+            if (int.TryParse(Console.ReadLine(), out int selection) && selection > 0 && selection <= players.Count)
+            {
+                var selectedPlayer = players[selection - 1];
+
+                Console.SetCursorPosition(borderLeft + 2, currentRow + Math.Min(players.Count, 8) + 3);
+                Console.WriteLine($"Đã chọn Player: {selectedPlayer.Username}");
+
+                // Achievement types
+                var achievementTypes = new string[]
+                {
+                    "Tournament Winner",
+                    "Top 3 Finisher",
+                    "Most Valuable Player",
+                    "Best Team Player",
+                    "Rising Star",
+                    "Veteran Player",
+                    "Fair Play Award",
+                    "Community Champion"
+                };
+
+                Console.SetCursorPosition(borderLeft + 2, currentRow + Math.Min(players.Count, 8) + 5);
+                Console.WriteLine("🏆 Chọn loại thành tích:");
+
+                for (int i = 0; i < achievementTypes.Length; i++)
+                {
+                    Console.SetCursorPosition(borderLeft + 4, currentRow + Math.Min(players.Count, 8) + 6 + i);
+                    Console.WriteLine($"{i + 1}. {achievementTypes[i]}");
+                }
+
+                Console.SetCursorPosition(borderLeft + 2, currentRow + Math.Min(players.Count, 8) + 15);
+                Console.Write("Chọn thành tích (1-8): ");
+
+                if (int.TryParse(Console.ReadLine(), out int achievementChoice) && achievementChoice > 0 && achievementChoice <= achievementTypes.Length)
+                {
+                    var selectedAchievement = achievementTypes[achievementChoice - 1];
+
+                    Console.SetCursorPosition(borderLeft + 2, currentRow + Math.Min(players.Count, 8) + 16);
+                    Console.Write("Nhập mô tả thành tích: ");
+                    var description = Console.ReadLine() ?? "";
+
+                    Console.SetCursorPosition(borderLeft + 2, currentRow + Math.Min(players.Count, 8) + 17);
+                    Console.Write($"Xác nhận gán thành tích '{selectedAchievement}' cho {selectedPlayer.Username}? (y/n): ");
+
+                    var confirmation = Console.ReadLine()?.ToLower();
+                    if (confirmation == "y" || confirmation == "yes")
+                    {
+                        // TODO: Implement actual achievement assignment logic when IAchievementService is available
+                        ConsoleRenderingService.ShowMessageBox($"✅ Đã gán thành tích '{selectedAchievement}' cho {selectedPlayer.Username}!\n📝 Mô tả: {description}", false, 3000);
+
+                        // Log the action
+                        Console.WriteLine($"\n📊 Achievement Assignment:");
+                        Console.WriteLine($"   Player ID: {selectedPlayer.Id}");
+                        Console.WriteLine($"   Achievement: {selectedAchievement}");
+                        Console.WriteLine($"   Description: {description}");
+                        Console.WriteLine($"   Assigned by: Admin");
+                        Console.WriteLine($"   Date: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
+                    }
+                    else
+                    {
+                        ConsoleRenderingService.ShowMessageBox("❌ Đã hủy thao tác", false, 1000);
+                    }
+                }
+                else
+                {
+                    ConsoleRenderingService.ShowMessageBox("❌ Lựa chọn thành tích không hợp lệ!", true, 2000);
+                }
+            }
+            else if (selection != 0)
+            {
+                ConsoleRenderingService.ShowMessageBox("❌ Lựa chọn Player không hợp lệ!", true, 2000);
             }
         }
         catch (Exception ex)
@@ -310,20 +552,20 @@ public class UserManagementHandler
             "ID", "Username", "Email", "Role", "Status");
         Console.ForegroundColor = ConsoleColor.White;
         Console.WriteLine(header);
-        
+
         // Separator line
         Console.SetCursorPosition(startX, startY + 1);
         Console.WriteLine(new string('─', Math.Min(70, maxWidth - 4)));
-        
+
         // Data rows
         int currentRow = startY + 2;
         int maxRows = 12; // Giới hạn số dòng hiển thị để vừa trong border
         int displayedRows = 0;
-        
+
         foreach (var user in users)
         {
             if (displayedRows >= maxRows) break;
-            
+
             Console.SetCursorPosition(startX, currentRow);
             var row = string.Format("{0,-5} {1,-15} {2,-25} {3,-10} {4,-10}",
                 user.Id,
@@ -331,14 +573,14 @@ public class UserManagementHandler
                 (user.Email?.Length > 24 ? user.Email.Substring(0, 24) : user.Email) ?? "N/A",
                 user.Role,
                 user.Status);
-            
+
             Console.ForegroundColor = user.Status == "Active" ? ConsoleColor.Green : ConsoleColor.Red;
             Console.WriteLine(row);
-            
+
             currentRow++;
             displayedRows++;
         }
-        
+
         // Nếu có nhiều dữ liệu hơn, hiển thị thông báo
         if (users.Count() > maxRows)
         {
@@ -346,7 +588,7 @@ public class UserManagementHandler
             Console.ForegroundColor = ConsoleColor.Yellow;
             Console.WriteLine($"... và {users.Count() - maxRows} người dùng khác");
         }
-        
+
         Console.ResetColor();
     }
 }

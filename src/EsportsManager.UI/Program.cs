@@ -93,6 +93,11 @@ class Program
     services.AddScoped<ITournamentService, TournamentService>();
     services.AddScoped<ITeamService, TeamService>();
     services.AddScoped<IWalletService, WalletService>();
+    services.AddScoped<IVotingService, VotingService>();
+    services.AddScoped<IFeedbackService, FeedbackService>();
+    // TODO: Fix SystemSettingsService compilation issue
+    // services.AddScoped<ISystemSettingsService, EsportsManager.BL.Services.SystemSettingsService>();
+    services.AddScoped<IAchievementService, AchievementService>();
 
     // ServiceManager để tích hợp UI và BL
     services.AddScoped<EsportsManager.UI.Services.ServiceManager>();
@@ -109,6 +114,9 @@ class Program
     services.AddScoped<DataContext>();    // Repository Pattern - Scoped để share với DataContext
     services.AddScoped<IUsersRepository, UsersRepository>();
     services.AddScoped<EsportsManager.DAL.Interfaces.ITeamRepository, EsportsManager.DAL.Repositories.TeamRepository>();
+    services.AddScoped<IVotesRepository, VotesRepository>();
+    services.AddScoped<IFeedbackRepository, FeedbackRepository>();
+    services.AddScoped<ISystemSettingsRepository, SystemSettingsRepository>();
 
     // ═══════════════════════════════════════════════════════════════
     // ADDITIONAL CONFIGURATION

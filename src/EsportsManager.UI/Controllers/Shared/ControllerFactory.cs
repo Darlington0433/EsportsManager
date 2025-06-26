@@ -23,17 +23,32 @@ namespace EsportsManager.UI.Controllers.Shared
         private readonly ITournamentService _tournamentService;
         private readonly ITeamService _teamService;
         private readonly IWalletService _walletService;
+        private readonly IVotingService _votingService;
+        private readonly IFeedbackService _feedbackService;
+        private readonly ISystemSettingsService _systemSettingsService;
+        private readonly IAchievementService _achievementService;
+        private readonly Services.SystemIntegrityService _systemIntegrityService;
 
         public ControllerFactory(
             IUserService userService,
             ITournamentService tournamentService,
             ITeamService teamService,
-            IWalletService walletService)
+            IVotingService votingService,
+            IWalletService walletService,
+            IFeedbackService feedbackService,
+            ISystemSettingsService systemSettingsService,
+            IAchievementService achievementService,
+            Services.SystemIntegrityService systemIntegrityService)
         {
             _userService = userService ?? throw new ArgumentNullException(nameof(userService));
             _tournamentService = tournamentService ?? throw new ArgumentNullException(nameof(tournamentService));
             _teamService = teamService ?? throw new ArgumentNullException(nameof(teamService));
+            _votingService = votingService ?? throw new ArgumentNullException(nameof(votingService));
             _walletService = walletService ?? throw new ArgumentNullException(nameof(walletService));
+            _feedbackService = feedbackService ?? throw new ArgumentNullException(nameof(feedbackService));
+            _systemSettingsService = systemSettingsService ?? throw new ArgumentNullException(nameof(systemSettingsService));
+            _achievementService = achievementService ?? throw new ArgumentNullException(nameof(achievementService));
+            _systemIntegrityService = systemIntegrityService ?? throw new ArgumentNullException(nameof(systemIntegrityService));
         }
 
         /// <summary>
@@ -61,8 +76,8 @@ namespace EsportsManager.UI.Controllers.Shared
             var profileHandler = new PlayerProfileHandler(user, _userService);
             var tournamentViewHandler = new TournamentViewHandler(_tournamentService);
             var feedbackHandler = new PlayerFeedbackHandler(user, _tournamentService);
-            var walletHandler = new PlayerWalletHandler(user);
-            var achievementHandler = new PlayerAchievementHandler(user, _tournamentService, _userService);
+            var walletHandler = new PlayerWalletHandler(user, _walletService);
+            var achievementHandler = new PlayerAchievementHandler(user, _tournamentService, _userService, _achievementService);
 
             return new PlayerController(
                 user,
@@ -81,16 +96,18 @@ namespace EsportsManager.UI.Controllers.Shared
         public ViewerController CreateViewerController(UserProfileDto user)
         {
             var tournamentHandler = new ViewerTournamentHandler(_tournamentService);
-            var votingHandler = new ViewerVotingHandler(user, _tournamentService, _userService);
-            var donationHandler = new ViewerDonationHandler(user);
+            var votingHandler = new ViewerVotingHandler(user, _tournamentService, _userService, _votingService);
+            var donationHandler = new ViewerDonationHandler(user, _walletService, _userService);
             var profileHandler = new ViewerProfileHandler(user, _userService);
+            var walletHandler = new ViewerWalletHandler(user, _walletService);
 
             return new ViewerController(
                 user,
                 tournamentHandler,
                 votingHandler,
                 donationHandler,
-                profileHandler);
+                profileHandler,
+                walletHandler);
         }
 
         /// <summary>
@@ -102,9 +119,8 @@ namespace EsportsManager.UI.Controllers.Shared
             var tournamentManagementHandler = new TournamentManagementHandler(_tournamentService);
             var systemStatsHandler = new SystemStatsHandler(_userService, _tournamentService, _teamService);
             var donationReportHandler = new DonationReportHandler(_walletService, _userService);
-            var votingResultsHandler = new VotingResultsHandler(_userService, _tournamentService);
-            var feedbackManagementHandler = new FeedbackManagementHandler(_userService, _tournamentService);
-            var systemSettingsHandler = new SystemSettingsHandler(_userService, _tournamentService);
+            var votingResultsHandler = new VotingResultsHandler(_userService, _tournamentService, _votingService);
+            var feedbackManagementHandler = new FeedbackManagementHandler(_userService, _tournamentService, _feedbackService);
 
             return new AdminUIController(
                 user,
@@ -113,8 +129,7 @@ namespace EsportsManager.UI.Controllers.Shared
                 systemStatsHandler,
                 donationReportHandler,
                 votingResultsHandler,
-                feedbackManagementHandler,
-                systemSettingsHandler);
+                feedbackManagementHandler);
         }
     }
 

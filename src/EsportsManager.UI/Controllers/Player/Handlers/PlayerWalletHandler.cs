@@ -1,197 +1,374 @@
-using System;
-using System.Threading.Tasks;
 using EsportsManager.BL.DTOs;
 using EsportsManager.BL.Interfaces;
+using EsportsManager.BL.Services;
+using EsportsManager.BL.Constants;
 using EsportsManager.UI.ConsoleUI.Utilities;
-using EsportsManager.UI.Controllers.MenuHandlers;
+using EsportsManager.UI.Utilities;
 
-namespace EsportsManager.UI.Controllers.Player.Handlers
+namespace EsportsManager.UI.Controllers.Player.Handlers;
+
+/// <summary>
+/// Handler for player wallet operations following 3-layer architecture
+/// Business logic moved to BL layer
+/// </summary>
+public class PlayerWalletHandler
 {
-    /// <summary>
-    /// Handler cho việc quản lý ví điện tử
-    /// Áp dụng Single Responsibility Principle
-    /// </summary>
-    public class PlayerWalletHandler : IPlayerWalletHandler
+    private readonly UserProfileDto _currentUser;
+    private readonly IWalletService _walletService;
+
+    public PlayerWalletHandler(
+        UserProfileDto currentUser,
+        IWalletService walletService)
     {
-        private readonly UserProfileDto _currentUser;
+        _currentUser = currentUser ?? throw new ArgumentNullException(nameof(currentUser));
+        _walletService = walletService ?? throw new ArgumentNullException(nameof(walletService));
+    }
 
-        public PlayerWalletHandler(UserProfileDto currentUser)
+    /// <summary>
+    /// Main wallet management menu for players
+    /// </summary>
+    public async Task HandleWalletManagementAsync()
+    {
+        while (true)
         {
-            _currentUser = currentUser;
-        }
-
-        public async Task HandleWalletManagementAsync()
-        {
-            while (true)
+            var walletOptions = new[]
             {
-                try
-                {
-                    Console.Clear();
-                    ConsoleRenderingService.DrawBorder("QUẢN LÝ VÍ ĐIỆN TỬ", 80, 15);
+                "Xem số dư ví",
+                "Lịch sử giao dịch",
+                "Rút tiền",
+                "⬅️ Quay lại"
+            };
 
-                    // Tính vị trí để hiển thị data bên trong border
-                    int borderLeft = (Console.WindowWidth - 80) / 2;
-                    int borderTop = (Console.WindowHeight - 15) / 4;
-                    
-                    // Mock wallet balance for demonstration
-                    decimal mockBalance = 250000;
-                    Console.SetCursorPosition(borderLeft + 2, borderTop + 2);
-                    Console.WriteLine($"💰 Số dư hiện tại: {mockBalance:N0} VND");
+            int selection = InteractiveMenuService.DisplayInteractiveMenu(
+                "QUẢN LÝ VÍ QUYÊN GÓP", walletOptions);
 
-                    var walletOptions = new[]
-                    {
-                        "Xem lịch sử giao dịch",
-                        "Nạp tiền vào ví (Mock)",
-                        "Donation cho streamer (Mock)",
-                        "Quay lại menu chính"
-                    };
-
-                    int selection = InteractiveMenuService.DisplayInteractiveMenu("QUẢN LÝ VÍ", walletOptions);
-
-                    switch (selection)
-                    {
-                        case 0:
-                            await HandleTransactionHistoryAsync();
-                            break;
-                        case 1:
-                            await HandleDepositAsync();
-                            break;
-                        case 2:
-                            await HandleDonationAsync();
-                            break;
-                        case 3:
-                        case -1:
-                            return;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    ConsoleRenderingService.ShowMessageBox($"❌ Lỗi hệ thống: {ex.Message}", false, 2000);
-                }
+            switch (selection)
+            {
+                case 0:
+                    await ViewWalletBalanceAsync();
+                    break;
+                case 1:
+                    await ViewTransactionHistoryAsync();
+                    break;
+                case 2:
+                    await WithdrawMoneyAsync();
+                    break;
+                case 3:
+                case -1:
+                    return;
+                default:
+                    ConsoleRenderingService.ShowNotification(
+                        WalletConstants.INVALID_OPTION_MESSAGE, ConsoleColor.Red);
+                    break;
             }
         }
+    }
 
-        private async Task HandleDepositAsync()
+    /// <summary>
+    /// Display wallet balance information
+    /// </summary>
+    private async Task ViewWalletBalanceAsync()
+    {
+        try
         {
-            try
+            Console.Clear();
+            ConsoleRenderingService.DrawBorder("SỐ DƯ VÍ QUYÊN GÓP", 60, 12);
+
+            var wallet = await _walletService.GetWalletByUserIdAsync(_currentUser.Id);
+            
+            if (wallet != null)
             {
-                Console.Clear();
-                ConsoleRenderingService.DrawBorder("NẠP TIỀN VÀO VÍ", 80, 10);
-
-                Console.WriteLine("💳 Nhập số tiền muốn nạp:");
-                Console.WriteLine("Số tiền tối thiểu: 10,000 VND");
-                Console.WriteLine("Số tiền tối đa: 10,000,000 VND");
-                Console.Write("Số tiền: ");
-
-                if (!decimal.TryParse(Console.ReadLine(), out decimal amount))
-                {
-                    ConsoleRenderingService.ShowMessageBox("Số tiền không hợp lệ!", false, 1500);
-                    return;
-                }
-
-                if (amount < 10000 || amount > 10000000)
-                {
-                    ConsoleRenderingService.ShowMessageBox("Số tiền nạp phải từ 10,000 đến 10,000,000 VND!", false, 2000);
-                    return;
-                }
-
-                Console.WriteLine($"\n💰 Xác nhận nạp {amount:N0} VND vào ví?");
-                Console.Write("Nhập 'YES' để xác nhận: ");
+                Console.WriteLine($"\n💰 Số dư hiện tại: {wallet.Balance:N0} VND");
+                Console.WriteLine($"📅 Cập nhật lần cuối: {wallet.LastUpdatedAt?.ToString("dd/MM/yyyy HH:mm") ?? "Chưa có"}");
                 
-                if (Console.ReadLine()?.ToUpper() == "YES")
+                // Display recent donation summary using BL service
+                var summary = await _walletService.GetWalletStatsAsync(_currentUser.Id);
+                if (summary != null)
                 {
-                    await Task.Delay(1000); // Simulate processing
-                    
-                    ConsoleRenderingService.ShowMessageBox($"✅ Nạp tiền thành công! Đã nạp {amount:N0} VND", true, 2500);
+                    Console.WriteLine($"\n📊 Thống kê giao dịch:");
+                    Console.WriteLine($"   - Tổng thu nhập: {summary.TotalIncome:N0} VND");
+                    Console.WriteLine($"   - Tổng chi tiêu: {summary.TotalExpense:N0} VND");
+                    Console.WriteLine($"   - Số giao dịch: {summary.TotalTransactions}");
                 }
             }
-            catch (Exception ex)
+            else
             {
-                ConsoleRenderingService.ShowMessageBox($"❌ Lỗi: {ex.Message}", false, 2000);
+                ConsoleRenderingService.ShowNotification(
+                    WalletConstants.WALLET_NOT_FOUND_MESSAGE, ConsoleColor.Yellow);
             }
+
+            Console.WriteLine(WalletConstants.PRESS_ANY_KEY_MESSAGE);
+            Console.ReadKey(true);
         }
-
-        private async Task HandleTransactionHistoryAsync()
+        catch (Exception ex)
         {
-            try
-            {
-                Console.Clear();
-                ConsoleRenderingService.DrawBorder("LỊCH SỬ GIAO DỊCH", 80, 15);
+            ConsoleRenderingService.ShowMessageBox(
+                $"Lỗi khi tải thông tin ví: {ex.Message}", true, 3000);
+        }
+    }
 
-                // Mock transaction history
-                var mockTransactions = new[]
+    /// <summary>
+    /// Display transaction history
+    /// </summary>
+    private async Task ViewTransactionHistoryAsync()
+    {
+        try
+        {
+            Console.Clear();
+            ConsoleRenderingService.DrawBorder("LỊCH SỬ GIAO DỊCH", 80, 20);
+
+            var transactions = await _walletService.GetTransactionHistoryAsync(_currentUser.Id);
+            
+            if (transactions == null || !transactions.Any())
+            {
+                ConsoleRenderingService.ShowNotification(
+                    "Không có giao dịch nào!", ConsoleColor.Yellow);
+            }
+            else
+            {
+                DisplayTransactionTable(transactions);
+            }
+
+            Console.WriteLine(WalletConstants.PRESS_ANY_KEY_MESSAGE);
+            Console.ReadKey(true);
+        }
+        catch (Exception ex)
+        {
+            ConsoleRenderingService.ShowMessageBox(
+                $"Lỗi khi tải lịch sử giao dịch: {ex.Message}", true, 3000);
+        }
+    }
+
+    /// <summary>
+    /// Handle money withdrawal with BL validation
+    /// </summary>
+    private async Task WithdrawMoneyAsync()
+    {
+        try
+        {
+            Console.Clear();
+            ConsoleRenderingService.DrawBorder("RÚT TIỀN", 60, 15);
+
+            // Get current balance using BL service
+            var wallet = await _walletService.GetWalletByUserIdAsync(_currentUser.Id);
+            if (wallet == null)
+            {
+                ConsoleRenderingService.ShowNotification(
+                    WalletConstants.WALLET_NOT_FOUND_MESSAGE, ConsoleColor.Red);
+                return;
+            }
+
+            Console.WriteLine($"💰 Số dư hiện tại: {wallet.Balance:N0} VND");
+            Console.WriteLine($"💡 Số tiền tối thiểu để rút: {WalletConstants.MIN_WITHDRAWAL_AMOUNT:N0} VND");
+
+            // Get withdrawal amount with BL validation
+            Console.Write("Nhập số tiền muốn rút (VND): ");
+            var amountInput = Console.ReadLine();
+
+            var validation = WalletValidationService.ValidateWithdrawalAmount(amountInput, wallet.Balance);
+            if (!validation.IsValid)
+            {
+                ConsoleRenderingService.ShowNotification(validation.ErrorMessage, ConsoleColor.Red);
+                Thread.Sleep(2000);
+                return;
+            }
+
+            // Get withdrawal method
+            var withdrawalMethod = GetWithdrawalMethod();
+            if (string.IsNullOrEmpty(withdrawalMethod))
+            {
+                return; // User cancelled
+            }
+
+            // Get withdrawal details
+            var withdrawalDetails = GetWithdrawalDetails(withdrawalMethod);
+            if (string.IsNullOrEmpty(withdrawalDetails))
+            {
+                return; // User cancelled or invalid input
+            }
+
+            // Confirm withdrawal
+            Console.WriteLine($"\n📋 Xác nhận thông tin rút tiền:");
+            Console.WriteLine($"   Số tiền: {validation.ValidatedAmount:N0} VND");
+            Console.WriteLine($"   Phương thức: {withdrawalMethod}");
+            Console.WriteLine($"   Chi tiết: {withdrawalDetails}");
+            Console.WriteLine($"   Phí rút tiền: {WalletConstants.WITHDRAWAL_FEE:N0} VND");
+            Console.WriteLine($"   Số tiền thực nhận: {validation.ValidatedAmount - WalletConstants.WITHDRAWAL_FEE:N0} VND");
+
+            Console.Write("\nXác nhận rút tiền? (y/n): ");
+            var confirmation = Console.ReadLine()?.ToLower();
+
+            if (confirmation == "y" || confirmation == "yes")
+            {
+                var withdrawalRequest = new WithdrawalDto
                 {
-                    "15/06/2024 09:30 - Nạp tiền: +100,000 VND",
-                    "12/06/2024 14:15 - Phí giải đấu: -30,000 VND",
-                    "10/06/2024 11:20 - Donation: -25,000 VND",
-                    "08/06/2024 16:45 - Nạp tiền: +200,000 VND",
-                    "05/06/2024 13:30 - Phí giải đấu: -50,000 VND"
+                    Amount = validation.ValidatedAmount,
+                    BankAccount = withdrawalDetails,
+                    BankName = withdrawalMethod
                 };
 
-                Console.WriteLine("📊 Lịch sử giao dịch gần đây:");
-                Console.WriteLine("─".PadRight(78, '─'));
-                Console.WriteLine("Thời gian           | Loại giao dịch    | Số tiền        | Mô tả");
-                Console.WriteLine("─".PadRight(78, '─'));
-
-                foreach (var transaction in mockTransactions)
+                var result = await _walletService.WithdrawAsync(_currentUser.Id, withdrawalRequest);
+                
+                if (result.Success)
                 {
-                    Console.WriteLine(transaction);
+                    ConsoleRenderingService.ShowNotification(
+                        WalletConstants.WITHDRAWAL_REQUEST_SUCCESS_MESSAGE, ConsoleColor.Green);
                 }
-
-                Console.WriteLine("\nNhấn Enter để tiếp tục...");
-                Console.ReadLine();
-                await Task.Delay(100); // Small delay to make it async
+                else
+                {
+                    ConsoleRenderingService.ShowNotification(
+                        result.Message ?? WalletConstants.WITHDRAWAL_REQUEST_FAILED_MESSAGE, 
+                        ConsoleColor.Red);
+                }
             }
-            catch (Exception ex)
+            else
             {
-                ConsoleRenderingService.ShowMessageBox($"❌ Lỗi: {ex.Message}", false, 2000);
+                ConsoleRenderingService.ShowNotification(
+                    WalletConstants.OPERATION_CANCELLED_MESSAGE, ConsoleColor.Yellow);
+            }
+
+            Thread.Sleep(2000);
+        }
+        catch (Exception ex)
+        {
+            ConsoleRenderingService.ShowMessageBox(
+                $"Lỗi khi thực hiện rút tiền: {ex.Message}", true, 3000);
+        }
+    }
+
+    /// <summary>
+    /// Get withdrawal method from user
+    /// </summary>
+    private string GetWithdrawalMethod()
+    {
+        var methods = WalletConstants.WITHDRAWAL_METHODS;
+        var methodOptions = methods.Select(m => m.Value).Concat(new[] { "❌ Hủy" }).ToArray();
+
+        int methodSelection = InteractiveMenuService.DisplayInteractiveMenu(
+            "CHỌN PHƯƠNG THỨC RÚT TIỀN", methodOptions);
+
+        if (methodSelection == -1 || methodSelection == methods.Count)
+            return string.Empty;
+
+        return methods.ElementAt(methodSelection).Key;
+    }
+
+    /// <summary>
+    /// Get withdrawal details based on method
+    /// </summary>
+    private string GetWithdrawalDetails(string method)
+    {
+        try
+        {
+            switch (method)
+            {
+                case "BankTransfer":
+                    Console.Write("Số tài khoản ngân hàng: ");
+                    var bankAccount = Console.ReadLine()?.Trim();
+                    Console.Write("Tên ngân hàng: ");
+                    var bankName = Console.ReadLine()?.Trim();
+                    Console.Write("Chủ tài khoản: ");
+                    var accountHolder = Console.ReadLine()?.Trim();
+
+                    if (string.IsNullOrEmpty(bankAccount) || string.IsNullOrEmpty(bankName) || 
+                        string.IsNullOrEmpty(accountHolder))
+                    {
+                        ConsoleRenderingService.ShowNotification(
+                            "Vui lòng nhập đầy đủ thông tin!", ConsoleColor.Red);
+                        return string.Empty;
+                    }
+
+                    return $"Bank: {bankName}, Account: {bankAccount}, Holder: {accountHolder}";
+
+                case "EWallet":
+                    var ewalletOptions = WalletConstants.EWALLET_PROVIDERS.Values.Concat(new[] { "❌ Hủy" }).ToArray();
+                    int ewalletChoice = InteractiveMenuService.DisplayInteractiveMenu(
+                        "CHỌN VÍ ĐIỆN TỬ", ewalletOptions);
+
+                    if (ewalletChoice == -1 || ewalletChoice == WalletConstants.EWALLET_PROVIDERS.Count)
+                        return string.Empty;
+
+                    var selectedEwallet = WalletConstants.EWALLET_PROVIDERS.ElementAt(ewalletChoice);
+                    Console.Write($"Số điện thoại {selectedEwallet.Value}: ");
+                    var phone = Console.ReadLine()?.Trim();
+
+                    if (string.IsNullOrEmpty(phone))
+                    {
+                        ConsoleRenderingService.ShowNotification(
+                            "Số điện thoại không được để trống!", ConsoleColor.Red);
+                        return string.Empty;
+                    }
+
+                    return $"{selectedEwallet.Value}: {phone}";
+
+                case "Cash":
+                    return "Nhận tiền mặt tại văn phòng";
+
+                default:
+                    return string.Empty;
             }
         }
-
-        private async Task HandleDonationAsync()
+        catch (Exception)
         {
-            try
+            return string.Empty;
+        }
+    }
+
+    /// <summary>
+    /// Display transaction history in table format
+    /// </summary>
+    private void DisplayTransactionTable(IEnumerable<TransactionDto> transactions)
+    {
+        var header = string.Format("{0,-15} {1,-12} {2,-15} {3,-20} {4,-15}",
+            "Ngày", "Loại", "Số tiền", "Từ/Đến", "Trạng thái");
+        
+        Console.WriteLine(header);
+        Console.WriteLine(new string('─', 77));
+
+        foreach (var transaction in transactions.Take(10)) // Show last 10 transactions
+        {
+            var typeDisplay = transaction.TransactionType switch
             {
-                Console.Clear();
-                ConsoleRenderingService.DrawBorder("DONATION CHO STREAMER", 80, 12);
+                "Donation" => "Quyên góp",
+                "Withdrawal" => "Rút tiền",
+                "TopUp" => "Nạp tiền",
+                _ => transaction.TransactionType
+            };
 
-                // Mock streamers list
-                var mockStreamers = new[] { "Streamer1", "Streamer2", "Streamer3" };
-
-                Console.WriteLine("🎮 Chọn streamer để donation:");
-                for (int i = 0; i < mockStreamers.Length; i++)
-                {
-                    Console.WriteLine($"{i + 1}. {mockStreamers[i]}");
-                }
-
-                Console.Write($"\nNhập số thứ tự streamer (1-{mockStreamers.Length}): ");
-                if (!int.TryParse(Console.ReadLine(), out int choice) || 
-                    choice < 1 || choice > mockStreamers.Length)
-                {
-                    ConsoleRenderingService.ShowMessageBox("Lựa chọn không hợp lệ!", false, 1500);
-                    return;
-                }
-
-                var selectedStreamer = mockStreamers[choice - 1];
-
-                Console.Write("Nhập số tiền donation (tối thiểu 1,000 VND): ");
-                if (!decimal.TryParse(Console.ReadLine(), out decimal amount) || amount < 1000)
-                {
-                    ConsoleRenderingService.ShowMessageBox("Số tiền donation không hợp lệ (tối thiểu 1,000 VND)!", false, 2000);
-                    return;
-                }
-
-                Console.Write("Nhập lời nhắn (tùy chọn): ");
-                string message = Console.ReadLine() ?? "";
-
-                await Task.Delay(1000); // Simulate processing
-                
-                ConsoleRenderingService.ShowMessageBox($"✅ Donation thành công! Đã gửi {amount:N0} VND cho {selectedStreamer}", true, 2500);
-            }
-            catch (Exception ex)
+            var statusDisplay = transaction.Status switch
             {
-                ConsoleRenderingService.ShowMessageBox($"❌ Lỗi: {ex.Message}", false, 2000);
-            }
+                "Completed" => "Hoàn thành",
+                "Pending" => "Chờ xử lý",
+                "Failed" => "Thất bại",
+                _ => transaction.Status
+            };
+
+            var row = string.Format("{0,-15} {1,-12} {2,-15} {3,-20} {4,-15}",
+                transaction.CreatedAt.ToString("dd/MM/yyyy"),
+                typeDisplay,
+                $"{transaction.Amount:N0} VND",
+                transaction.Note?.Length > 20 ? 
+                    transaction.Note.Substring(0, 17) + "..." : 
+                    transaction.Note ?? "",
+                statusDisplay);
+
+            // Color code based on transaction type
+            var color = transaction.TransactionType switch
+            {
+                "Donation" => ConsoleColor.Green,
+                "Withdrawal" => ConsoleColor.Yellow,
+                "TopUp" => ConsoleColor.Cyan,
+                _ => ConsoleColor.White
+            };
+
+            Console.ForegroundColor = color;
+            Console.WriteLine(row);
+            Console.ResetColor();
+        }
+
+        if (transactions.Count() > 10)
+        {
+            Console.WriteLine($"\n... và {transactions.Count() - 10} giao dịch khác");
         }
     }
 }

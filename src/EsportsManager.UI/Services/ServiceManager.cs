@@ -23,12 +23,26 @@ public class ServiceManager
     private readonly ITournamentService _tournamentService;
     private readonly ITeamService _teamService;
     private readonly IWalletService _walletService;
+    private readonly IVotingService _votingService;
+    private readonly IFeedbackService _feedbackService;
+    private readonly IAchievementService _achievementService;
 
-    public ServiceManager(IUserService userService, ITournamentService tournamentService, ITeamService teamService, IWalletService walletService)
+    public ServiceManager(
+        IUserService userService,
+        ITournamentService tournamentService,
+        ITeamService teamService,
+        IWalletService walletService,
+        IVotingService votingService,
+        IFeedbackService feedbackService,
+        IAchievementService achievementService)
     {
         _userService = userService ?? throw new ArgumentNullException(nameof(userService));
         _tournamentService = tournamentService ?? throw new ArgumentNullException(nameof(tournamentService));
-        _teamService = teamService ?? throw new ArgumentNullException(nameof(teamService));        _walletService = walletService ?? throw new ArgumentNullException(nameof(walletService));
+        _teamService = teamService ?? throw new ArgumentNullException(nameof(teamService));
+        _walletService = walletService ?? throw new ArgumentNullException(nameof(walletService));
+        _votingService = votingService ?? throw new ArgumentNullException(nameof(votingService));
+        _feedbackService = feedbackService ?? throw new ArgumentNullException(nameof(feedbackService));
+        _achievementService = achievementService ?? throw new ArgumentNullException(nameof(achievementService));
     }
 
     /// <summary>
@@ -41,9 +55,8 @@ public class ServiceManager
         var tournamentManagementHandler = new TournamentManagementHandler(_tournamentService);
         var systemStatsHandler = new SystemStatsHandler(_userService, _tournamentService, _teamService);
         var donationReportHandler = new DonationReportHandler(_walletService, _userService);
-        var votingResultsHandler = new VotingResultsHandler(_userService, _tournamentService);
-        var feedbackManagementHandler = new FeedbackManagementHandler(_userService, _tournamentService);
-        var systemSettingsHandler = new SystemSettingsHandler(_userService, _tournamentService);
+        var votingResultsHandler = new VotingResultsHandler(_userService, _tournamentService, _votingService);
+        var feedbackManagementHandler = new FeedbackManagementHandler(_userService, _tournamentService, _feedbackService);
 
         return new AdminUIController(
             adminUser,
@@ -52,8 +65,7 @@ public class ServiceManager
             systemStatsHandler,
             donationReportHandler,
             votingResultsHandler,
-            feedbackManagementHandler,
-            systemSettingsHandler);
+            feedbackManagementHandler);
     }
 
     /// <summary>
@@ -67,8 +79,8 @@ public class ServiceManager
         var profileHandler = new PlayerProfileHandler(playerUser, _userService);
         var tournamentViewHandler = new TournamentViewHandler(_tournamentService);
         var feedbackHandler = new PlayerFeedbackHandler(playerUser, _tournamentService);
-        var walletHandler = new PlayerWalletHandler(playerUser);
-        var achievementHandler = new PlayerAchievementHandler(playerUser, _tournamentService, _userService);
+        var walletHandler = new PlayerWalletHandler(playerUser, _walletService);
+        var achievementHandler = new PlayerAchievementHandler(playerUser, _tournamentService, _userService, _achievementService);
 
         return new PlayerController(playerUser, tournamentRegistrationHandler, teamManagementHandler, profileHandler, tournamentViewHandler, feedbackHandler, walletHandler, achievementHandler);
     }
@@ -80,10 +92,11 @@ public class ServiceManager
     {
         // Tạo các handler instances cho Viewer
         var tournamentHandler = new ViewerTournamentHandler(_tournamentService);
-        var votingHandler = new ViewerVotingHandler(viewerUser, _tournamentService, _userService);
-        var donationHandler = new ViewerDonationHandler(viewerUser);
+        var votingHandler = new ViewerVotingHandler(viewerUser, _tournamentService, _userService, _votingService);
+        var donationHandler = new ViewerDonationHandler(viewerUser, _walletService, _userService);
         var profileHandler = new ViewerProfileHandler(viewerUser, _userService);
+        var walletHandler = new ViewerWalletHandler(viewerUser, _walletService);
 
-        return new ViewerController(viewerUser, tournamentHandler, votingHandler, donationHandler, profileHandler);
+        return new ViewerController(viewerUser, tournamentHandler, votingHandler, donationHandler, profileHandler, walletHandler);
     }
 }

@@ -62,14 +62,13 @@ public class PlayerController : BaseController
         {
             var menuOptions = new[]
             {
-                "Đăng ký tham gia giải đấu",
-                "Quản lý team",
-                "Xem thông tin cá nhân",
-                "Cập nhật thông tin cá nhân",
+                "Quản lý team (Tạo/Tham gia/Rời)",
+                "Đăng ký tham gia giải đấu", 
                 "Xem danh sách giải đấu",
+                "Quản lý ví điện tử (Rút tiền)",
                 "Gửi feedback giải đấu",
-                "Quản lý ví điện tử",
-                "Thành tích cá nhân",
+                "Xem thành tích cá nhân",
+                "Cập nhật thông tin cá nhân",
                 "Đăng xuất"
             };
 
@@ -78,30 +77,27 @@ public class PlayerController : BaseController
             switch (selection)
             {
                 case 0:
-                    _tournamentRegistrationHandler.HandleTournamentRegistrationAsync().GetAwaiter().GetResult();
-                    break;
-                case 1:
                     _teamManagementHandler.HandleTeamManagementAsync().GetAwaiter().GetResult();
                     break;
+                case 1:
+                    _tournamentRegistrationHandler.HandleTournamentRegistrationAsync().GetAwaiter().GetResult();
+                    break;
                 case 2:
-                    _profileHandler.HandleViewPersonalInfoAsync().GetAwaiter().GetResult();
-                    break;
-                case 3:
-                    _profileHandler.HandleUpdatePersonalInfoAsync().GetAwaiter().GetResult();
-                    break;
-                case 4:
                     _tournamentViewHandler.HandleViewTournamentListAsync().GetAwaiter().GetResult();
                     break;
-                case 5:
-                    _feedbackHandler.HandleSubmitFeedbackAsync().GetAwaiter().GetResult();
-                    break;
-                case 6:
+                case 3:
                     _walletHandler.HandleWalletManagementAsync().GetAwaiter().GetResult();
                     break;
-                case 7:
+                case 4:
+                    _feedbackHandler.HandleSubmitFeedbackAsync().GetAwaiter().GetResult();
+                    break;
+                case 5:
                     _achievementHandler.HandleViewAchievementsAsync().GetAwaiter().GetResult();
                     break;
-                case 8:
+                case 6:
+                    _profileHandler.HandleUpdatePersonalInfoAsync().GetAwaiter().GetResult();
+                    break;
+                case 7:
                 case -1:
                     return; // Đăng xuất
                 default:

@@ -56,9 +56,36 @@ namespace EsportsManager.BL.Interfaces
         /// <summary>
         /// Kiểm tra xem người dùng có đủ số dư không
         /// </summary>
-        Task<bool> HasSufficientBalanceAsync(int userId, decimal amount);    /// <summary>
-                                                                             /// Lấy thống kê giao dịch
-                                                                             /// </summary>
+        Task<bool> HasSufficientBalanceAsync(int userId, decimal amount);        /// <summary>
+                                                                                 /// Lấy thống kê giao dịch
+                                                                                 /// </summary>
         Task<WalletStatsDto> GetWalletStatsAsync(int userId);
+
+        /// <summary>
+        /// Lấy tổng quan báo cáo donation
+        /// </summary>
+        Task<DonationOverviewDto> GetDonationOverviewAsync();
+
+        /// <summary>
+        /// Lấy danh sách top người nhận donation
+        /// </summary>
+        Task<List<TopDonationUserDto>> GetTopDonationReceiversAsync(int limit = 10);
+
+        /// <summary>
+        /// Lấy danh sách top người gửi donation
+        /// </summary>
+        Task<List<TopDonationUserDto>> GetTopDonatorsAsync(int limit = 10);
+
+        /// <summary>
+        /// Lấy danh sách lịch sử donation với bộ lọc
+        /// </summary>
+        Task<List<TransactionDto>> GetDonationHistoryAsync(
+            DonationSearchFilterDto filter);
+
+        /// <summary>
+        /// Tìm kiếm donation theo các tiêu chí khác nhau
+        /// </summary>
+        Task<List<TransactionDto>> SearchDonationsAsync(
+            DonationSearchFilterDto filter);
     }
 }

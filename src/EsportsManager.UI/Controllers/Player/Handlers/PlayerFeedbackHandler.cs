@@ -55,17 +55,26 @@ namespace EsportsManager.UI.Controllers.Player.Handlers
                             CreatedAt = DateTime.Now
                         };
 
-                        // Simulated feedback submission for now
-                        await Task.Delay(1000);
-                        bool success = true; // Mock success
-
-                        if (success)
+                        // Get the first tournament for demonstration - in a real app, the user would select a tournament
+                        var tournaments = await _tournamentService.GetAllTournamentsAsync();
+                        if (tournaments.Count > 0)
                         {
-                            ConsoleRenderingService.ShowMessageBox("✅ Feedback đã được gửi thành công!", true, 2000);
+                            feedbackDto.TournamentId = tournaments[0].TournamentId; // Use the first tournament
+                            // Submit feedback through tournament service
+                            var result = await _tournamentService.SubmitFeedbackAsync(_currentUser.Id, feedbackDto);
+
+                            if (result)
+                            {
+                                ConsoleRenderingService.ShowMessageBox("✅ Feedback đã được gửi thành công!", true, 2000);
+                            }
+                            else
+                            {
+                                ConsoleRenderingService.ShowMessageBox("❌ Gửi feedback thất bại!", false, 2000);
+                            }
                         }
                         else
                         {
-                            ConsoleRenderingService.ShowMessageBox("❌ Gửi feedback thất bại!", false, 2000);
+                            ConsoleRenderingService.ShowMessageBox("❌ Không có giải đấu nào để gửi feedback!", false, 2000);
                         }
                     }
                     else

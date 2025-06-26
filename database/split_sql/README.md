@@ -1,6 +1,6 @@
 # Database Split SQL Files
 
-Thư mục này chứa 8 file SQL được tách theo chức năng. **PHẢI chạy theo đúng thứ tự** để tránh lỗi.
+Thư mục này chứa 9 file SQL được tách theo chức năng. **PHẢI chạy theo đúng thứ tự** để tránh lỗi.
 
 ## 🚀 Cách sử dụng nhanh
 
@@ -10,16 +10,17 @@ SOURCE RUN_ALL.sql;
 
 ## 📋 Thứ tự chi tiết
 
-| File | Mô tả | Phụ thuộc |
-|------|-------|-----------|
-| `01_create_database_and_tables.sql` | Tạo database và tất cả bảng | Không |
-| `02_create_indexes.sql` | Tạo indexes tối ưu | File 01 |
-| `03_create_views.sql` | Tạo views | File 01-02 |
-| `04_create_triggers.sql` | Tạo triggers | File 01-03 |
-| `05_create_procedures.sql` | Tạo procedures cơ bản | File 01-04 |
-| `06_add_constraints.sql` | Thêm constraints | File 01-05 |
-| `07_sample_data.sql` | **TÀI KHOẢN ĐĂNG NHẬP** | File 01-06 |
-| `08_tournament_procedures.sql` | Tournament procedures | File 01-07 |
+| File                                | Mô tả                        | Phụ thuộc  |
+| ----------------------------------- | ---------------------------- | ---------- |
+| `01_create_database_and_tables.sql` | Tạo database và tất cả bảng  | Không      |
+| `02_create_indexes.sql`             | Tạo indexes tối ưu           | File 01    |
+| `03_create_views.sql`               | Tạo views                    | File 01-02 |
+| `04_create_triggers.sql`            | Tạo triggers                 | File 01-03 |
+| `05_create_procedures.sql`          | Tạo procedures cơ bản        | File 01-04 |
+| `06_add_constraints.sql`            | Thêm constraints             | File 01-05 |
+| `07_sample_data.sql`                | **TÀI KHOẢN ĐĂNG NHẬP**      | File 01-06 |
+| `08_tournament_procedures.sql`      | Tournament procedures        | File 01-07 |
+| `09_wallet_procedures.sql`          | Wallet & donation procedures | File 01-08 |
 
 ## ⚠️ Quan trọng
 
@@ -30,7 +31,7 @@ SOURCE RUN_ALL.sql;
 ## 🔧 Tài khoản mặc định
 
 - `admin/admin123` (Admin)
-- `player1/player123` (Player) 
+- `player1/player123` (Player)
 - `viewer1/viewer123` (Viewer)
 
 ## Chạy từ Command Line
@@ -38,6 +39,7 @@ SOURCE RUN_ALL.sql;
 Để chạy từng file SQL theo thứ tự từ dòng lệnh MySQL:
 
 ### Windows
+
 ```
 mysql -u root -p < 01_create_database_and_tables.sql
 mysql -u root -p EsportsManager < 02_create_indexes.sql
@@ -50,6 +52,7 @@ mysql -u root -p EsportsManager < 08_tournament_procedures.sql
 ```
 
 ### Linux/Mac
+
 ```
 mysql -u root -p < 01_create_database_and_tables.sql
 mysql -u root -p EsportsManager < 02_create_indexes.sql
@@ -73,11 +76,13 @@ Tất cả nội dung trong các file SQL riêng lẻ này đã được tích h
 Nếu bạn muốn tạo lại file tổng hợp sau khi sửa đổi các file riêng lẻ, bạn có thể kết hợp chúng bằng lệnh:
 
 ### Windows
+
 ```
 type 01_create_database_and_tables.sql 02_create_indexes.sql 03_create_views.sql 04_create_triggers.sql 05_create_procedures.sql 06_add_constraints.sql 07_sample_data.sql 08_tournament_procedures.sql > ..\esportsmanager.sql
 ```
 
 ### Linux/Mac
+
 ```
 cat 01_create_database_and_tables.sql 02_create_indexes.sql 03_create_views.sql 04_create_triggers.sql 05_create_procedures.sql 06_add_constraints.sql 07_sample_data.sql 08_tournament_procedures.sql > ../esportsmanager.sql
 ```

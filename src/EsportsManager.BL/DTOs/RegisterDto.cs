@@ -49,9 +49,14 @@ namespace EsportsManager.BL.DTOs
         public string Role { get; set; } = "Viewer";
 
         /// <summary>
+        /// Câu hỏi bảo mật
+        /// </summary>
+        public string SecurityQuestion { get; set; } = string.Empty;
+
+        /// <summary>
         /// Câu trả lời bảo mật
         /// </summary>
-        public string? SecurityAnswer { get; set; }
+        public string SecurityAnswer { get; set; } = string.Empty;
     }
 
 

@@ -17,15 +17,18 @@ namespace EsportsManager.UI.Controllers.Player.Handlers
         private readonly UserProfileDto _currentUser;
         private readonly ITournamentService _tournamentService;
         private readonly IUserService _userService;
+        private readonly IAchievementService _achievementService;
 
         public PlayerAchievementHandler(
             UserProfileDto currentUser,
             ITournamentService tournamentService,
-            IUserService userService)
+            IUserService userService,
+            IAchievementService achievementService)
         {
             _currentUser = currentUser;
             _tournamentService = tournamentService;
             _userService = userService;
+            _achievementService = achievementService;
         }
 
         public async Task HandleViewAchievementsAsync()
@@ -47,7 +50,6 @@ namespace EsportsManager.UI.Controllers.Player.Handlers
                 ConsoleRenderingService.ShowMessageBox($"❌ Lỗi hệ thống: {ex.Message}", false, 2000);
             }
         }
-
         private async Task DisplayPlayerStatsAsync()
         {
             try
@@ -55,23 +57,29 @@ namespace EsportsManager.UI.Controllers.Player.Handlers
                 Console.WriteLine("📊 THỐNG KÊ TỔNG QUAN");
                 Console.WriteLine("─".PadRight(78, '─'));
 
-                // Mock player stats for demonstration
-                await Task.Delay(100); // Small delay to make it async
-                
-                Console.WriteLine($"🏆 Tổng số giải đấu tham gia: 12");
-                Console.WriteLine($"🥇 Số giải đầu đã thắng: 3");
-                Console.WriteLine($"🥈 Số lần vào chung kết: 5");
-                Console.WriteLine($"🥉 Số lần vào bán kết: 8");
-                Console.WriteLine($"💰 Tổng tiền thưởng đã nhận: 2,500,000 VND");
-                Console.WriteLine($"📈 Điểm số trung bình: 8.5");
-                Console.WriteLine($"⭐ Xếp hạng hiện tại: #15 toàn quốc");
+                // Lấy thống kê người chơi từ IAchievementService
+                var playerStats = await _achievementService.GetPlayerStatsAsync(_currentUser.Id);
+
+                if (playerStats != null)
+                {
+                    Console.WriteLine($"🏆 Tổng số giải đấu tham gia: {playerStats.TotalTournaments}");
+                    Console.WriteLine($"🥇 Số giải đấu đã thắng: {playerStats.TournamentsWon}");
+                    Console.WriteLine($"🥈 Số lần vào chung kết: {playerStats.FinalsAppearances}");
+                    Console.WriteLine($"🥉 Số lần vào bán kết: {playerStats.SemiFinalsAppearances}");
+                    Console.WriteLine($"💰 Tổng tiền thưởng đã nhận: {playerStats.TotalPrizeMoney:N0} VND");
+                    Console.WriteLine($"📈 Điểm số trung bình: {playerStats.AverageRating:F1}");
+                    Console.WriteLine($"⭐ Xếp hạng hiện tại: #{playerStats.CurrentRanking} toàn quốc");
+                }
+                else
+                {
+                    Console.WriteLine("❌ Không thể tải thông tin thống kê.");
+                }
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"⚠️ Lỗi khi tải thống kê: {ex.Message}");
             }
         }
-
         private async Task DisplayTournamentHistoryAsync()
         {
             try
@@ -79,25 +87,20 @@ namespace EsportsManager.UI.Controllers.Player.Handlers
                 Console.WriteLine("\n🏅 LỊCH SỬ GIẢI ĐẤU");
                 Console.WriteLine("─".PadRight(78, '─'));
 
-                var tournaments = await _tournamentService.GetAllTournamentsAsync();
-                
-                if (tournaments.Count > 0)
+                // Lấy lịch sử giải đấu từ IAchievementService
+                var tournamentHistory = await _achievementService.GetPlayerTournamentHistoryAsync(_currentUser.Id);
+
+                if (tournamentHistory != null && tournamentHistory.Count > 0)
                 {
                     Console.WriteLine("Tên giải đấu                | Kết quả      | Vị trí | Tiền thưởng");
                     Console.WriteLine("─".PadRight(78, '─'));
 
-                    // Mock tournament history
-                    var mockHistory = new[]
+                    foreach (var tournament in tournamentHistory)
                     {
-                        ("LOL Championship 2024", "Vô địch", "#1", "1,000,000 VND"),
-                        ("CS:GO Masters", "Á quân", "#2", "500,000 VND"),
-                        ("PUBG Mobile Cup", "Bán kết", "#4", "200,000 VND"),
-                        ("FIFA Online League", "Vòng loại", "#8", "-")
-                    };
+                        string position = $"#{tournament.Position}";
+                        string prize = tournament.PrizeMoney > 0 ? $"{tournament.PrizeMoney:N0} VND" : "-";
 
-                    foreach (var (name, result, position, prize) in mockHistory)
-                    {
-                        Console.WriteLine($"{name,-25} | {result,-10} | {position,-6} | {prize}");
+                        Console.WriteLine($"{tournament.TournamentName,-25} | {tournament.Result,-10} | {position,-6} | {prize}");
                     }
                 }
                 else
@@ -110,7 +113,6 @@ namespace EsportsManager.UI.Controllers.Player.Handlers
                 Console.WriteLine($"⚠️ Lỗi khi tải lịch sử giải đấu: {ex.Message}");
             }
         }
-
         private async Task DisplayAwardsAndRankingsAsync()
         {
             try
@@ -118,40 +120,40 @@ namespace EsportsManager.UI.Controllers.Player.Handlers
                 Console.WriteLine("\n🏆 DANH HIỆU VÀ THÀNH TÍCH");
                 Console.WriteLine("─".PadRight(78, '─'));
 
-                // Mock achievements
-                await Task.Delay(100); // Small delay to make it async
-                
-                var mockAchievements = new[]
-                {
-                    ("Vô địch mùa đầu", "15/06/2024", "Giành chiến thắng giải đấu đầu tiên"),
-                    ("Top Player", "20/07/2024", "Vào top 10 bảng xếp hạng"),
-                    ("Chiến binh bất bại", "05/08/2024", "Thắng 10 trận liên tiếp")
-                };
+                // Lấy danh sách thành tích từ IAchievementService
+                var achievements = await _achievementService.GetPlayerAchievementsAsync(_currentUser.Id);
 
                 Console.WriteLine("Danh hiệu                   | Ngày đạt được | Mô tả");
                 Console.WriteLine("─".PadRight(78, '─'));
 
-                foreach (var (title, date, description) in mockAchievements)
+                if (achievements != null && achievements.Count > 0)
                 {
-                    Console.WriteLine($"{title,-25} | {date} | {description}");
+                    foreach (var achievement in achievements)
+                    {
+                        Console.WriteLine($"{achievement.Title,-25} | {achievement.DateAchieved:dd/MM/yyyy} | {achievement.Description}");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("Chưa có thành tích nào.");
                 }
 
-                // Hiển thị điểm nổi bật
+                // Hiển thị điểm nổi bật từ service
                 Console.WriteLine("\n🌟 ĐIỂM NỔI BẬT");
                 Console.WriteLine("─".PadRight(78, '─'));
 
-                var highlights = new[]
-                {
-                    "Đã giành chiến thắng trong 3 giải đấu",
-                    "Tham gia hơn 10 giải đấu - Player tích cực",
-                    "Kiếm được hơn 2 triệu VND tiền thưởng",
-                    "Điểm số trung bình cao (>= 8.0)",
-                    "Top 15 trong bảng xếp hạng toàn quốc"
-                };
+                var highlights = await _achievementService.GetPlayerHighlightsAsync(_currentUser.Id);
 
-                foreach (var highlight in highlights)
+                if (highlights != null && highlights.Count > 0)
                 {
-                    Console.WriteLine($"• {highlight}");
+                    foreach (var highlight in highlights)
+                    {
+                        Console.WriteLine($"• {highlight}");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("• Chưa có điểm nổi bật nào.");
                 }
             }
             catch (Exception ex)

@@ -75,6 +75,17 @@ public class Users
     public DateTime? PasswordResetExpiry { get; set; }
 
     /// <summary>
+    /// Câu hỏi bảo mật để khôi phục mật khẩu
+    /// </summary>
+    [StringLength(200)]
+    public string? SecurityQuestion { get; set; }
+
+    /// <summary>
+    /// Câu trả lời bảo mật (đã được hash)
+    /// </summary>
+    public string? SecurityAnswer { get; set; }
+
+    /// <summary>
     /// Ngày đăng nhập lần cuối
     /// </summary>
     public DateTime? LastLoginAt { get; set; }
