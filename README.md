@@ -277,7 +277,7 @@ Chúng tôi hoan nghênh mọi đóng góp! Vui lòng đọc [CONTRIBUTING.md](C
 
 ## 📄 Giấy phép
 
-Dự án này được cấp phép theo giấy phép MIT - xem file [LICENSE](LICENSE) để biết chi tiết.
+Dự án này được cấp phép theo giấy phép Custom (Non-commercial) - xem file [LICENSE](LICENSE) để biết chi tiết.
 
 ## 👥 Tác giả
 
