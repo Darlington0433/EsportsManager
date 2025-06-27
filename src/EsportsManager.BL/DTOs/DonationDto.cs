@@ -18,9 +18,10 @@ namespace EsportsManager.BL.DTOs
 
         public int? TournamentId { get; set; }
         public int? TeamId { get; set; }
+        public int? PlayerId { get; set; }
 
         [Required(ErrorMessage = "Loại donate không được để trống")]
-        public required string DonationType { get; set; } // 'Tournament', 'Team'
+        public required string DonationType { get; set; } // 'Tournament', 'Team', 'Player'
     }
 }
 

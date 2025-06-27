@@ -141,7 +141,9 @@ namespace EsportsManager.UI.Controllers.Viewer.Handlers
                         Amount = amount,
                         Message = message.Length > 0 ? message : "No message",
                         DonationType = "Player", // Custom donation type for player
-                        TeamId = null
+                        PlayerId = selectedPlayer.Id, // Set the selected player ID
+                        TeamId = null,
+                        TournamentId = null
                     };
 
                     // Call service to process donation

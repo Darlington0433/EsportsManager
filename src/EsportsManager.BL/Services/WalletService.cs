@@ -27,16 +27,30 @@ namespace EsportsManager.BL.Services
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _dataContext = dataContext ?? throw new ArgumentNullException(nameof(dataContext));
 
-            // Kiểm tra nếu có thể kết nối đến database
-            _useDatabase = _dataContext.TestConnectionAsync().Result;
+            // Kiểm tra nếu có thể kết nối đến database với error handling tốt hơn
+            try
+            {
+                _useDatabase = _dataContext.TestConnectionAsync().Result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Database connection test failed in WalletService constructor");
+                _useDatabase = false;
+            }
 
             if (!_useDatabase)
             {
                 _logger.LogWarning("Database connection failed. Please check the connection settings.");
             }
-        }    /// <summary>
-             /// Lấy thông tin ví của người dùng
-             /// </summary>
+            else
+            {
+                _logger.LogInformation("WalletService: Database connection established successfully");
+            }
+        }
+
+        /// <summary>
+        /// Lấy thông tin ví của người dùng
+        /// </summary>
         public async Task<WalletInfoDto?> GetWalletByUserIdAsync(int userId)
         {
             if (_useDatabase)
@@ -496,17 +510,28 @@ namespace EsportsManager.BL.Services
 
                 // Determine donation target
                 string targetType = donationDto.DonationType;
-                int? targetId = donationDto.DonationType == "Tournament" ? donationDto.TournamentId : donationDto.TeamId;
-                string targetName = donationDto.DonationType == "Tournament"
-                    ? $"Giải đấu #{donationDto.TournamentId}"
-                    : $"Team #{donationDto.TeamId}";
+                int? targetId = donationDto.DonationType switch
+                {
+                    "Tournament" => donationDto.TournamentId,
+                    "Team" => donationDto.TeamId,
+                    "Player" => donationDto.PlayerId,
+                    _ => null
+                };
+
+                string targetName = donationDto.DonationType switch
+                {
+                    "Tournament" => $"Giải đấu #{donationDto.TournamentId}",
+                    "Team" => $"Team #{donationDto.TeamId}",
+                    "Player" => $"Player #{donationDto.PlayerId}",
+                    _ => "Unknown"
+                };
 
                 if (targetId == null)
                     return new TransactionResultDto
                     {
                         Success = false,
                         Message = "Đối tượng donate không hợp lệ",
-                        Errors = new List<string> { "Vui lòng chọn giải đấu hoặc team để donate" }
+                        Errors = new List<string> { "Vui lòng chọn giải đấu, team hoặc player để donate" }
                     };
 
                 // Process donation
@@ -768,12 +793,19 @@ namespace EsportsManager.BL.Services
                         };
 
                         // Lấy thông kê theo loại
-                        var byTypeTable = _dataContext.ExecuteStoredProcedure("sp_GetDonationsByType");
-                        foreach (DataRow typeRow in byTypeTable.Rows)
+                        try
                         {
-                            string donationType = typeRow["DonationType"].ToString() ?? "Unknown";
-                            decimal amount = Convert.ToDecimal(typeRow["Amount"]);
-                            overview.DonationByType[donationType] = amount;
+                            var byTypeTable = _dataContext.ExecuteStoredProcedure("sp_GetDonationsByType");
+                            foreach (DataRow typeRow in byTypeTable.Rows)
+                            {
+                                string donationType = typeRow["DonationType"].ToString() ?? "Unknown";
+                                decimal amount = Convert.ToDecimal(typeRow["Amount"]);
+                                overview.DonationByType[donationType] = amount;
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogWarning(ex, "Could not load donation by type data, continuing with basic overview");
                         }
 
                         return overview;
@@ -784,7 +816,14 @@ namespace EsportsManager.BL.Services
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Error retrieving donation overview");
+                    _logger.LogError(ex, "Error retrieving donation overview: {ErrorMessage}", ex.Message);
+
+                    // Kiểm tra xem có phải lỗi stored procedure không tồn tại
+                    if (ex.Message.Contains("doesn't exist") || ex.Message.Contains("does not exist"))
+                    {
+                        throw new InvalidOperationException("Stored procedure 'sp_GetDonationOverview' chưa được tạo. Vui lòng chạy file database/DONATION_FIX.sql để tạo các stored procedures cần thiết.", ex);
+                    }
+
                     throw new InvalidOperationException("Không thể lấy tổng quan donation. Vui lòng kiểm tra cài đặt cơ sở dữ liệu và thử lại.", ex);
                 }
             }
@@ -803,22 +842,47 @@ namespace EsportsManager.BL.Services
             {
                 try
                 {
-                    // Sử dụng stored procedure
-                    var paramLimit = _dataContext.CreateParameter("@Limit", limit);
-                    var result = _dataContext.ExecuteStoredProcedure("sp_GetTopDonationReceivers", paramLimit);
+                    // Use raw SQL instead of stored procedure to avoid parameter issues
+                    var sql = @"
+                        SELECT 
+                            d.TargetID as EntityId,
+                            d.TargetType as EntityType,
+                            COALESCE(u.Username, CONCAT(d.TargetType, ' #', d.TargetID)) as EntityName,
+                            COUNT(*) as DonationCount,
+                            SUM(d.Amount) as TotalAmount,
+                            MIN(d.DonationDate) as FirstDonation,
+                            MAX(d.DonationDate) as LastDonation
+                        FROM Donations d
+                        LEFT JOIN Users u ON (d.TargetType = 'Player' AND d.TargetID = u.UserID)
+                        WHERE d.Status = 'Completed'
+                        GROUP BY d.TargetID, d.TargetType
+                        ORDER BY TotalAmount DESC
+                        LIMIT @Limit";
 
+                    using var connection = _dataContext.CreateConnection();
+                    connection.Open();
+
+                    using var command = connection.CreateCommand();
+                    command.CommandText = sql;
+                    command.CommandType = CommandType.Text;
+
+                    var parameter = _dataContext.CreateParameter("@Limit", limit);
+                    command.Parameters.Add(parameter);
+
+                    using var reader = command.ExecuteReader();
                     var topReceivers = new List<TopDonationUserDto>();
-                    foreach (DataRow row in result.Rows)
+
+                    while (reader.Read())
                     {
                         topReceivers.Add(new TopDonationUserDto
                         {
-                            UserId = row["EntityId"] != DBNull.Value ? Convert.ToInt32(row["EntityId"]) : 0,
-                            Username = Convert.ToString(row["EntityName"]) ?? "Unknown",
-                            UserType = Convert.ToString(row["EntityType"]) ?? "Unknown",
-                            DonationCount = Convert.ToInt32(row["DonationCount"]),
-                            TotalAmount = Convert.ToDecimal(row["TotalAmount"]),
-                            FirstDonation = Convert.ToDateTime(row["FirstDonation"]),
-                            LastDonation = Convert.ToDateTime(row["LastDonation"])
+                            UserId = reader["EntityId"] != DBNull.Value ? Convert.ToInt32(reader["EntityId"]) : 0,
+                            Username = Convert.ToString(reader["EntityName"]) ?? "Unknown",
+                            UserType = Convert.ToString(reader["EntityType"]) ?? "Unknown",
+                            DonationCount = Convert.ToInt32(reader["DonationCount"]),
+                            TotalAmount = Convert.ToDecimal(reader["TotalAmount"]),
+                            FirstDonation = Convert.ToDateTime(reader["FirstDonation"]),
+                            LastDonation = Convert.ToDateTime(reader["LastDonation"])
                         });
                     }
 
@@ -845,22 +909,46 @@ namespace EsportsManager.BL.Services
             {
                 try
                 {
-                    // Sử dụng stored procedure
-                    var paramLimit = _dataContext.CreateParameter("@Limit", limit);
-                    var result = _dataContext.ExecuteStoredProcedure("sp_GetTopDonators", paramLimit);
+                    // Use raw SQL instead of stored procedure to avoid parameter issues
+                    var sql = @"
+                        SELECT 
+                            d.UserID,
+                            u.Username,
+                            COUNT(*) as DonationCount,
+                            SUM(d.Amount) as TotalAmount,
+                            MIN(d.DonationDate) as FirstDonation,
+                            MAX(d.DonationDate) as LastDonation
+                        FROM Donations d
+                        INNER JOIN Users u ON d.UserID = u.UserID
+                        WHERE d.Status = 'Completed'
+                        GROUP BY d.UserID, u.Username
+                        ORDER BY TotalAmount DESC
+                        LIMIT @Limit";
 
+                    using var connection = _dataContext.CreateConnection();
+                    connection.Open();
+
+                    using var command = connection.CreateCommand();
+                    command.CommandText = sql;
+                    command.CommandType = CommandType.Text;
+
+                    var parameter = _dataContext.CreateParameter("@Limit", limit);
+                    command.Parameters.Add(parameter);
+
+                    using var reader = command.ExecuteReader();
                     var topDonators = new List<TopDonationUserDto>();
-                    foreach (DataRow row in result.Rows)
+
+                    while (reader.Read())
                     {
                         topDonators.Add(new TopDonationUserDto
                         {
-                            UserId = Convert.ToInt32(row["UserId"]),
-                            Username = Convert.ToString(row["Username"]) ?? "Unknown",
+                            UserId = Convert.ToInt32(reader["UserID"]),
+                            Username = Convert.ToString(reader["Username"]) ?? "Unknown",
                             UserType = "User",
-                            DonationCount = Convert.ToInt32(row["DonationCount"]),
-                            TotalAmount = Convert.ToDecimal(row["TotalAmount"]),
-                            FirstDonation = Convert.ToDateTime(row["FirstDonation"]),
-                            LastDonation = Convert.ToDateTime(row["LastDonation"])
+                            DonationCount = Convert.ToInt32(reader["DonationCount"]),
+                            TotalAmount = Convert.ToDecimal(reader["TotalAmount"]),
+                            FirstDonation = Convert.ToDateTime(reader["FirstDonation"]),
+                            LastDonation = Convert.ToDateTime(reader["LastDonation"])
                         });
                     }
 
@@ -887,32 +975,95 @@ namespace EsportsManager.BL.Services
             {
                 try
                 {
-                    // Tạo tham số cho stored procedure
-                    var parameters = new List<IDbDataParameter>
-                    {
-                        _dataContext.CreateParameter("@PageNumber", filter.PageNumber),
-                        _dataContext.CreateParameter("@PageSize", filter.PageSize)
-                    };
+                    // Use raw SQL instead of stored procedure to avoid parameter issues
+                    var sql = @"
+                        SELECT 
+                            wt.TransactionID as Id,
+                            wt.UserID,
+                            u.Username,
+                            'Donation' as TransactionType,
+                            ABS(wt.Amount) as Amount,
+                            wt.Status,
+                            wt.CreatedAt,
+                            wt.ReferenceCode,
+                            wt.Note,
+                            wt.RelatedEntityType,
+                            wt.RelatedEntityID
+                        FROM WalletTransactions wt
+                        JOIN Users u ON wt.UserID = u.UserID
+                        WHERE wt.TransactionType = 'Donation'";
 
-                    // Thêm các tham số lọc tùy chọn
+                    var parameters = new List<IDbDataParameter>();
+                    var whereConditions = new List<string>();
+
+                    // Add optional filter conditions
                     if (filter.FromDate.HasValue)
-                        parameters.Add(_dataContext.CreateParameter("@FromDate", filter.FromDate));
+                    {
+                        whereConditions.Add("wt.CreatedAt >= @FromDate");
+                        parameters.Add(_dataContext.CreateParameter("@FromDate", filter.FromDate.Value));
+                    }
 
                     if (filter.ToDate.HasValue)
-                        parameters.Add(_dataContext.CreateParameter("@ToDate", filter.ToDate));
+                    {
+                        whereConditions.Add("wt.CreatedAt <= @ToDate");
+                        parameters.Add(_dataContext.CreateParameter("@ToDate", filter.ToDate.Value));
+                    }
 
                     if (filter.MinAmount.HasValue)
-                        parameters.Add(_dataContext.CreateParameter("@MinAmount", filter.MinAmount));
+                    {
+                        whereConditions.Add("ABS(wt.Amount) >= @MinAmount");
+                        parameters.Add(_dataContext.CreateParameter("@MinAmount", filter.MinAmount.Value));
+                    }
 
                     if (filter.MaxAmount.HasValue)
-                        parameters.Add(_dataContext.CreateParameter("@MaxAmount", filter.MaxAmount));
-
-                    var result = _dataContext.ExecuteStoredProcedure("sp_GetDonationHistory", parameters.ToArray());
-
-                    var transactions = new List<TransactionDto>();
-                    foreach (DataRow row in result.Rows)
                     {
-                        transactions.Add(MapTransactionFromDataRow(row));
+                        whereConditions.Add("ABS(wt.Amount) <= @MaxAmount");
+                        parameters.Add(_dataContext.CreateParameter("@MaxAmount", filter.MaxAmount.Value));
+                    }
+
+                    // Add WHERE conditions if any
+                    if (whereConditions.Count > 0)
+                    {
+                        sql += " AND " + string.Join(" AND ", whereConditions);
+                    }
+
+                    // Add ORDER BY and LIMIT
+                    sql += " ORDER BY wt.CreatedAt DESC";
+
+                    var offset = (filter.PageNumber - 1) * filter.PageSize;
+                    sql += $" LIMIT {filter.PageSize} OFFSET {offset}";
+
+                    using var connection = _dataContext.CreateConnection();
+                    connection.Open();
+
+                    using var command = connection.CreateCommand();
+                    command.CommandText = sql;
+                    command.CommandType = CommandType.Text;
+
+                    foreach (var parameter in parameters)
+                    {
+                        command.Parameters.Add(parameter);
+                    }
+
+                    using var reader = command.ExecuteReader();
+                    var transactions = new List<TransactionDto>();
+
+                    while (reader.Read())
+                    {
+                        transactions.Add(new TransactionDto
+                        {
+                            Id = Convert.ToInt32(reader["Id"]),
+                            UserId = Convert.ToInt32(reader["UserID"]),
+                            Username = Convert.ToString(reader["Username"]) ?? "",
+                            TransactionType = Convert.ToString(reader["TransactionType"]) ?? "",
+                            Amount = Convert.ToDecimal(reader["Amount"]),
+                            Status = Convert.ToString(reader["Status"]) ?? "",
+                            CreatedAt = Convert.ToDateTime(reader["CreatedAt"]),
+                            ReferenceCode = Convert.ToString(reader["ReferenceCode"]) ?? "",
+                            Note = Convert.ToString(reader["Note"]) ?? "",
+                            RelatedEntityType = Convert.ToString(reader["RelatedEntityType"]),
+                            RelatedEntityId = reader["RelatedEntityID"] != DBNull.Value ? Convert.ToInt32(reader["RelatedEntityID"]) : null
+                        });
                     }
 
                     return transactions;
