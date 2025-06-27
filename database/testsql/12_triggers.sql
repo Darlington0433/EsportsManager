@@ -1,5 +1,9 @@
 -- =====================================================
--- AUTOMATIC TRIGGERS
+-- 12. TRIGGERS MODULE
+-- =====================================================
+-- Module: Database Triggers for Automatic Actions
+-- Description: Automatic triggers for wallet updates and logging
+-- Dependencies: All table modules (02-09)
 -- =====================================================
 
 USE EsportsManager;
@@ -65,17 +69,21 @@ BEGIN
     IF NEW.Status = 'Completed' AND NEW.TargetType = 'Player' THEN
         INSERT INTO WalletTransactions (
             WalletID, 
+            UserID,
             TransactionType, 
             Amount, 
-            Description, 
-            ReferenceID
+            BalanceAfter,
+            Status,
+            Note
         )
         SELECT 
             w.WalletID,
+            w.UserID,
             'Donation_Received',
             NEW.Amount,
-            CONCAT('Donation from user ID: ', NEW.UserID, ' to ', NEW.TargetType, ' - ', COALESCE(NEW.Message, 'No message')),
-            NEW.DonationID
+            w.Balance,
+            'Completed',
+            CONCAT('Donation from user ID: ', NEW.UserID, ' to ', NEW.TargetType, ' - ', COALESCE(NEW.Message, 'No message'))
         FROM Wallets w 
         WHERE w.UserID = NEW.TargetID;
     END IF;
@@ -108,4 +116,4 @@ END//
 
 DELIMITER ;
 
-SELECT 'Database triggers created successfully!' as Message;
+SELECT '12. Database triggers created successfully!' as Message;

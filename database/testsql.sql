@@ -200,15 +200,16 @@ CREATE TABLE IF NOT EXISTS Wallets (
 -- Table: Donations (Donations from Viewers to Players)
 CREATE TABLE IF NOT EXISTS Donations (
     DonationID INT AUTO_INCREMENT PRIMARY KEY,
-    FromUserID INT NOT NULL, -- Viewer donates
-    ToUserID INT NOT NULL,   -- Player receives
+    UserID INT NOT NULL, -- User who donates (FromUserID)
     Amount DECIMAL(10,2) NOT NULL,
     Message TEXT,
-    DonationDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     Status ENUM('Completed', 'Failed', 'Refunded') DEFAULT 'Completed',
+    TargetType VARCHAR(50) NOT NULL, -- 'Tournament', 'Team', 'Player', etc.
+    TargetID INT, -- ID of the target entity
+    TransactionID INT NULL, -- Link to WalletTransactions (nullable to avoid circular dependency)
+    DonationDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     
-    FOREIGN KEY (FromUserID) REFERENCES Users(UserID) ON DELETE RESTRICT,
-    FOREIGN KEY (ToUserID) REFERENCES Users(UserID) ON DELETE RESTRICT
+    FOREIGN KEY (UserID) REFERENCES Users(UserID) ON DELETE RESTRICT
 ) ENGINE=InnoDB COMMENT='Donations table';
 
 -- Table: Withdrawals (Money withdrawal by Players)
@@ -293,13 +294,21 @@ CREATE TABLE IF NOT EXISTS UserProfiles (
 CREATE TABLE IF NOT EXISTS WalletTransactions (
     TransactionID INT AUTO_INCREMENT PRIMARY KEY,
     WalletID INT NOT NULL,
-    TransactionType ENUM('Deposit', 'Withdrawal', 'Donation_Received', 'Prize_Money', 'Refund') NOT NULL,
+    UserID INT NOT NULL,
+    TransactionType VARCHAR(50) NOT NULL,
     Amount DECIMAL(12,2) NOT NULL,
-    Description TEXT,
-    ReferenceID INT, -- Reference to Donation/Withdrawal/etc
+    BalanceAfter DECIMAL(12,2) NOT NULL,
+    Status VARCHAR(20) DEFAULT 'Completed',
+    ReferenceCode VARCHAR(100),
+    Note TEXT,
+    RelatedEntityType VARCHAR(50),
+    RelatedEntityID INT,
+    RelatedUserID INT,
     CreatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     
-    FOREIGN KEY (WalletID) REFERENCES Wallets(WalletID) ON DELETE CASCADE
+    FOREIGN KEY (WalletID) REFERENCES Wallets(WalletID) ON DELETE CASCADE,
+    FOREIGN KEY (UserID) REFERENCES Users(UserID) ON DELETE CASCADE,
+    FOREIGN KEY (RelatedUserID) REFERENCES Users(UserID) ON DELETE SET NULL
 ) ENGINE=InnoDB COMMENT='Detailed wallet transaction history based on ERD';
 
 -- Table: Feedback (Detailed feedback for tournaments)
@@ -344,8 +353,8 @@ CREATE INDEX idx_tournaments_status ON Tournaments(Status);
 CREATE INDEX idx_tournaments_dates ON Tournaments(StartDate, EndDate);
 
 -- Indexes for Donations
-CREATE INDEX idx_donations_from ON Donations(FromUserID);
-CREATE INDEX idx_donations_to ON Donations(ToUserID);
+CREATE INDEX idx_donations_user ON Donations(UserID);
+CREATE INDEX idx_donations_target ON Donations(TargetType, TargetID);
 CREATE INDEX idx_donations_date ON Donations(DonationDate);
 
 -- Indexes for Votes
@@ -615,12 +624,12 @@ CREATE TRIGGER tr_update_wallet_on_donation
 AFTER INSERT ON Donations
 FOR EACH ROW
 BEGIN
-    IF NEW.Status = 'Completed' THEN
+    IF NEW.Status = 'Completed' AND NEW.TargetType = 'Player' THEN
         UPDATE Wallets 
         SET Balance = Balance + NEW.Amount,
             TotalReceived = TotalReceived + NEW.Amount,
             LastUpdated = CURRENT_TIMESTAMP
-        WHERE UserID = NEW.ToUserID;
+        WHERE UserID = NEW.TargetID;
     END IF;
 END//
 
@@ -645,7 +654,7 @@ CREATE TRIGGER tr_log_wallet_transaction_donation
 AFTER INSERT ON Donations
 FOR EACH ROW
 BEGIN
-    IF NEW.Status = 'Completed' THEN
+    IF NEW.Status = 'Completed' AND NEW.TargetType = 'Player' THEN
         INSERT INTO WalletTransactions (
             WalletID, 
             TransactionType, 
@@ -657,10 +666,10 @@ BEGIN
             w.WalletID,
             'Donation_Received',
             NEW.Amount,
-            CONCAT('Donation from user ID: ', NEW.FromUserID, ' - ', COALESCE(NEW.Message, 'No message')),
+            CONCAT('Donation from user ID: ', NEW.UserID, ' to ', NEW.TargetType, ' - ', COALESCE(NEW.Message, 'No message')),
             NEW.DonationID
         FROM Wallets w 
-        WHERE w.UserID = NEW.ToUserID;
+        WHERE w.UserID = NEW.TargetID;
     END IF;
 END//
 
@@ -1077,12 +1086,12 @@ INSERT INTO TournamentResults (TournamentID, TeamID, Position, PrizeMoney, Notes
 (4, 4, 1, 1000.00, 'Champion with perfect record');
 
 -- Add some donations from viewers to players
-INSERT INTO Donations (FromUserID, ToUserID, Amount, Message, Status) VALUES
-(8, 3, 50.00, 'Great performance in last tournament!', 'Completed'),
-(9, 4, 30.00, 'You\'re my favorite player!', 'Completed'),
-(10, 5, 25.00, 'Keep up the good work', 'Completed'),
-(8, 6, 15.00, 'Amazing skills!', 'Completed'),
-(9, 7, 20.00, 'Looking forward to your next match', 'Completed');
+INSERT INTO Donations (UserID, Amount, Message, Status, TargetType, TargetID) VALUES
+(8, 50.00, 'Great performance in last tournament!', 'Completed', 'Player', 3),
+(9, 30.00, 'You are my favorite player!', 'Completed', 'Player', 4),
+(10, 25.00, 'Keep up the good work', 'Completed', 'Player', 5),
+(8, 15.00, 'Amazing skills!', 'Completed', 'Player', 6),
+(9, 20.00, 'Looking forward to your next match', 'Completed', 'Player', 7);
 
 -- Add some admin actions for audit trail
 INSERT INTO AdminActions (AdminID, ActionType, TargetType, TargetID, Description) VALUES

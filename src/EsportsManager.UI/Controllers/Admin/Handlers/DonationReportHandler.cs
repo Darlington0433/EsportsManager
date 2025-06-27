@@ -109,7 +109,26 @@ public class DonationReportHandler : IDonationReportHandler
         }
         catch (Exception ex)
         {
-            ConsoleRenderingService.ShowMessageBox($"Lỗi khi tải tổng quan donation: {ex.Message}", true, 3000);
+            // Hiển thị thông báo lỗi chi tiết hơn
+            string errorMessage = ex.Message;
+            string suggestion = "";
+
+            if (ex.Message.Contains("doesn't exist") || ex.Message.Contains("does not exist"))
+            {
+                suggestion = "\n\n💡 HƯỚNG DẪN SỬA LỖI:\n" +
+                           "1. Mở MySQL Workbench\n" +
+                           "2. Chạy file: database/DONATION_QUICK_FIX.sql\n" +
+                           "3. Hoặc xem hướng dẫn trong: SỬA_LỖI_DONATION_NHANH.md";
+            }
+            else if (ex.Message.Contains("connection") || ex.Message.Contains("database"))
+            {
+                suggestion = "\n\n💡 KIỂM TRA:\n" +
+                           "1. MySQL server đang chạy?\n" +
+                           "2. Database 'EsportsManager' đã tồn tại?\n" +
+                           "3. Thông tin kết nối đúng?";
+            }
+
+            ConsoleRenderingService.ShowMessageBox($"Lỗi khi tải tổng quan donation: {errorMessage}{suggestion}", true, 5000);
         }
     }
 
@@ -154,7 +173,10 @@ public class DonationReportHandler : IDonationReportHandler
         }
         catch (Exception ex)
         {
-            ConsoleRenderingService.ShowMessageBox($"Lỗi khi tải top người nhận: {ex.Message}", true, 3000);
+            string suggestion = ex.Message.Contains("doesn't exist") || ex.Message.Contains("does not exist")
+                ? "\n\n💡 Chạy file: database/DONATION_FIX_COMPLETE.sql để sửa lỗi"
+                : "";
+            ConsoleRenderingService.ShowMessageBox($"Lỗi khi tải top người nhận: {ex.Message}{suggestion}", true, 4000);
         }
     }
 
@@ -196,7 +218,10 @@ public class DonationReportHandler : IDonationReportHandler
         }
         catch (Exception ex)
         {
-            ConsoleRenderingService.ShowMessageBox($"Lỗi khi tải top người donation: {ex.Message}", true, 3000);
+            string suggestion = ex.Message.Contains("doesn't exist") || ex.Message.Contains("does not exist")
+                ? "\n\n💡 Chạy file: database/DONATION_FIX_COMPLETE.sql để sửa lỗi"
+                : "";
+            ConsoleRenderingService.ShowMessageBox($"Lỗi khi tải top người donation: {ex.Message}{suggestion}", true, 4000);
         }
     }
 

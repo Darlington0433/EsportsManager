@@ -10,35 +10,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### 🎉 Initial Release
 
 #### ✨ Added
+
 - **3-Layer Architecture Implementation**
+
   - UI Layer with Console Interface
   - Business Logic Layer with Services
   - Data Access Layer with Repository Pattern
 
 - **User Authentication System**
+
   - Login/Registration forms
   - Password recovery functionality
   - Role-based access control (Admin/Player/Viewer)
 
 - **Console UI Features**
+
   - Beautiful ASCII art interface
   - Interactive menus with keyboard navigation
   - Responsive design adapting to window size
   - Professional form layouts with validation
 
 - **Admin Features**
+
   - User management system
   - Tournament management (stub)
   - System statistics (stub)
   - Feedback management (stub)
 
 - **Player Features**
+
   - Personal profile management
   - Tournament registration (stub)
   - Team management (stub)
-  - Wallet system (stub)
+  - Fully implemented wallet & donation system
+    - Donation overview with real-time statistics
+    - Top donation receivers visualization
+    - Top donators leaderboard
+    - Complete donation history with filtering
+    - Synchronized database procedures & views
 
 - **Viewer Features**
+
   - Tournament viewing (stub)
   - Statistics viewing (stub)
   - Voting system (stub)
@@ -51,6 +63,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Comprehensive error handling
 
 #### 🏗️ Architecture
+
 - Clean 3-layer separation
 - Repository pattern for data access
 - DTO pattern for data transfer
@@ -58,31 +71,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Dependency injection setup
 
 #### 📚 Documentation
+
 - Comprehensive README with architecture overview
 - Code structure guide
 - Detailed commenting in Vietnamese
 - XML documentation for public APIs
 
 #### 🛠️ Development Tools
+
 - .NET 9.0 target framework
 - Visual Studio 2022 compatibility
 - Git repository with proper .gitignore
 - Build scripts and configuration
 
 ### 🔧 Technical Details
+
 - **Framework**: .NET 9.0
 - **Language**: C# 11.0
 - **Architecture**: 3-Layer + SOLID
-- **Database**: SQL Server (Repository pattern ready)
+- **Database**: SQL Server with stored procedures & views
 - **UI**: Console Application with rich interface
+- **Testing**: Console test tools for system validation
 
 ### 📊 Statistics
+
 - **Total Files**: 31 C# files
 - **Lines of Code**: ~3,000+ lines
 - **Build Status**: ✅ Passing
 - **Test Coverage**: Ready for unit tests
 
 ### 🎯 Future Roadmap
+
 - Real database integration
 - Complete controller implementations
 - Web API development
@@ -94,13 +113,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Development Notes
 
 ### Code Refactoring Done
+
 - ✅ Removed duplicate input logic
 - ✅ Unified validation services
 - ✅ Cleaned up unused classes
 - ✅ Improved error handling
 - ✅ Enhanced UI rendering
+- ✅ Fixed donation system integration
+- ✅ Synchronized wallet & donation data
 
 ### Quality Improvements
+
 - ✅ Professional naming conventions
 - ✅ Consistent code style
 - ✅ Comprehensive documentation
@@ -110,6 +133,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ---
 
 **Legend:**
+
 - 🎉 Major releases
 - ✨ New features
 - 🐛 Bug fixes

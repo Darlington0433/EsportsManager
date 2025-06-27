@@ -556,8 +556,8 @@ CREATE PROCEDURE sp_GetDonationOverview()
 BEGIN
     SELECT 
         COUNT(*) as TotalDonations,
-        COUNT(DISTINCT FromUserID) as TotalDonators,
-        COUNT(DISTINCT ToUserID) as TotalReceivers,
+        COUNT(DISTINCT UserID) as TotalDonators,
+        COUNT(DISTINCT CASE WHEN TargetType = 'Player' THEN TargetID END) as TotalReceivers,
         SUM(Amount) as TotalAmount
     FROM Donations
     WHERE Status = 'Completed';
@@ -567,20 +567,13 @@ END//
 DROP PROCEDURE IF EXISTS sp_GetDonationsByType//
 CREATE PROCEDURE sp_GetDonationsByType()
 BEGIN
-    -- Sử dụng UserRoles để phân loại donation theo loại người dùng nhận
+    -- Group donations by TargetType
     SELECT 
-        CASE 
-            WHEN ur.RoleID = 2 THEN 'Player'
-            WHEN ur.RoleID = 3 THEN 'Team'
-            WHEN ur.RoleID = 4 THEN 'Tournament'
-            ELSE 'Other'
-        END as DonationType,
-        SUM(d.Amount) as Amount
-    FROM Donations d
-    JOIN Users u ON d.ToUserID = u.UserID
-    JOIN UserRoles ur ON u.UserID = ur.UserID
-    WHERE d.Status = 'Completed'
-    GROUP BY ur.RoleID;
+        TargetType as DonationType,
+        SUM(Amount) as Amount
+    FROM Donations
+    WHERE Status = 'Completed'
+    GROUP BY TargetType;
 END//
 
 -- Procedure: Get top donation receivers
@@ -589,24 +582,19 @@ CREATE PROCEDURE sp_GetTopDonationReceivers(
     IN p_Limit INT
 )
 BEGIN
+    -- For Player donations, we can get user info
     SELECT 
-        d.ToUserID as EntityId,
-        CASE 
-            WHEN ur.RoleID = 2 THEN 'Player'
-            WHEN ur.RoleID = 3 THEN 'Team'
-            WHEN ur.RoleID = 4 THEN 'Tournament'
-            ELSE 'Other'
-        END as EntityType,
-        u.Username as EntityName,
+        d.TargetID as EntityId,
+        d.TargetType as EntityType,
+        COALESCE(u.Username, CONCAT(d.TargetType, ' #', d.TargetID)) as EntityName,
         COUNT(*) as DonationCount,
         SUM(d.Amount) as TotalAmount,
         MIN(d.DonationDate) as FirstDonation,
         MAX(d.DonationDate) as LastDonation
     FROM Donations d
-    JOIN Users u ON d.ToUserID = u.UserID
-    JOIN UserRoles ur ON u.UserID = ur.UserID
+    LEFT JOIN Users u ON (d.TargetType = 'Player' AND d.TargetID = u.UserID)
     WHERE d.Status = 'Completed'
-    GROUP BY d.ToUserID, ur.RoleID, u.Username
+    GROUP BY d.TargetID, d.TargetType
     ORDER BY TotalAmount DESC
     LIMIT p_Limit;
 END//
@@ -618,16 +606,16 @@ CREATE PROCEDURE sp_GetTopDonators(
 )
 BEGIN
     SELECT 
-        d.FromUserID as UserID,
+        d.UserID,
         u.Username,
         COUNT(*) as DonationCount,
         SUM(d.Amount) as TotalAmount,
         MIN(d.DonationDate) as FirstDonation,
         MAX(d.DonationDate) as LastDonation
     FROM Donations d
-    JOIN Users u ON d.FromUserID = u.UserID
+    JOIN Users u ON d.UserID = u.UserID
     WHERE d.Status = 'Completed'
-    GROUP BY d.FromUserID, u.Username
+    GROUP BY d.UserID, u.Username
     ORDER BY TotalAmount DESC
     LIMIT p_Limit;
 END//

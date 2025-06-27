@@ -1,8 +1,15 @@
 -- =====================================================
--- CREATE INDEXES FOR PERFORMANCE
+-- 10. INDEXES MODULE
+-- =====================================================
+-- Module: Database Performance Indexes
+-- Description: Create indexes for better query performance
+-- Dependencies: All table modules (02-09)
 -- =====================================================
 
 USE EsportsManager;
+
+-- Re-enable foreign key checks
+SET FOREIGN_KEY_CHECKS = 1;
 
 -- Indexes for Users
 CREATE INDEX idx_users_role ON Users(Role);
@@ -39,4 +46,4 @@ CREATE INDEX idx_teams_created_by ON Teams(CreatedBy);
 CREATE INDEX idx_wallet_transactions_type ON WalletTransactions(TransactionType);
 CREATE INDEX idx_wallet_transactions_date ON WalletTransactions(CreatedAt);
 
-SELECT 'Database indexes created successfully!' as Message;
+SELECT '10. Database indexes created successfully!' as Message;

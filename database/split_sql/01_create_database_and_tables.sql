@@ -200,15 +200,16 @@ CREATE TABLE IF NOT EXISTS Wallets (
 -- Table: Donations (Donations from Viewers to Players)
 CREATE TABLE IF NOT EXISTS Donations (
     DonationID INT AUTO_INCREMENT PRIMARY KEY,
-    FromUserID INT NOT NULL, -- Viewer donates
-    ToUserID INT NOT NULL,   -- Player receives
+    UserID INT NOT NULL, -- User who donates (FromUserID)
     Amount DECIMAL(10,2) NOT NULL,
     Message TEXT,
-    DonationDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     Status ENUM('Completed', 'Failed', 'Refunded') DEFAULT 'Completed',
+    TargetType VARCHAR(50) NOT NULL, -- 'Tournament', 'Team', 'Player', etc.
+    TargetID INT, -- ID of the target entity
+    TransactionID INT NULL, -- Link to WalletTransactions (nullable to avoid circular dependency)
+    DonationDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     
-    FOREIGN KEY (FromUserID) REFERENCES Users(UserID) ON DELETE RESTRICT,
-    FOREIGN KEY (ToUserID) REFERENCES Users(UserID) ON DELETE RESTRICT
+    FOREIGN KEY (UserID) REFERENCES Users(UserID) ON DELETE RESTRICT
 ) ENGINE=InnoDB COMMENT='Donations table';
 
 -- Table: Withdrawals (Money withdrawal by Players)
@@ -293,13 +294,21 @@ CREATE TABLE IF NOT EXISTS UserProfiles (
 CREATE TABLE IF NOT EXISTS WalletTransactions (
     TransactionID INT AUTO_INCREMENT PRIMARY KEY,
     WalletID INT NOT NULL,
-    TransactionType ENUM('Deposit', 'Withdrawal', 'Donation_Received', 'Prize_Money', 'Refund') NOT NULL,
+    UserID INT NOT NULL,
+    TransactionType VARCHAR(50) NOT NULL,
     Amount DECIMAL(12,2) NOT NULL,
-    Description TEXT,
-    ReferenceID INT, -- Reference to Donation/Withdrawal/etc
+    BalanceAfter DECIMAL(12,2) NOT NULL,
+    Status VARCHAR(20) DEFAULT 'Completed',
+    ReferenceCode VARCHAR(100),
+    Note TEXT,
+    RelatedEntityType VARCHAR(50),
+    RelatedEntityID INT,
+    RelatedUserID INT,
     CreatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     
-    FOREIGN KEY (WalletID) REFERENCES Wallets(WalletID) ON DELETE CASCADE
+    FOREIGN KEY (WalletID) REFERENCES Wallets(WalletID) ON DELETE CASCADE,
+    FOREIGN KEY (UserID) REFERENCES Users(UserID) ON DELETE CASCADE,
+    FOREIGN KEY (RelatedUserID) REFERENCES Users(UserID) ON DELETE SET NULL
 ) ENGINE=InnoDB COMMENT='Detailed wallet transaction history based on ERD';
 
 -- Table: Feedback (Detailed feedback for tournaments)

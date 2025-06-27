@@ -194,12 +194,12 @@ INSERT INTO TournamentResults (TournamentID, TeamID, Position, PrizeMoney, Notes
 (4, 4, 1, 1000.00, 'Champion with perfect record');
 
 -- Add some donations from viewers to players
-INSERT INTO Donations (FromUserID, ToUserID, Amount, Message, Status) VALUES
-(8, 3, 50.00, 'Great performance in last tournament!', 'Completed'),
-(9, 4, 30.00, 'You\'re my favorite player!', 'Completed'),
-(10, 5, 25.00, 'Keep up the good work', 'Completed'),
-(8, 6, 15.00, 'Amazing skills!', 'Completed'),
-(9, 7, 20.00, 'Looking forward to your next match', 'Completed');
+INSERT INTO Donations (UserID, Amount, Message, Status, TargetType, TargetID) VALUES
+(8, 50.00, 'Great performance in last tournament!', 'Completed', 'Player', 3),
+(9, 30.00, 'You are my favorite player!', 'Completed', 'Player', 4),
+(10, 25.00, 'Keep up the good work', 'Completed', 'Player', 5),
+(8, 15.00, 'Amazing skills!', 'Completed', 'Player', 6),
+(9, 20.00, 'Looking forward to your next match', 'Completed', 'Player', 7);
 
 -- Add some admin actions for audit trail
 INSERT INTO AdminActions (AdminID, ActionType, TargetType, TargetID, Description) VALUES
