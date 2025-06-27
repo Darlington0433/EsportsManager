@@ -75,12 +75,12 @@ public class PlayerWalletHandler
             ConsoleRenderingService.DrawBorder("SỐ DƯ VÍ QUYÊN GÓP", 60, 12);
 
             var wallet = await _walletService.GetWalletByUserIdAsync(_currentUser.Id);
-            
+
             if (wallet != null)
             {
                 Console.WriteLine($"\n💰 Số dư hiện tại: {wallet.Balance:N0} VND");
                 Console.WriteLine($"📅 Cập nhật lần cuối: {wallet.LastUpdatedAt?.ToString("dd/MM/yyyy HH:mm") ?? "Chưa có"}");
-                
+
                 // Display recent donation summary using BL service
                 var summary = await _walletService.GetWalletStatsAsync(_currentUser.Id);
                 if (summary != null)
@@ -102,8 +102,11 @@ public class PlayerWalletHandler
         }
         catch (Exception ex)
         {
+            // Log lỗi nếu có logger, không cần thiết nếu không có
+            // _logger?.LogError(ex, "Error in ViewWalletBalanceAsync for user {UserId}", _currentUser?.Id);
+
             ConsoleRenderingService.ShowMessageBox(
-                $"Lỗi khi tải thông tin ví: {ex.Message}", true, 3000);
+                $"Không thể tải thông tin ví. Vui lòng thử lại sau.", true, 3000);
         }
     }
 
@@ -118,7 +121,7 @@ public class PlayerWalletHandler
             ConsoleRenderingService.DrawBorder("LỊCH SỬ GIAO DỊCH", 80, 20);
 
             var transactions = await _walletService.GetTransactionHistoryAsync(_currentUser.Id);
-            
+
             if (transactions == null || !transactions.Any())
             {
                 ConsoleRenderingService.ShowNotification(
@@ -135,7 +138,7 @@ public class PlayerWalletHandler
         catch (Exception ex)
         {
             ConsoleRenderingService.ShowMessageBox(
-                $"Lỗi khi tải lịch sử giao dịch: {ex.Message}", true, 3000);
+                $"Không thể tải lịch sử giao dịch. Vui lòng thử lại sau.", true, 3000);
         }
     }
 
@@ -208,7 +211,7 @@ public class PlayerWalletHandler
                 };
 
                 var result = await _walletService.WithdrawAsync(_currentUser.Id, withdrawalRequest);
-                
+
                 if (result.Success)
                 {
                     ConsoleRenderingService.ShowNotification(
@@ -217,7 +220,7 @@ public class PlayerWalletHandler
                 else
                 {
                     ConsoleRenderingService.ShowNotification(
-                        result.Message ?? WalletConstants.WITHDRAWAL_REQUEST_FAILED_MESSAGE, 
+                        result.Message ?? WalletConstants.WITHDRAWAL_REQUEST_FAILED_MESSAGE,
                         ConsoleColor.Red);
                 }
             }
@@ -232,7 +235,7 @@ public class PlayerWalletHandler
         catch (Exception ex)
         {
             ConsoleRenderingService.ShowMessageBox(
-                $"Lỗi khi thực hiện rút tiền: {ex.Message}", true, 3000);
+                $"Không thể thực hiện rút tiền. Vui lòng thử lại sau.", true, 3000);
         }
     }
 
@@ -270,7 +273,7 @@ public class PlayerWalletHandler
                     Console.Write("Chủ tài khoản: ");
                     var accountHolder = Console.ReadLine()?.Trim();
 
-                    if (string.IsNullOrEmpty(bankAccount) || string.IsNullOrEmpty(bankName) || 
+                    if (string.IsNullOrEmpty(bankAccount) || string.IsNullOrEmpty(bankName) ||
                         string.IsNullOrEmpty(accountHolder))
                     {
                         ConsoleRenderingService.ShowNotification(
@@ -321,7 +324,7 @@ public class PlayerWalletHandler
     {
         var header = string.Format("{0,-15} {1,-12} {2,-15} {3,-20} {4,-15}",
             "Ngày", "Loại", "Số tiền", "Từ/Đến", "Trạng thái");
-        
+
         Console.WriteLine(header);
         Console.WriteLine(new string('─', 77));
 
@@ -347,8 +350,8 @@ public class PlayerWalletHandler
                 transaction.CreatedAt.ToString("dd/MM/yyyy"),
                 typeDisplay,
                 $"{transaction.Amount:N0} VND",
-                transaction.Note?.Length > 20 ? 
-                    transaction.Note.Substring(0, 17) + "..." : 
+                transaction.Note?.Length > 20 ?
+                    transaction.Note.Substring(0, 17) + "..." :
                     transaction.Note ?? "",
                 statusDisplay);
 
