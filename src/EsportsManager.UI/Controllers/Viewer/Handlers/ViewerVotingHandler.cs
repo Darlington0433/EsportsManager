@@ -16,15 +16,18 @@ namespace EsportsManager.UI.Controllers.Viewer.Handlers
         private readonly UserProfileDto _currentUser;
         private readonly ITournamentService _tournamentService;
         private readonly IUserService _userService;
+        private readonly IVotingService _votingService;
 
         public ViewerVotingHandler(
             UserProfileDto currentUser,
             ITournamentService tournamentService,
-            IUserService userService)
+            IUserService userService,
+            IVotingService votingService)
         {
             _currentUser = currentUser;
             _tournamentService = tournamentService;
             _userService = userService;
+            _votingService = votingService;
         }
 
         public async Task HandleVoteForPlayerAsync()
@@ -32,13 +35,9 @@ namespace EsportsManager.UI.Controllers.Viewer.Handlers
             try
             {
                 Console.Clear();
-                ConsoleRenderingService.DrawBorder("VOTE CHO PLAYER YÊU THÍCH", 80, 15);
+                ConsoleRenderingService.DrawBorder("VOTE CHO PLAYER YÊU THÍCH", 80, 15);                // Sử dụng HandlePlayerVotingAsync để xử lý việc vote cho player
+                await HandlePlayerVotingAsync();
 
-                // Implement player voting logic here
-                Console.WriteLine("🗳️ Chức năng vote cho player đang được phát triển...");
-                
-                await Task.Delay(100); // Placeholder async operation
-                
                 Console.WriteLine("\nNhấn Enter để tiếp tục...");
                 Console.ReadLine();
             }
@@ -53,13 +52,9 @@ namespace EsportsManager.UI.Controllers.Viewer.Handlers
             try
             {
                 Console.Clear();
-                ConsoleRenderingService.DrawBorder("VOTE CHO GIẢI ĐẤU HAY NHẤT", 80, 15);
+                ConsoleRenderingService.DrawBorder("VOTE CHO GIẢI ĐẤU HAY NHẤT", 80, 15);                // Sử dụng HandleTournamentVotingAsync để xử lý việc vote cho giải đấu
+                await HandleTournamentVotingAsync();
 
-                // Implement tournament voting logic here
-                Console.WriteLine("🗳️ Chức năng vote cho giải đấu đang được phát triển...");
-                
-                await Task.Delay(100); // Placeholder async operation
-                
                 Console.WriteLine("\nNhấn Enter để tiếp tục...");
                 Console.ReadLine();
             }
@@ -74,13 +69,9 @@ namespace EsportsManager.UI.Controllers.Viewer.Handlers
             try
             {
                 Console.Clear();
-                ConsoleRenderingService.DrawBorder("VOTE CHO MÔTHER SPORT ESPORTS", 80, 15);
+                ConsoleRenderingService.DrawBorder("VOTE CHO MÔTHER SPORT ESPORTS", 80, 15);                // Sử dụng HandleEsportsVotingAsync để xử lý việc vote cho môn thể thao
+                await HandleEsportsVotingAsync();
 
-                // Implement sport voting logic here
-                Console.WriteLine("🗳️ Chức năng vote cho môn thể thao đang được phát triển...");
-                
-                await Task.Delay(100); // Placeholder async operation
-                
                 Console.WriteLine("\nNhấn Enter để tiếp tục...");
                 Console.ReadLine();
             }
@@ -123,7 +114,7 @@ namespace EsportsManager.UI.Controllers.Viewer.Handlers
                             await HandleEsportsVotingAsync();
                             break;
                         case 3:
-                            HandleViewVotingResults();
+                            await HandleViewVotingResults();
                             break;
                         case 4:
                         case -1:
@@ -147,27 +138,77 @@ namespace EsportsManager.UI.Controllers.Viewer.Handlers
                 Console.Clear();
                 ConsoleRenderingService.DrawBorder("VOTE CHO PLAYER YÊU THÍCH", 80, 15);
 
-                // Mock player list for voting
-                var mockPlayers = new[] { "Player1", "Player2", "Player3", "Player4" };
-                
-                Console.WriteLine("👥 Chọn player để vote:");
-                for (int i = 0; i < mockPlayers.Length; i++)
-                {
-                    Console.WriteLine($"{i + 1}. {mockPlayers[i]}");
-                }
+                // Get real player list from database
+                var playerResult = await _userService.GetUsersByRoleAsync("Player");
 
-                Console.Write($"\nNhập số thứ tự player (1-{mockPlayers.Length}): ");
-                if (int.TryParse(Console.ReadLine(), out int choice) && 
-                    choice >= 1 && choice <= mockPlayers.Length)
+                if (playerResult.IsSuccess && playerResult.Data != null && playerResult.Data.Any())
                 {
-                    var selectedPlayer = mockPlayers[choice - 1];
-                    
-                    await Task.Delay(500); // Simulate processing
-                    ConsoleRenderingService.ShowMessageBox($"✅ Đã vote cho {selectedPlayer}!", true, 2000);
+                    var players = playerResult.Data.ToList();
+
+                    Console.WriteLine("👥 Chọn player để vote:");
+                    for (int i = 0; i < players.Count; i++)
+                    {
+                        Console.WriteLine($"{i + 1}. {players[i].Username}");
+                    }
+
+                    Console.Write($"\nNhập số thứ tự player (1-{players.Count}): ");
+                    if (int.TryParse(Console.ReadLine(), out int choice) &&
+                        choice >= 1 && choice <= players.Count)
+                    {
+                        var selectedPlayer = players[choice - 1];
+
+                        Console.WriteLine($"\nĐánh giá cho {selectedPlayer.Username}:");
+                        Console.WriteLine("1 - ⭐ | 2 - ⭐⭐ | 3 - ⭐⭐⭐ | 4 - ⭐⭐⭐⭐ | 5 - ⭐⭐⭐⭐⭐");
+                        Console.Write("Chọn số điểm (1-5): ");
+
+                        int rating = 5; // Mặc định điểm cao nhất
+                        if (int.TryParse(Console.ReadLine(), out int ratingInput) &&
+                            ratingInput >= 1 && ratingInput <= 5)
+                        {
+                            rating = ratingInput;
+                        }
+
+                        Console.Write("Nhập nhận xét (tùy chọn): ");
+                        string comment = Console.ReadLine() ?? string.Empty;
+
+                        // Create voting object
+                        var votingDto = new VotingDto
+                        {
+                            UserId = _currentUser.Id,
+                            VoteType = "Player",
+                            TargetId = selectedPlayer.Id,
+                            TargetName = selectedPlayer.Username,
+                            Rating = rating,
+                            Comment = comment,
+                            VoteDate = DateTime.Now
+                        };
+
+                        // Sử dụng IVotingService để lưu vote
+                        try
+                        {
+                            var result = await _votingService.SubmitVoteAsync(votingDto);
+                            if (result)
+                            {
+                                ConsoleRenderingService.ShowMessageBox($"✅ Đã vote cho {selectedPlayer.Username}!", true, 2000);
+                            }
+                            else
+                            {
+                                ConsoleRenderingService.ShowMessageBox($"❌ Không thể vote cho player.", false, 2000);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            ConsoleRenderingService.ShowMessageBox($"❌ Lỗi khi vote: {ex.Message}", false, 2000);
+                        }
+                    }
+                    else
+                    {
+                        ConsoleRenderingService.ShowMessageBox("Lựa chọn không hợp lệ!", false, 1500);
+                    }
                 }
                 else
                 {
-                    ConsoleRenderingService.ShowMessageBox("Lựa chọn không hợp lệ!", false, 1500);
+                    ConsoleRenderingService.ShowMessageBox("Không tìm thấy Player nào trong hệ thống!", false, 2000);
                 }
             }
             catch (Exception ex)
@@ -184,7 +225,7 @@ namespace EsportsManager.UI.Controllers.Viewer.Handlers
                 ConsoleRenderingService.DrawBorder("VOTE CHO GIẢI ĐẤU HAY NHẤT", 80, 15);
 
                 var tournaments = await _tournamentService.GetAllTournamentsAsync();
-                
+
                 if (tournaments.Count > 0)
                 {
                     Console.WriteLine("🏆 Chọn giải đấu để vote:");
@@ -194,13 +235,46 @@ namespace EsportsManager.UI.Controllers.Viewer.Handlers
                     }
 
                     Console.Write($"\nNhập số thứ tự giải đấu (1-{tournaments.Count}): ");
-                    if (int.TryParse(Console.ReadLine(), out int choice) && 
+                    if (int.TryParse(Console.ReadLine(), out int choice) &&
                         choice >= 1 && choice <= tournaments.Count)
                     {
                         var selectedTournament = tournaments[choice - 1];
-                        
-                        await Task.Delay(500); // Simulate processing
-                        ConsoleRenderingService.ShowMessageBox($"✅ Đã vote cho {selectedTournament.Name}!", true, 2000);
+
+                        Console.WriteLine($"\nĐánh giá cho {selectedTournament.Name}:");
+                        Console.WriteLine("1 - ⭐ | 2 - ⭐⭐ | 3 - ⭐⭐⭐ | 4 - ⭐⭐⭐⭐ | 5 - ⭐⭐⭐⭐⭐");
+                        Console.Write("Chọn số điểm (1-5): ");
+
+                        int rating = 5; // Mặc định điểm cao nhất
+                        if (int.TryParse(Console.ReadLine(), out int ratingInput) &&
+                            ratingInput >= 1 && ratingInput <= 5)
+                        {
+                            rating = ratingInput;
+                        }
+
+                        Console.Write("Nhập nhận xét (tùy chọn): ");
+                        string comment = Console.ReadLine() ?? string.Empty;
+
+                        // Tạo voting DTO
+                        var votingDto = new VotingDto
+                        {
+                            UserId = _currentUser.Id,
+                            VoteType = "Tournament",
+                            TargetId = selectedTournament.TournamentId,
+                            TargetName = selectedTournament.Name,
+                            Rating = rating,
+                            Comment = comment,
+                            VoteDate = DateTime.Now
+                        };
+
+                        var result = await _votingService.SubmitVoteAsync(votingDto);
+                        if (result)
+                        {
+                            ConsoleRenderingService.ShowMessageBox($"✅ Đã vote cho {selectedTournament.Name}!", true, 2000);
+                        }
+                        else
+                        {
+                            ConsoleRenderingService.ShowMessageBox($"❌ Không thể vote cho giải đấu.", false, 2000);
+                        }
                     }
                     else
                     {
@@ -242,13 +316,45 @@ namespace EsportsManager.UI.Controllers.Viewer.Handlers
                 }
 
                 Console.Write($"\nNhập số thứ tự (1-{esportsCategories.Length}): ");
-                if (int.TryParse(Console.ReadLine(), out int choice) && 
+                if (int.TryParse(Console.ReadLine(), out int choice) &&
                     choice >= 1 && choice <= esportsCategories.Length)
                 {
                     var selectedCategory = esportsCategories[choice - 1];
-                    
-                    await Task.Delay(500); // Simulate processing
-                    ConsoleRenderingService.ShowMessageBox($"✅ Đã vote cho {selectedCategory}!", true, 2000);
+
+                    Console.WriteLine($"\nĐánh giá cho {selectedCategory}:");
+                    Console.WriteLine("1 - ⭐ | 2 - ⭐⭐ | 3 - ⭐⭐⭐ | 4 - ⭐⭐⭐⭐ | 5 - ⭐⭐⭐⭐⭐");
+                    Console.Write("Chọn số điểm (1-5): ");
+
+                    int rating = 5; // Mặc định điểm cao nhất
+                    if (int.TryParse(Console.ReadLine(), out int ratingInput) &&
+                        ratingInput >= 1 && ratingInput <= 5)
+                    {
+                        rating = ratingInput;
+                    }
+
+                    Console.Write("Nhập nhận xét (tùy chọn): ");
+                    string comment = Console.ReadLine() ?? string.Empty;
+
+                    var votingDto = new VotingDto
+                    {
+                        UserId = _currentUser.Id,
+                        VoteType = "EsportsCategory",
+                        TargetId = choice, // Sử dụng index làm ID tạm thời
+                        TargetName = selectedCategory,
+                        Rating = rating,
+                        Comment = comment,
+                        VoteDate = DateTime.Now
+                    };
+
+                    var result = await _votingService.SubmitVoteAsync(votingDto);
+                    if (result)
+                    {
+                        ConsoleRenderingService.ShowMessageBox($"✅ Đã vote cho {selectedCategory}!", true, 2000);
+                    }
+                    else
+                    {
+                        ConsoleRenderingService.ShowMessageBox($"❌ Không thể vote cho esports category.", false, 2000);
+                    }
                 }
                 else
                 {
@@ -261,57 +367,65 @@ namespace EsportsManager.UI.Controllers.Viewer.Handlers
             }
         }
 
-        private void HandleViewVotingResults()
+        private async Task HandleViewVotingResults()
         {
             try
             {
                 Console.Clear();
                 ConsoleRenderingService.DrawBorder("KẾT QUẢ VOTING", 80, 20);
-                
+
                 Console.WriteLine("📊 KẾT QUẢ VOTING TỔNG HỢP");
                 Console.WriteLine("─".PadRight(78, '─'));
-                
+
                 Console.WriteLine("\n🏆 TOP 5 PLAYER YÊU THÍCH:");
-                var mockPlayerResults = new[]
+
+                // Get actual voting results from service
+                var playerResults = await _votingService.GetPlayerVotingResultsAsync(5);
+
+                if (playerResults != null && playerResults.Count > 0)
                 {
-                    ("Player1", 150),
-                    ("Player2", 120),
-                    ("Player3", 95),
-                    ("Player4", 80),
-                    ("Player5", 65)
-                };
-                
-                foreach (var (name, votes) in mockPlayerResults)
-                {
-                    Console.WriteLine($"  • {name}: {votes} votes");
+                    foreach (var result in playerResults)
+                    {
+                        Console.WriteLine($"  • {result.TargetName}: {result.TotalVotes} votes (⭐ {result.AverageRating:F1})");
+                    }
                 }
-                
+                else
+                {
+                    Console.WriteLine("  • Chưa có dữ liệu bình chọn");
+                }
+
                 Console.WriteLine("\n🎮 TOP 5 GIẢI ĐẤU HAY NHẤT:");
-                var mockTournamentResults = new[]
+
+                // Get tournament voting results
+                var tournamentResults = await _votingService.GetTournamentVotingResultsAsync(5);
+
+                if (tournamentResults != null && tournamentResults.Count > 0)
                 {
-                    ("LOL Championship", 200),
-                    ("CS:GO Masters", 180),
-                    ("PUBG Mobile Cup", 150),
-                    ("FIFA Online League", 120),
-                    ("Valorant Series", 100)
-                };
-                
-                foreach (var (name, votes) in mockTournamentResults)
-                {
-                    Console.WriteLine($"  • {name}: {votes} votes");
+                    foreach (var result in tournamentResults)
+                    {
+                        Console.WriteLine($"  • {result.TargetName}: {result.TotalVotes} votes (⭐ {result.AverageRating:F1})");
+                    }
                 }
-                
+                else
+                {
+                    Console.WriteLine("  • Chưa có dữ liệu bình chọn cho giải đấu");
+                }
+
                 Console.WriteLine("\n🏅 TOP 3 MÔN THỂ THAO ESPORTS:");
-                var mockCategoryResults = new[]
+
+                // Get esports category voting results
+                var categoryResults = await _votingService.GetEsportsCategoryVotingResultsAsync(3);
+
+                if (categoryResults != null && categoryResults.Count > 0)
                 {
-                    ("League of Legends", 300),
-                    ("Counter-Strike: GO", 250),
-                    ("PUBG Mobile", 220)
-                };
-                
-                foreach (var (name, votes) in mockCategoryResults)
+                    foreach (var result in categoryResults)
+                    {
+                        Console.WriteLine($"  • {result.TargetName}: {result.TotalVotes} votes (⭐ {result.AverageRating:F1})");
+                    }
+                }
+                else
                 {
-                    Console.WriteLine($"  • {name}: {votes} votes");
+                    Console.WriteLine("  • Chưa có dữ liệu bình chọn cho môn thể thao esports");
                 }
 
                 Console.WriteLine("\nNhấn Enter để tiếp tục...");

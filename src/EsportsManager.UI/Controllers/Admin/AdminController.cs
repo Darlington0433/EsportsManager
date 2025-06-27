@@ -15,7 +15,6 @@ public class AdminUIController : BaseController, IAdminUIController
     private readonly DonationReportHandler _donationReportHandler;
     private readonly VotingResultsHandler _votingResultsHandler;
     private readonly FeedbackManagementHandler _feedbackManagementHandler;
-    private readonly SystemSettingsHandler _systemSettingsHandler;
 
     public AdminUIController(
         UserProfileDto currentUser,
@@ -24,8 +23,7 @@ public class AdminUIController : BaseController, IAdminUIController
         SystemStatsHandler systemStatsHandler,
         DonationReportHandler donationReportHandler,
         VotingResultsHandler votingResultsHandler,
-        FeedbackManagementHandler feedbackManagementHandler,
-        SystemSettingsHandler systemSettingsHandler) : base(currentUser)
+        FeedbackManagementHandler feedbackManagementHandler) : base(currentUser)
     {
         _userManagementHandler = userManagementHandler;
         _tournamentManagementHandler = tournamentManagementHandler;
@@ -33,7 +31,6 @@ public class AdminUIController : BaseController, IAdminUIController
         _donationReportHandler = donationReportHandler;
         _votingResultsHandler = votingResultsHandler;
         _feedbackManagementHandler = feedbackManagementHandler;
-        _systemSettingsHandler = systemSettingsHandler;
     }
 
     /// <summary>
@@ -52,45 +49,53 @@ public class AdminUIController : BaseController, IAdminUIController
             {
                 "Quản lý người dùng",
                 "Quản lý giải đấu/trận đấu",
+                "Duyệt đăng ký giải đấu",
+                "Quản lý đội/team",
+                "Thêm achievement cho player",
                 "Xem thống kê hệ thống",
                 "Xem báo cáo donation",
                 "Xem kết quả voting",
                 "Quản lý feedback",
-                "Cài đặt hệ thống",
                 "Xóa người dùng",
                 "Đăng xuất"
             };
 
             int selection = InteractiveMenuService.DisplayInteractiveMenu($"MENU ADMIN - {_currentUser.Username}", menuOptions);
-            
+
             switch (selection)
             {
                 case 0:
                     ManageUsersAsync().GetAwaiter().GetResult();
                     break;
                 case 1:
-                    _tournamentManagementHandler.ManageTournamentsAsync().GetAwaiter().GetResult();
+                    _userManagementHandler.ApprovePendingAccountsAsync().GetAwaiter().GetResult();
                     break;
                 case 2:
-                    _systemStatsHandler.ViewSystemStatsAsync().GetAwaiter().GetResult();
+                    _tournamentManagementHandler.ApproveTournamentRegistrationsAsync().GetAwaiter().GetResult();
                     break;
                 case 3:
-                    _donationReportHandler.ViewDonationReportsAsync().GetAwaiter().GetResult();
+                    _tournamentManagementHandler.ManageTeamsAsync().GetAwaiter().GetResult();
                     break;
                 case 4:
-                    _votingResultsHandler.ViewVotingResultsAsync().GetAwaiter().GetResult();
+                    _userManagementHandler.AssignAchievementsAsync().GetAwaiter().GetResult();
                     break;
                 case 5:
-                    _feedbackManagementHandler.ManageFeedbackAsync().GetAwaiter().GetResult();
+                    _systemStatsHandler.ViewSystemStatsAsync().GetAwaiter().GetResult();
                     break;
                 case 6:
-                    _systemSettingsHandler.SystemSettingsAsync().GetAwaiter().GetResult();
+                    _donationReportHandler.ViewDonationReportsAsync().GetAwaiter().GetResult();
                     break;
                 case 7:
-                    _userManagementHandler.DeleteUsersAsync().GetAwaiter().GetResult();
+                    _votingResultsHandler.ViewVotingResultsAsync().GetAwaiter().GetResult();
                     break;
                 case 8:
-                case -1: 
+                    _feedbackManagementHandler.ManageFeedbackAsync().GetAwaiter().GetResult();
+                    break;
+                case 9:
+                    _userManagementHandler.DeleteUsersAsync().GetAwaiter().GetResult();
+                    break;
+                case 10:
+                case -1:
                     return; // Đăng xuất
             }
         }

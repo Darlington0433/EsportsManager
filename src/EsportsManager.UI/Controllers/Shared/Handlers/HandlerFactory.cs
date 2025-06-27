@@ -18,17 +18,32 @@ namespace EsportsManager.UI.Controllers.Shared.Handlers
         private readonly ITournamentService _tournamentService;
         private readonly ITeamService _teamService;
         private readonly IWalletService _walletService;
+        private readonly IVotingService _votingService;
+        private readonly IFeedbackService _feedbackService;
+        private readonly ISystemSettingsService _systemSettingsService;
+        private readonly UI.Services.SystemIntegrityService _systemIntegrityService;
+        private readonly IAchievementService _achievementService;
 
         public HandlerFactory(
             IUserService userService,
             ITournamentService tournamentService,
             ITeamService teamService,
-            IWalletService walletService)
+            IWalletService walletService,
+            IVotingService votingService,
+            IFeedbackService feedbackService,
+            ISystemSettingsService systemSettingsService,
+            UI.Services.SystemIntegrityService systemIntegrityService,
+            IAchievementService achievementService)
         {
             _userService = userService ?? throw new ArgumentNullException(nameof(userService));
             _tournamentService = tournamentService ?? throw new ArgumentNullException(nameof(tournamentService));
             _teamService = teamService ?? throw new ArgumentNullException(nameof(teamService));
             _walletService = walletService ?? throw new ArgumentNullException(nameof(walletService));
+            _votingService = votingService ?? throw new ArgumentNullException(nameof(votingService));
+            _feedbackService = feedbackService ?? throw new ArgumentNullException(nameof(feedbackService));
+            _systemSettingsService = systemSettingsService ?? throw new ArgumentNullException(nameof(systemSettingsService));
+            _systemIntegrityService = systemIntegrityService ?? throw new ArgumentNullException(nameof(systemIntegrityService));
+            _achievementService = achievementService ?? throw new ArgumentNullException(nameof(achievementService));
         }
 
         // TODO: Re-enable after interface migration is complete
@@ -56,24 +71,24 @@ namespace EsportsManager.UI.Controllers.Shared.Handlers
 
         public IVotingResultsHandler CreateVotingResultsHandler()
         {
-            return new VotingResultsHandler(_userService, _tournamentService);
+            return new VotingResultsHandler(_userService, _tournamentService, _votingService);
         }
 
         public IFeedbackManagementHandler CreateFeedbackManagementHandler()
         {
-            return new FeedbackManagementHandler(_userService, _tournamentService);
+            return new FeedbackManagementHandler(_userService, _tournamentService, _feedbackService);
         }
 
         public ISystemSettingsHandler CreateSystemSettingsHandler()
         {
-            return new SystemSettingsHandler(_userService, _tournamentService);
+            return new SystemSettingsHandler(_userService, _tournamentService, _systemSettingsService, _systemIntegrityService);
         }
         #endregion
 
         #region Player Handlers
         public PlayerAchievementHandler CreatePlayerAchievementHandler(UserProfileDto user)
         {
-            return new PlayerAchievementHandler(user, _tournamentService, _userService);
+            return new PlayerAchievementHandler(user, _tournamentService, _userService, _achievementService);
         }
 
         public PlayerFeedbackHandler CreatePlayerFeedbackHandler(UserProfileDto user)
@@ -93,14 +108,14 @@ namespace EsportsManager.UI.Controllers.Shared.Handlers
 
         public PlayerWalletHandler CreatePlayerWalletHandler(UserProfileDto user)
         {
-            return new PlayerWalletHandler(user);
+            return new PlayerWalletHandler(user, _walletService);
         }
         #endregion
 
         #region Viewer Handlers
         public ViewerDonationHandler CreateViewerDonationHandler(UserProfileDto user)
         {
-            return new ViewerDonationHandler(user);
+            return new ViewerDonationHandler(user, _walletService, _userService);
         }
 
         public ViewerProfileHandler CreateViewerProfileHandler(UserProfileDto user)
@@ -115,7 +130,7 @@ namespace EsportsManager.UI.Controllers.Shared.Handlers
 
         public ViewerVotingHandler CreateViewerVotingHandler(UserProfileDto user)
         {
-            return new ViewerVotingHandler(user, _tournamentService, _userService);
+            return new ViewerVotingHandler(user, _tournamentService, _userService, _votingService);
         }
         #endregion
         */

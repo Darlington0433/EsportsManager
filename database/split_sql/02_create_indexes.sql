@@ -20,8 +20,8 @@ CREATE INDEX idx_tournaments_status ON Tournaments(Status);
 CREATE INDEX idx_tournaments_dates ON Tournaments(StartDate, EndDate);
 
 -- Indexes for Donations
-CREATE INDEX idx_donations_from ON Donations(FromUserID);
-CREATE INDEX idx_donations_to ON Donations(ToUserID);
+CREATE INDEX idx_donations_user ON Donations(UserID);
+CREATE INDEX idx_donations_target ON Donations(TargetType, TargetID);
 CREATE INDEX idx_donations_date ON Donations(DonationDate);
 
 -- Indexes for Votes

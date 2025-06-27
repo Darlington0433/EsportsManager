@@ -19,18 +19,21 @@ public class ViewerController : BaseController
     private readonly ViewerVotingHandler _votingHandler;
     private readonly ViewerDonationHandler _donationHandler;
     private readonly ViewerProfileHandler _profileHandler;
+    private readonly ViewerWalletHandler _walletHandler;
 
     public ViewerController(
         UserProfileDto currentUser,
         ViewerTournamentHandler tournamentHandler,
         ViewerVotingHandler votingHandler,
         ViewerDonationHandler donationHandler,
-        ViewerProfileHandler profileHandler) : base(currentUser)
+        ViewerProfileHandler profileHandler,
+        ViewerWalletHandler walletHandler) : base(currentUser)
     {
         _tournamentHandler = tournamentHandler;
         _votingHandler = votingHandler;
         _donationHandler = donationHandler;
         _profileHandler = profileHandler;
+        _walletHandler = walletHandler;
     }
 
     /// <summary>
@@ -52,12 +55,12 @@ public class ViewerController : BaseController
             var menuOptions = new[]
             {
                 "Xem danh sách giải đấu",
-                "Xem bảng xếp hạng giải đấu",
-                "Vote cho Player/Tournament/Sport",
+                "Xem bảng xếp hạng giải đấu", 
                 "Donate cho Player",
+                "Vote (Player/Tournament/Sport)",
+                "Quản lý ví điện tử (Nạp tiền)",
                 "Xem thông tin cá nhân",
                 "Cập nhật thông tin cá nhân",
-                "Đổi mật khẩu",
                 "Đăng xuất"
             };
 
@@ -72,19 +75,18 @@ public class ViewerController : BaseController
                     _tournamentHandler.HandleViewTournamentStandingsAsync().GetAwaiter().GetResult();
                     break;
                 case 2:
-                    _votingHandler.HandleVoteForPlayerAsync().GetAwaiter().GetResult();
-                    break;
-                case 3:
                     _donationHandler.HandleDonateToPlayerAsync().GetAwaiter().GetResult();
                     break;
+                case 3:
+                    _votingHandler.HandleVotingAsync().GetAwaiter().GetResult();
+                    break;
                 case 4:
-                    _profileHandler.HandleViewProfileAsync().GetAwaiter().GetResult();
+                    _walletHandler.HandleWalletManagementAsync().GetAwaiter().GetResult();
                     break;
                 case 5:
-                    _profileHandler.HandleUpdateProfileAsync().GetAwaiter().GetResult();
+                    _profileHandler.HandleViewProfileAsync().GetAwaiter().GetResult();
                     break;
                 case 6:
-                    // Change password functionality - we can map this to update profile for now
                     _profileHandler.HandleUpdateProfileAsync().GetAwaiter().GetResult();
                     break;
                 case 7:

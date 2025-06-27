@@ -32,12 +32,12 @@ CREATE TRIGGER tr_update_wallet_on_donation
 AFTER INSERT ON Donations
 FOR EACH ROW
 BEGIN
-    IF NEW.Status = 'Completed' THEN
+    IF NEW.Status = 'Completed' AND NEW.TargetType = 'Player' THEN
         UPDATE Wallets 
         SET Balance = Balance + NEW.Amount,
             TotalReceived = TotalReceived + NEW.Amount,
             LastUpdated = CURRENT_TIMESTAMP
-        WHERE UserID = NEW.ToUserID;
+        WHERE UserID = NEW.TargetID;
     END IF;
 END//
 
@@ -62,7 +62,7 @@ CREATE TRIGGER tr_log_wallet_transaction_donation
 AFTER INSERT ON Donations
 FOR EACH ROW
 BEGIN
-    IF NEW.Status = 'Completed' THEN
+    IF NEW.Status = 'Completed' AND NEW.TargetType = 'Player' THEN
         INSERT INTO WalletTransactions (
             WalletID, 
             TransactionType, 
@@ -74,10 +74,10 @@ BEGIN
             w.WalletID,
             'Donation_Received',
             NEW.Amount,
-            CONCAT('Donation from user ID: ', NEW.FromUserID, ' - ', COALESCE(NEW.Message, 'No message')),
+            CONCAT('Donation from user ID: ', NEW.UserID, ' to ', NEW.TargetType, ' - ', COALESCE(NEW.Message, 'No message')),
             NEW.DonationID
         FROM Wallets w 
-        WHERE w.UserID = NEW.ToUserID;
+        WHERE w.UserID = NEW.TargetID;
     END IF;
 END//
 

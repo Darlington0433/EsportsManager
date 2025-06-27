@@ -28,7 +28,10 @@ SOURCE 07_sample_data.sql;
 -- 8. Tạo tournament procedures
 SOURCE 08_tournament_procedures.sql;
 
+-- 9. Tạo wallet và donation procedures
+SOURCE 09_wallet_procedures.sql;
+
 -- Thông báo hoàn thành
-SELECT '✅ Đã hoàn thành tất cả 8 bước setup!' as Message;
+SELECT '✅ Đã hoàn thành tất cả 9 bước setup!' as Message;
 SELECT 'admin/admin123, player1/player123, viewer1/viewer123' as 'Tài khoản đăng nhập';
 SELECT 'Database EsportsManager sẵn sàng sử dụng!' as Status;

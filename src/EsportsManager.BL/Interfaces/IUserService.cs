@@ -36,7 +36,8 @@ public interface IUserService
     Task<List<UserProfileDto>> SearchUsersAsync(string searchTerm);
     Task<bool> ToggleUserStatusAsync(int userId);
     Task<string> ResetPasswordAsync(int userId);
-    Task<bool> DeleteUserAsync(int userId);
+    Task<bool> DeleteUserAsync(int userId, int currentUserId = 0);
+    Task<BusinessResult<bool>> DeleteUserWithPermissionCheckAsync(int userId, int requestUserId);
 
     // Validation methods
     Task<BusinessResult<bool>> IsUsernameAvailableAsync(string username);
@@ -48,4 +49,8 @@ public interface IUserService
     Task<BusinessResult<int>> GetTotalUsersCountAsync();
     Task<BusinessResult<int>> GetUserCountByRoleAsync(string role);
     Task<BusinessResult<int>> GetActiveUsersCountAsync();
+
+    // Pending account management methods
+    Task<BusinessResult<IEnumerable<UserDto>>> GetPendingAccountsAsync();
+    Task<BusinessResult> ApproveAccountAsync(int userId);
 }
