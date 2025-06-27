@@ -785,10 +785,10 @@ namespace EsportsManager.BL.Services
                         var row = result.Rows[0];
                         var overview = new DonationOverviewDto
                         {
-                            TotalDonations = Convert.ToInt32(row["TotalDonations"]),
-                            TotalDonators = Convert.ToInt32(row["TotalDonators"]),
-                            TotalReceivers = Convert.ToInt32(row["TotalReceivers"]),
-                            TotalDonationAmount = Convert.ToDecimal(row["TotalAmount"]),
+                            TotalDonations = row["TotalDonations"] != DBNull.Value ? Convert.ToInt32(row["TotalDonations"]) : 0,
+                            TotalDonators = row["TotalDonators"] != DBNull.Value ? Convert.ToInt32(row["TotalDonators"]) : 0,
+                            TotalReceivers = row["TotalReceivers"] != DBNull.Value ? Convert.ToInt32(row["TotalReceivers"]) : 0,
+                            TotalDonationAmount = row["TotalAmount"] != DBNull.Value ? Convert.ToDecimal(row["TotalAmount"]) : 0m,
                             LastUpdated = DateTime.Now
                         };
 
@@ -798,30 +798,57 @@ namespace EsportsManager.BL.Services
                             var byTypeTable = _dataContext.ExecuteStoredProcedure("sp_GetDonationsByType");
                             foreach (DataRow typeRow in byTypeTable.Rows)
                             {
-                                string donationType = typeRow["DonationType"].ToString() ?? "Unknown";
-                                decimal amount = Convert.ToDecimal(typeRow["Amount"]);
+                                string donationType = typeRow["DonationType"]?.ToString() ?? "Unknown";
+                                decimal amount = typeRow["Amount"] != DBNull.Value ? Convert.ToDecimal(typeRow["Amount"]) : 0m;
                                 overview.DonationByType[donationType] = amount;
                             }
                         }
                         catch (Exception ex)
                         {
                             _logger.LogWarning(ex, "Could not load donation by type data, continuing with basic overview");
+                            // Thêm một số dữ liệu mặc định nếu không thể lấy được
+                            if (overview.DonationByType.Count == 0)
+                            {
+                                overview.DonationByType["Tournament"] = 0m;
+                                overview.DonationByType["Team"] = 0m;
+                                overview.DonationByType["Player"] = 0m;
+                            }
                         }
 
                         return overview;
                     }
 
-                    // Nếu không có kết quả, trả về giá trị mặc định
-                    return new DonationOverviewDto();
+                    // Nếu không có kết quả, trả về giá trị mặc định với cấu trúc hoàn chỉnh
+                    _logger.LogInformation("No donation data found, returning default overview");
+                    return new DonationOverviewDto
+                    {
+                        TotalDonations = 0,
+                        TotalDonators = 0,
+                        TotalReceivers = 0,
+                        TotalDonationAmount = 0m,
+                        LastUpdated = DateTime.Now,
+                        DonationByType = new Dictionary<string, decimal>
+                        {
+                            {"Tournament", 0m},
+                            {"Team", 0m},
+                            {"Player", 0m}
+                        }
+                    };
                 }
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "Error retrieving donation overview: {ErrorMessage}", ex.Message);
 
                     // Kiểm tra xem có phải lỗi stored procedure không tồn tại
-                    if (ex.Message.Contains("doesn't exist") || ex.Message.Contains("does not exist"))
+                    if (ex.Message.Contains("doesn't exist") || ex.Message.Contains("does not exist") || ex.Message.Contains("PROCEDURE") || ex.Message.Contains("procedure"))
                     {
-                        throw new InvalidOperationException("Stored procedure 'sp_GetDonationOverview' chưa được tạo. Vui lòng chạy file database/DONATION_FIX.sql để tạo các stored procedures cần thiết.", ex);
+                        throw new InvalidOperationException("Stored procedure 'sp_GetDonationOverview' chưa được tạo hoặc bị lỗi. Vui lòng chạy lại file database/esportsmanager.sql để tạo đầy đủ các stored procedures.", ex);
+                    }
+
+                    // Lỗi kết nối database
+                    if (ex.Message.Contains("connection") || ex.Message.Contains("server") || ex.Message.Contains("timeout"))
+                    {
+                        throw new InvalidOperationException("Lỗi kết nối cơ sở dữ liệu. Vui lòng kiểm tra MySQL server đang chạy và thông tin kết nối đúng.", ex);
                     }
 
                     throw new InvalidOperationException("Không thể lấy tổng quan donation. Vui lòng kiểm tra cài đặt cơ sở dữ liệu và thử lại.", ex);
