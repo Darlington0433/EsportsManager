@@ -2,7 +2,7 @@
 
 [![.NET](https://img.shields.io/badge/.NET-9.0-blue.svg)](https://dotnet.microsoft.com/)
 [![Trạng Thái Build](https://img.shields.io/badge/build-passing-brightgreen.svg)](#)
-[![Giấy Phép](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/Darlington0433/EsportsManager/blob/main/LICENSE)
+[![Giấy Phép](https://img.shields.io/badge/license-Custom-red.svg)](https://github.com/Darlington0433/EsportsManager/blob/main/LICENSE)
 [![C#](https://img.shields.io/badge/C%23-11.0-purple.svg)](https://docs.microsoft.com/en-us/dotnet/csharp/)
 [![GitHub Stars](https://img.shields.io/github/stars/Darlington0433/EsportsManager?style=social)](https://github.com/Darlington0433/EsportsManager)
 
