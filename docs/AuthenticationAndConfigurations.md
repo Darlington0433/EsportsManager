@@ -1,5 +1,9 @@
 # Authentication and Configurations in EsportsManager
 
+**Repository**: [https://github.com/Darlington0433/EsportsManager](https://github.com/Darlington0433/EsportsManager)  
+**Authors**: Phan Nhật Quân và mọi người - VTC Academy Team  
+**Contact**: quannnd2004@gmail.com
+
 ## Authentication Changes
 
 ### Overview
