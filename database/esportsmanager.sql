@@ -499,97 +499,7 @@ WHERE u.Role = 'Player'
 GROUP BY u.UserID;
 
 SELECT 'Database views created successfully!' as Message;
-SELECT 
-    t.TournamentID,
-    t.TournamentName,
-    g.GameName,
-    COUNT(tr.TeamID) as RegisteredTeams,
-    t.MaxTeams,
-    t.PrizePool,
-    t.Status,
-    u.DisplayName as CreatedBy
-FROM Tournaments t
-LEFT JOIN TournamentRegistrations tr ON t.TournamentID = tr.TournamentID AND tr.Status = 'Approved'
-LEFT JOIN Games g ON t.GameID = g.GameID
-LEFT JOIN Users u ON t.CreatedBy = u.UserID
-GROUP BY t.TournamentID;
 
--- View: Player statistics
-CREATE OR REPLACE VIEW v_player_stats AS
-SELECT 
-    u.UserID,
-    u.Username,
-    u.DisplayName,
-    COUNT(DISTINCT tm.TeamID) as TeamsJoined,
-    COUNT(DISTINCT tr.TournamentID) as TournamentsPlayed,
-    COALESCE(w.Balance, 0.00) as WalletBalance,
-    COALESCE(w.TotalReceived, 0.00) as TotalDonationsReceived
-FROM Users u
-LEFT JOIN TeamMembers tm ON u.UserID = tm.UserID AND tm.Status = 'Active'
-LEFT JOIN TournamentRegistrations tr ON tm.TeamID = tr.TeamID AND tr.Status = 'Approved'
-LEFT JOIN Wallets w ON u.UserID = w.UserID
-WHERE u.Role = 'Player'
-GROUP BY u.UserID;
-
--- View: Tournament results with team details
-CREATE OR REPLACE VIEW v_tournament_results AS
-SELECT 
-    tr.ResultID,
-    t.TournamentName,
-    g.GameName,
-    team.TeamName,
-    tr.Position,
-    tr.PrizeMoney,
-    tr.Notes,
-    t.StartDate,
-    t.EndDate
-FROM TournamentResults tr
-JOIN Tournaments t ON tr.TournamentID = t.TournamentID
-JOIN Teams team ON tr.TeamID = team.TeamID
-JOIN Games g ON t.GameID = g.GameID
-ORDER BY t.TournamentID, tr.Position;
-
--- View: Complete team information with position ranking
-CREATE OR REPLACE VIEW v_team_rankings AS
-SELECT 
-    t.TeamID,
-    t.TeamName,
-    g.GameName,
-    COUNT(DISTINCT tm.UserID) as ActiveMembers,
-    COUNT(DISTINCT tr.TournamentID) as TournamentsParticipated,
-    AVG(tres.Position) as AveragePosition,
-    SUM(tres.PrizeMoney) as TotalPrizeMoneyWon,
-    RANK() OVER (PARTITION BY t.GameID ORDER BY SUM(tres.PrizeMoney) DESC) as GameRanking
-FROM Teams t
-JOIN Games g ON t.GameID = g.GameID
-LEFT JOIN TeamMembers tm ON t.TeamID = tm.TeamID AND tm.Status = 'Active'
-LEFT JOIN TournamentRegistrations tr ON t.TeamID = tr.TeamID AND tr.Status = 'Approved'
-LEFT JOIN TournamentResults tres ON t.TeamID = tres.TeamID
-WHERE t.Status = 'Active'
-GROUP BY t.TeamID, t.TeamName, g.GameName;
-
--- View: Enhanced user wallet summary
-CREATE OR REPLACE VIEW v_user_wallet_summary AS
-SELECT 
-    u.UserID,
-    u.Username,
-    u.DisplayName,
-    w.Balance,
-    w.TotalReceived,
-    w.TotalWithdrawn,
-    COUNT(DISTINCT wt_in.TransactionID) as TotalIncomingTransactions,
-    COUNT(DISTINCT wt_out.TransactionID) as TotalOutgoingTransactions,
-    w.LastUpdated
-FROM Users u
-LEFT JOIN Wallets w ON u.UserID = w.UserID
-LEFT JOIN WalletTransactions wt_in ON w.WalletID = wt_in.WalletID 
-    AND wt_in.TransactionType IN ('Donation_Received', 'Prize_Money', 'Deposit')
-LEFT JOIN WalletTransactions wt_out ON w.WalletID = wt_out.WalletID 
-    AND wt_out.TransactionType IN ('Withdrawal')
-WHERE u.Role = 'Player'
-GROUP BY u.UserID;
-
-SELECT 'Database views created successfully!' as Message;
 -- =====================================================
 -- AUTOMATIC TRIGGERS
 -- =====================================================
@@ -657,16 +567,22 @@ BEGIN
     IF NEW.Status = 'Completed' AND NEW.TargetType = 'Player' THEN
         INSERT INTO WalletTransactions (
             WalletID, 
+            UserID,
             TransactionType, 
             Amount, 
-            Description, 
-            ReferenceID
+            BalanceAfter,
+            Note, 
+            RelatedEntityType,
+            RelatedEntityID
         )
         SELECT 
             w.WalletID,
+            w.UserID,
             'Donation_Received',
             NEW.Amount,
+            w.Balance + NEW.Amount,
             CONCAT('Donation from user ID: ', NEW.UserID, ' to ', NEW.TargetType, ' - ', COALESCE(NEW.Message, 'No message')),
+            'Donation',
             NEW.DonationID
         FROM Wallets w 
         WHERE w.UserID = NEW.TargetID;
@@ -682,16 +598,22 @@ BEGIN
     IF NEW.Status = 'Completed' AND OLD.Status != 'Completed' THEN
         INSERT INTO WalletTransactions (
             WalletID, 
+            UserID,
             TransactionType, 
             Amount, 
-            Description, 
-            ReferenceID
+            BalanceAfter,
+            Note, 
+            RelatedEntityType,
+            RelatedEntityID
         )
         SELECT 
             w.WalletID,
+            w.UserID,
             'Withdrawal',
-            NEW.Amount,
+            -NEW.Amount,
+            w.Balance - NEW.Amount,
             CONCAT('Withdrawal to ', NEW.BankName, ' - ', NEW.BankAccountNumber),
+            'Withdrawal',
             NEW.WithdrawalID
         FROM Wallets w 
         WHERE w.UserID = NEW.UserID;
@@ -821,7 +743,7 @@ BEGIN
         wt.TransactionID,
         wt.TransactionType,
         wt.Amount,
-        wt.Description,
+        wt.Note,
         wt.CreatedAt,
         w.Balance as CurrentBalance
     FROM WalletTransactions wt
@@ -1559,3 +1481,115 @@ END$$
 DELIMITER ;
 
 SELECT 'Tournament procedures created successfully!' as Message;
+-- =====================================================
+-- DONATION PROCEDURES
+-- =====================================================
+
+DELIMITER $$
+
+-- Procedure: Get donation overview
+DROP PROCEDURE IF EXISTS sp_GetDonationOverview$$
+CREATE PROCEDURE sp_GetDonationOverview()
+BEGIN
+    SELECT 
+        COUNT(*) as TotalDonations,
+        COUNT(DISTINCT UserID) as TotalDonators,
+        COUNT(DISTINCT CASE WHEN TargetType = 'Player' THEN TargetID END) as TotalReceivers,
+        SUM(Amount) as TotalAmount
+    FROM Donations
+    WHERE Status = 'Completed';
+END$$
+
+-- Procedure: Get donations by type
+DROP PROCEDURE IF EXISTS sp_GetDonationsByType$$
+CREATE PROCEDURE sp_GetDonationsByType()
+BEGIN
+    -- Group donations by TargetType
+    SELECT 
+        TargetType as DonationType,
+        SUM(Amount) as Amount
+    FROM Donations
+    WHERE Status = 'Completed'
+    GROUP BY TargetType;
+END$$
+
+-- Procedure: Get top donation receivers
+DROP PROCEDURE IF EXISTS sp_GetTopDonationReceivers$$
+CREATE PROCEDURE sp_GetTopDonationReceivers(
+    IN p_Limit INT
+)
+BEGIN
+    -- For Player donations, we can get user info
+    SELECT 
+        d.TargetID as EntityId,
+        d.TargetType as EntityType,
+        COALESCE(u.Username, CONCAT(d.TargetType, ' #', d.TargetID)) as EntityName,
+        COUNT(*) as DonationCount,
+        SUM(d.Amount) as TotalAmount,
+        MIN(d.DonationDate) as FirstDonation,
+        MAX(d.DonationDate) as LastDonation
+    FROM Donations d
+    LEFT JOIN Users u ON (d.TargetType = 'Player' AND d.TargetID = u.UserID)
+    WHERE d.Status = 'Completed'
+    GROUP BY d.TargetID, d.TargetType
+    ORDER BY TotalAmount DESC
+    LIMIT p_Limit;
+END$$
+
+-- Procedure: Get top donators
+DROP PROCEDURE IF EXISTS sp_GetTopDonators$$
+CREATE PROCEDURE sp_GetTopDonators(
+    IN p_Limit INT
+)
+BEGIN
+    SELECT 
+        d.UserID,
+        u.Username,
+        COUNT(*) as DonationCount,
+        SUM(d.Amount) as TotalAmount,
+        MIN(d.DonationDate) as FirstDonation,
+        MAX(d.DonationDate) as LastDonation
+    FROM Donations d
+    JOIN Users u ON d.UserID = u.UserID
+    WHERE d.Status = 'Completed'
+    GROUP BY d.UserID, u.Username
+    ORDER BY TotalAmount DESC
+    LIMIT p_Limit;
+END$$
+
+-- Procedure: Get user transaction history
+DROP PROCEDURE IF EXISTS sp_GetUserTransactionHistory$$
+CREATE PROCEDURE sp_GetUserTransactionHistory(
+    IN p_UserID INT,
+    IN p_PageNumber INT,
+    IN p_PageSize INT
+)
+BEGIN
+    DECLARE v_Offset INT DEFAULT 0;
+    
+    -- Calculate offset for pagination
+    SET v_Offset = (p_PageNumber - 1) * p_PageSize;
+    
+    -- Get wallet transactions for the user
+    SELECT 
+        wt.TransactionID as Id,
+        wt.UserID,
+        u.Username,
+        wt.TransactionType,
+        wt.Amount,
+        wt.Status,
+        wt.CreatedAt,
+        wt.ReferenceCode,
+        wt.Note,
+        wt.RelatedEntityType,
+        wt.RelatedEntityID
+    FROM WalletTransactions wt
+    JOIN Users u ON wt.UserID = u.UserID
+    WHERE wt.UserID = p_UserID
+    ORDER BY wt.CreatedAt DESC
+    LIMIT p_PageSize OFFSET v_Offset;
+END$$
+
+DELIMITER ;
+
+SELECT 'Donation procedures created successfully!' as Message;
