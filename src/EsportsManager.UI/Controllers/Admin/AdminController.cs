@@ -48,11 +48,10 @@ public class AdminUIController : BaseController, IAdminUIController
             var menuOptions = new[]
             {
                 "Quản lý người dùng",
-                "Duyệt tài khoản Pending",
                 "Quản lý giải đấu/trận đấu",
                 "Duyệt đăng ký giải đấu",
                 "Quản lý đội/team",
-                "Gán achievement cho player",
+                "Thêm achievement cho player",
                 "Xem thống kê hệ thống",
                 "Xem báo cáo donation",
                 "Xem kết quả voting",
@@ -72,33 +71,30 @@ public class AdminUIController : BaseController, IAdminUIController
                     _userManagementHandler.ApprovePendingAccountsAsync().GetAwaiter().GetResult();
                     break;
                 case 2:
-                    _tournamentManagementHandler.ManageTournamentsAsync().GetAwaiter().GetResult();
-                    break;
-                case 3:
                     _tournamentManagementHandler.ApproveTournamentRegistrationsAsync().GetAwaiter().GetResult();
                     break;
-                case 4:
+                case 3:
                     _tournamentManagementHandler.ManageTeamsAsync().GetAwaiter().GetResult();
                     break;
-                case 5:
+                case 4:
                     _userManagementHandler.AssignAchievementsAsync().GetAwaiter().GetResult();
                     break;
-                case 6:
+                case 5:
                     _systemStatsHandler.ViewSystemStatsAsync().GetAwaiter().GetResult();
                     break;
-                case 7:
+                case 6:
                     _donationReportHandler.ViewDonationReportsAsync().GetAwaiter().GetResult();
                     break;
-                case 8:
+                case 7:
                     _votingResultsHandler.ViewVotingResultsAsync().GetAwaiter().GetResult();
                     break;
-                case 9:
+                case 8:
                     _feedbackManagementHandler.ManageFeedbackAsync().GetAwaiter().GetResult();
                     break;
-                case 10:
+                case 9:
                     _userManagementHandler.DeleteUsersAsync().GetAwaiter().GetResult();
                     break;
-                case 11:
+                case 10:
                 case -1:
                     return; // Đăng xuất
             }
