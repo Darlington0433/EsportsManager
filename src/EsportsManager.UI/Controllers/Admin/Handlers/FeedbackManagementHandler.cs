@@ -192,6 +192,17 @@ public class FeedbackManagementHandler
         }
         catch (Exception ex)
         {
+            Console.Clear();
+            Console.WriteLine($"Chi tiết lỗi:");
+            Console.WriteLine($"Message: {ex.Message}");
+            Console.WriteLine($"StackTrace: {ex.StackTrace}");
+            if (ex.InnerException != null)
+            {
+                Console.WriteLine($"InnerException: {ex.InnerException.Message}");
+            }
+            Console.WriteLine("\nNhấn phím bất kỳ để tiếp tục...");
+            Console.ReadKey(true);
+
             ConsoleRenderingService.ShowMessageBox($"Lỗi khi tải feedback theo tournament: {ex.Message}", true, 3000);
         }
     }

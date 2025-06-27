@@ -21,6 +21,22 @@ namespace EsportsManager.BL.Services
         {
             _dataContext = dataContext ?? throw new ArgumentNullException(nameof(dataContext));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        }
+
+        // Helper methods for safe data type conversion
+        private static DateTime SafeGetDateTime(object dbValue, DateTime defaultValue = default)
+        {
+            return dbValue == DBNull.Value ? defaultValue : Convert.ToDateTime(dbValue);
+        }
+
+        private static int SafeGetInt32(object dbValue, int defaultValue = 0)
+        {
+            return dbValue == DBNull.Value ? defaultValue : Convert.ToInt32(dbValue);
+        }
+
+        private static decimal SafeGetDecimal(object dbValue, decimal defaultValue = 0)
+        {
+            return dbValue == DBNull.Value ? defaultValue : Convert.ToDecimal(dbValue);
         }        /// <summary>
                  /// Lấy danh sách tất cả giải đấu
                  /// </summary>
@@ -37,21 +53,21 @@ namespace EsportsManager.BL.Services
                 {
                     var tournament = new TournamentInfoDto
                     {
-                        TournamentId = Convert.ToInt32(row["TournamentID"]),
+                        TournamentId = SafeGetInt32(row["TournamentID"]),
                         TournamentName = row["TournamentName"]?.ToString() ?? string.Empty,
                         Description = row["Description"]?.ToString() ?? string.Empty,
-                        GameId = Convert.ToInt32(row["GameID"]),
+                        GameId = SafeGetInt32(row["GameID"]),
                         GameName = row["GameName"]?.ToString() ?? string.Empty,
-                        StartDate = Convert.ToDateTime(row["StartDate"]),
-                        EndDate = Convert.ToDateTime(row["EndDate"]),
-                        RegistrationDeadline = Convert.ToDateTime(row["RegistrationDeadline"]),
-                        MaxTeams = Convert.ToInt32(row["MaxTeams"]),
-                        EntryFee = Convert.ToDecimal(row["EntryFee"]),
-                        PrizePool = Convert.ToDecimal(row["PrizePool"]),
+                        StartDate = SafeGetDateTime(row["StartDate"]),
+                        EndDate = SafeGetDateTime(row["EndDate"]),
+                        RegistrationDeadline = SafeGetDateTime(row["RegistrationDeadline"]),
+                        MaxTeams = SafeGetInt32(row["MaxTeams"]),
+                        EntryFee = SafeGetDecimal(row["EntryFee"]),
+                        PrizePool = SafeGetDecimal(row["PrizePool"]),
                         Status = row["Status"]?.ToString() ?? string.Empty,
-                        RegisteredTeams = Convert.ToInt32(row["RegisteredTeams"]),
-                        CreatedBy = Convert.ToInt32(row["CreatedBy"]),
-                        CreatedAt = Convert.ToDateTime(row["CreatedAt"])
+                        RegisteredTeams = SafeGetInt32(row["RegisteredTeams"]),
+                        CreatedBy = SafeGetInt32(row["CreatedBy"]),
+                        CreatedAt = SafeGetDateTime(row["CreatedAt"])
                     };
 
                     result.Add(tournament);
@@ -82,21 +98,21 @@ namespace EsportsManager.BL.Services
                 {
                     var tournament = new TournamentInfoDto
                     {
-                        TournamentId = Convert.ToInt32(row["TournamentID"]),
+                        TournamentId = SafeGetInt32(row["TournamentID"]),
                         TournamentName = row["TournamentName"]?.ToString() ?? string.Empty,
                         Description = row["Description"]?.ToString() ?? string.Empty,
-                        GameId = Convert.ToInt32(row["GameID"]),
+                        GameId = SafeGetInt32(row["GameID"]),
                         GameName = row["GameName"]?.ToString() ?? string.Empty,
-                        StartDate = Convert.ToDateTime(row["StartDate"]),
-                        EndDate = Convert.ToDateTime(row["EndDate"]),
-                        RegistrationDeadline = Convert.ToDateTime(row["RegistrationDeadline"]),
-                        MaxTeams = Convert.ToInt32(row["MaxTeams"]),
-                        EntryFee = Convert.ToDecimal(row["EntryFee"]),
-                        PrizePool = Convert.ToDecimal(row["PrizePool"]),
+                        StartDate = SafeGetDateTime(row["StartDate"]),
+                        EndDate = SafeGetDateTime(row["EndDate"]),
+                        RegistrationDeadline = SafeGetDateTime(row["RegistrationDeadline"]),
+                        MaxTeams = SafeGetInt32(row["MaxTeams"]),
+                        EntryFee = SafeGetDecimal(row["EntryFee"]),
+                        PrizePool = SafeGetDecimal(row["PrizePool"]),
                         Status = row["Status"]?.ToString() ?? string.Empty,
-                        RegisteredTeams = Convert.ToInt32(row["RegisteredTeams"]),
-                        CreatedBy = Convert.ToInt32(row["CreatedBy"]),
-                        CreatedAt = Convert.ToDateTime(row["CreatedAt"])
+                        RegisteredTeams = SafeGetInt32(row["RegisteredTeams"]),
+                        CreatedBy = SafeGetInt32(row["CreatedBy"]),
+                        CreatedAt = SafeGetDateTime(row["CreatedAt"])
                     };
 
                     result.Add(tournament);
@@ -130,21 +146,21 @@ namespace EsportsManager.BL.Services
                 DataRow row = dataTable.Rows[0];
                 var tournament = new TournamentInfoDto
                 {
-                    TournamentId = Convert.ToInt32(row["TournamentID"]),
+                    TournamentId = SafeGetInt32(row["TournamentID"]),
                     TournamentName = row["TournamentName"]?.ToString() ?? string.Empty,
                     Description = row["Description"]?.ToString() ?? string.Empty,
-                    GameId = Convert.ToInt32(row["GameID"]),
+                    GameId = SafeGetInt32(row["GameID"]),
                     GameName = row["GameName"]?.ToString() ?? string.Empty,
-                    StartDate = Convert.ToDateTime(row["StartDate"]),
-                    EndDate = Convert.ToDateTime(row["EndDate"]),
-                    RegistrationDeadline = Convert.ToDateTime(row["RegistrationDeadline"]),
-                    MaxTeams = Convert.ToInt32(row["MaxTeams"]),
-                    EntryFee = Convert.ToDecimal(row["EntryFee"]),
-                    PrizePool = Convert.ToDecimal(row["PrizePool"]),
+                    StartDate = SafeGetDateTime(row["StartDate"]),
+                    EndDate = SafeGetDateTime(row["EndDate"]),
+                    RegistrationDeadline = SafeGetDateTime(row["RegistrationDeadline"]),
+                    MaxTeams = SafeGetInt32(row["MaxTeams"]),
+                    EntryFee = SafeGetDecimal(row["EntryFee"]),
+                    PrizePool = SafeGetDecimal(row["PrizePool"]),
                     Status = row["Status"]?.ToString() ?? string.Empty,
-                    RegisteredTeams = Convert.ToInt32(row["RegisteredTeams"]),
-                    CreatedBy = Convert.ToInt32(row["CreatedBy"]),
-                    CreatedAt = Convert.ToDateTime(row["CreatedAt"])
+                    RegisteredTeams = SafeGetInt32(row["RegisteredTeams"]),
+                    CreatedBy = SafeGetInt32(row["CreatedBy"]),
+                    CreatedAt = SafeGetDateTime(row["CreatedAt"])
                 };
 
                 return await Task.FromResult(tournament);
@@ -173,21 +189,21 @@ namespace EsportsManager.BL.Services
                 {
                     var tournament = new TournamentInfoDto
                     {
-                        TournamentId = Convert.ToInt32(row["TournamentID"]),
+                        TournamentId = SafeGetInt32(row["TournamentID"]),
                         TournamentName = row["TournamentName"]?.ToString() ?? string.Empty,
                         Description = row["Description"]?.ToString() ?? string.Empty,
-                        GameId = Convert.ToInt32(row["GameID"]),
+                        GameId = SafeGetInt32(row["GameID"]),
                         GameName = row["GameName"]?.ToString() ?? string.Empty,
-                        StartDate = Convert.ToDateTime(row["StartDate"]),
-                        EndDate = Convert.ToDateTime(row["EndDate"]),
-                        RegistrationDeadline = Convert.ToDateTime(row["RegistrationDeadline"]),
-                        MaxTeams = Convert.ToInt32(row["MaxTeams"]),
-                        EntryFee = Convert.ToDecimal(row["EntryFee"]),
-                        PrizePool = Convert.ToDecimal(row["PrizePool"]),
+                        StartDate = SafeGetDateTime(row["StartDate"]),
+                        EndDate = SafeGetDateTime(row["EndDate"]),
+                        RegistrationDeadline = SafeGetDateTime(row["RegistrationDeadline"]),
+                        MaxTeams = SafeGetInt32(row["MaxTeams"]),
+                        EntryFee = SafeGetDecimal(row["EntryFee"]),
+                        PrizePool = SafeGetDecimal(row["PrizePool"]),
                         Status = row["Status"]?.ToString() ?? string.Empty,
-                        RegisteredTeams = Convert.ToInt32(row["RegisteredTeams"]),
-                        CreatedBy = Convert.ToInt32(row["CreatedBy"]),
-                        CreatedAt = Convert.ToDateTime(row["CreatedAt"])
+                        RegisteredTeams = SafeGetInt32(row["RegisteredTeams"]),
+                        CreatedBy = SafeGetInt32(row["CreatedBy"]),
+                        CreatedAt = SafeGetDateTime(row["CreatedAt"])
                     };
 
                     result.Add(tournament);
@@ -272,7 +288,7 @@ namespace EsportsManager.BL.Services
                 DataRow row = dataTable.Rows[0];
                 var tournament = new TournamentInfoDto
                 {
-                    TournamentId = Convert.ToInt32(row["TournamentID"]),
+                    TournamentId = SafeGetInt32(row["TournamentID"]),
                     TournamentName = tournamentDto.TournamentName,
                     Description = tournamentDto.Description,
                     GameId = tournamentDto.GameId,
@@ -286,7 +302,7 @@ namespace EsportsManager.BL.Services
                     Status = "Draft",
                     RegisteredTeams = 0,
                     CreatedBy = tournamentDto.CreatedBy,
-                    CreatedAt = Convert.ToDateTime(row["CreatedAt"])
+                    CreatedAt = SafeGetDateTime(row["CreatedAt"])
                 };
 
                 return await Task.FromResult(tournament);
@@ -364,13 +380,13 @@ namespace EsportsManager.BL.Services
                 {
                     var team = new TeamInfoDto
                     {
-                        Id = Convert.ToInt32(row["TeamID"]),
+                        Id = SafeGetInt32(row["TeamID"]),
                         Name = row["TeamName"]?.ToString() ?? string.Empty,
                         Description = row["Description"]?.ToString(),
                         Logo = row["LogoURL"]?.ToString(),
-                        LeaderId = Convert.ToInt32(row["TeamLeaderID"]),
+                        LeaderId = SafeGetInt32(row["TeamLeaderID"]),
                         LeaderName = row["TeamLeaderName"]?.ToString() ?? string.Empty,
-                        MemberCount = Convert.ToInt32(row["MemberCount"])
+                        MemberCount = SafeGetInt32(row["MemberCount"])
                         // Note: RegistrationStatus is not a property of TeamInfoDto
                     };
 
@@ -426,13 +442,13 @@ namespace EsportsManager.BL.Services
                 {
                     var feedback = new FeedbackDto
                     {
-                        FeedbackId = Convert.ToInt32(row["FeedbackID"]),
-                        TournamentId = Convert.ToInt32(row["TournamentID"]),
-                        UserId = Convert.ToInt32(row["UserID"]),
+                        FeedbackId = SafeGetInt32(row["FeedbackID"]),
+                        TournamentId = SafeGetInt32(row["TournamentID"]),
+                        UserId = SafeGetInt32(row["UserID"]),
                         UserName = row["UserName"]?.ToString() ?? string.Empty,
                         Content = row["Content"]?.ToString() ?? string.Empty,
-                        Rating = Convert.ToInt32(row["Rating"]),
-                        CreatedAt = Convert.ToDateTime(row["CreatedAt"]),
+                        Rating = SafeGetInt32(row["Rating"]),
+                        CreatedAt = SafeGetDateTime(row["CreatedAt"]),
                         Status = row["Status"]?.ToString() ?? string.Empty
                     };
 
@@ -465,13 +481,13 @@ namespace EsportsManager.BL.Services
                 {
                     var tournamentStat = new TournamentStatDto
                     {
-                        TournamentId = Convert.ToInt32(row["TournamentID"]),
+                        TournamentId = SafeGetInt32(row["TournamentID"]),
                         TournamentName = row["TournamentName"]?.ToString() ?? string.Empty,
                         Status = row["Status"]?.ToString() ?? string.Empty,
-                        TeamsParticipating = Convert.ToInt32(row["TeamsParticipating"]),
-                        PrizePool = Convert.ToDecimal(row["PrizePool"]),
-                        StartDate = Convert.ToDateTime(row["StartDate"]),
-                        EndDate = Convert.ToDateTime(row["EndDate"])
+                        TeamsParticipating = SafeGetInt32(row["TeamsParticipating"]),
+                        PrizePool = SafeGetDecimal(row["PrizePool"]),
+                        StartDate = SafeGetDateTime(row["StartDate"]),
+                        EndDate = SafeGetDateTime(row["EndDate"])
                     };
 
                     result.Add(tournamentStat);
@@ -503,12 +519,12 @@ namespace EsportsManager.BL.Services
                 {
                     var tournamentResult = new TournamentResultDto
                     {
-                        Position = Convert.ToInt32(row["Position"]),
+                        Position = SafeGetInt32(row["Position"]),
                         TeamName = row["TeamName"]?.ToString() ?? string.Empty,
-                        PrizeMoney = Convert.ToDecimal(row["PrizeMoney"]),
+                        PrizeMoney = SafeGetDecimal(row["PrizeMoney"]),
                         Notes = row["Notes"]?.ToString(),
                         TeamLeader = row["TeamLeader"]?.ToString() ?? string.Empty,
-                        TeamId = Convert.ToInt32(row["TeamID"])
+                        TeamId = SafeGetInt32(row["TeamID"])
                     };
 
                     result.Add(tournamentResult);
@@ -568,11 +584,11 @@ namespace EsportsManager.BL.Services
                 {
                     var leaderboardItem = new TournamentLeaderboardDto
                     {
-                        Rank = Convert.ToInt32(row["RankPosition"]),
+                        Rank = SafeGetInt32(row["RankPosition"]),
                         TeamName = row["TeamName"]?.ToString() ?? string.Empty,
-                        Position = Convert.ToInt32(row["Position"]),
-                        PrizeMoney = Convert.ToDecimal(row["PrizeMoney"]),
-                        TeamSize = Convert.ToInt32(row["TeamSize"]),
+                        Position = SafeGetInt32(row["Position"]),
+                        PrizeMoney = SafeGetDecimal(row["PrizeMoney"]),
+                        TeamSize = SafeGetInt32(row["TeamSize"]),
                         TeamMembers = row["TeamMembers"]?.ToString()
                     };
 
