@@ -4,16 +4,19 @@ using EsportsManager.BL.Services;
 using EsportsManager.BL.Constants;
 using EsportsManager.UI.ConsoleUI.Utilities;
 using EsportsManager.UI.Controllers.Admin.Interfaces;
+using EsportsManager.UI.Controllers.MenuHandlers.Shared;
 
 namespace EsportsManager.UI.Controllers.Admin.Handlers;
 
-public class TournamentManagementHandler
+public class TournamentManagementHandler : BaseHandler
 {
     private readonly ITournamentService _tournamentService;
+    private readonly ITeamService _teamService;
 
-    public TournamentManagementHandler(ITournamentService tournamentService)
+    public TournamentManagementHandler(UserProfileDto currentUser, ITournamentService tournamentService, ITeamService teamService) : base(currentUser)
     {
         _tournamentService = tournamentService;
+        _teamService = teamService;
     }
 
     public async Task ManageTournamentsAsync()
@@ -222,111 +225,102 @@ public class TournamentManagementHandler
         try
         {
             Console.Clear();
-            ConsoleRenderingService.DrawBorder("DUYỆT ĐĂNG KÝ GIẢI ĐẤU", 80, 20);
+            ConsoleRenderingService.DrawBorder("DUYỆT ĐĂNG KÝ GIẢI ĐẤU", 120, 25);
 
-            // TODO: Get pending tournament registrations
-            // For now, show a demo message
-            await Task.Delay(100); // Add await to satisfy compiler
-
-            int borderLeft = (Console.WindowWidth - 80) / 2;
-            int borderTop = (Console.WindowHeight - 20) / 4;
-            int centerX = (Console.WindowWidth - 40) / 2;
-            int centerY = Console.WindowHeight / 2;
-
-            Console.SetCursorPosition(centerX, centerY);
-            Console.ForegroundColor = ConsoleColor.Cyan;
-            Console.WriteLine("📋 DEMO: Duyệt đăng ký giải đấu");
-            Console.WriteLine();
-
-            // Sample data since tournament service methods aren't fully implemented
-            Console.SetCursorPosition(centerX - 15, centerY + 2);
-            Console.WriteLine("Danh sách đăng ký mẫu:");
-            Console.SetCursorPosition(centerX - 15, centerY + 3);
-            Console.WriteLine("1. ProGamer123 → LoL Championship 2025");
-            Console.SetCursorPosition(centerX - 15, centerY + 4);
-            Console.WriteLine("2. SharpShooter → CS:GO Open Tournament");
-            Console.SetCursorPosition(centerX - 15, centerY + 5);
-            Console.WriteLine("3. TacticalMaster → Valorant Pro League");
-
-            Console.SetCursorPosition(centerX - 10, centerY + 7);
-            Console.Write("Chọn đăng ký (1-3, 0=thoát): ");
-            if (int.TryParse(Console.ReadLine(), out int choice) && choice > 0 && choice <= 3)
-            {
-                var playerNames = new[] { "ProGamer123", "SharpShooter", "TacticalMaster" };
-                var tournamentNames = new[] { "LoL Championship 2025", "CS:GO Open Tournament", "Valorant Pro League" };
-
-                Console.SetCursorPosition(centerX - 10, centerY + 8);
-                Console.Write($"Duyệt {playerNames[choice - 1]}? (y/n): ");
-                var confirm = Console.ReadLine()?.ToLower();
-
-                if (confirm == "y" || confirm == "yes")
-                {
-                    ConsoleRenderingService.ShowMessageBox($"✅ Đã duyệt {playerNames[choice - 1]} tham gia {tournamentNames[choice - 1]}!", false, 2500);
-                }
-                else
-                {
-                    ConsoleRenderingService.ShowMessageBox("❌ Đã hủy", false, 1000);
-                }
-            }
-
-            Console.ResetColor();
-            Console.SetCursorPosition(centerX - 10, centerY + 7);
-            Console.WriteLine("Nhấn phím bất kỳ để tiếp tục...");
-            Console.ReadKey(true);
-
-            /* TODO: Implement when ITournamentService has required methods
+            // Get pending tournament registrations using the new service method
             var pendingRegistrations = await _tournamentService.GetPendingRegistrationsAsync();
             
-            if (pendingRegistrations == null || !pendingRegistrations.Any())
+            if (!pendingRegistrations.Any())
             {
                 ConsoleRenderingService.ShowNotification("Không có đăng ký nào đang chờ duyệt", ConsoleColor.Yellow);
+                Console.WriteLine("\nNhấn phím bất kỳ để tiếp tục...");
+                Console.ReadKey(true);
                 return;
             }
 
+            int borderLeft = (Console.WindowWidth - 120) / 2;
+            int borderTop = (Console.WindowHeight - 25) / 4;
+
             Console.SetCursorPosition(borderLeft + 2, borderTop + 2);
             Console.ForegroundColor = ConsoleColor.White;
-            Console.WriteLine($"{"ID",-5} {"Player",-15} {"Tournament",-20} {"Ngày đăng ký",-15} {"Team",-10}");
+            Console.WriteLine($"{"ID",-5} {"Team",-20} {"Tournament",-25} {"Leader",-15} {"Date",-12} {"Members",-8}");
             Console.SetCursorPosition(borderLeft + 2, borderTop + 3);
-            Console.WriteLine(new string('─', 70));
+            Console.WriteLine(new string('─', 110));
 
             int currentRow = borderTop + 4;
-            foreach (var registration in pendingRegistrations.Take(10))
+            for (int i = 0; i < Math.Min(pendingRegistrations.Count, 15); i++)
             {
-                Console.SetCursorPosition(borderLeft + 2, currentRow);
+                var registration = pendingRegistrations[i];
+                Console.SetCursorPosition(borderLeft + 2, currentRow + i);
                 Console.ForegroundColor = ConsoleColor.Yellow;
-                var row = string.Format("{0,-5} {1,-15} {2,-20} {3,-15} {4,-10}",
-                    registration.Id,
-                    registration.PlayerName,
-                    registration.TournamentName.Length > TournamentConstants.MAX_TOURNAMENT_NAME_SHORT ? 
-                        TournamentStatsService.FormatTournamentNameShort(registration.TournamentName) : registration.TournamentName,
-                    registration.RegisterDate.ToString("dd/MM/yyyy"),
-                    registration.TeamName ?? "Individual");
-                Console.WriteLine(row);
-                currentRow++;
+                
+                var tournamentName = registration.TournamentName.Length > 24 ? 
+                    registration.TournamentName.Substring(0, 21) + "..." : registration.TournamentName;
+                var teamName = registration.TeamName.Length > 19 ? 
+                    registration.TeamName.Substring(0, 16) + "..." : registration.TeamName;
+                var leaderName = registration.RegisteredByName.Length > 14 ? 
+                    registration.RegisteredByName.Substring(0, 11) + "..." : registration.RegisteredByName;
+                
+                Console.WriteLine($"{registration.RegistrationId,-5} {teamName,-20} {tournamentName,-25} {leaderName,-15} {registration.RegistrationDate:dd/MM/yyyy,-12} {registration.TeamMemberCount,-8}");
             }
 
             Console.ResetColor();
-            Console.SetCursorPosition(borderLeft + 2, borderTop + 16);
+            Console.SetCursorPosition(borderLeft + 2, borderTop + 21);
             Console.WriteLine($"Tổng cộng: {pendingRegistrations.Count} đăng ký chờ duyệt");
 
-            Console.Write("\nNhập Registration ID cần duyệt (0 để quay lại): ");
+            Console.SetCursorPosition(borderLeft + 2, borderTop + 22);
+            Console.Write("Nhập Registration ID cần duyệt (0 để quay lại): ");
+            
             if (int.TryParse(Console.ReadLine(), out int registrationId) && registrationId > 0)
             {
-                var result = await _tournamentService.ApproveRegistrationAsync(registrationId);
-                if (result.IsSuccess)
+                var selectedRegistration = pendingRegistrations.FirstOrDefault(r => r.RegistrationId == registrationId);
+                if (selectedRegistration == null)
                 {
-                    ConsoleRenderingService.ShowMessageBox("✅ Đã duyệt đăng ký thành công!", false, 2000);
+                    ConsoleRenderingService.ShowMessageBox("❌ Không tìm thấy đăng ký với ID này!", true, 2000);
+                    return;
+                }
+
+                Console.SetCursorPosition(borderLeft + 2, borderTop + 23);
+                Console.Write($"Duyệt đăng ký của {selectedRegistration.TeamName} cho {selectedRegistration.TournamentName}? (y/n/r=reject): ");
+                var confirm = Console.ReadLine()?.ToLower().Trim();
+
+                if (confirm == "y" || confirm == "yes")
+                {
+                    bool success = await _tournamentService.ApproveRegistrationAsync(registrationId);
+                    if (success)
+                    {
+                        ConsoleRenderingService.ShowMessageBox($"✅ Đã duyệt đăng ký của {selectedRegistration.TeamName} thành công!", false, 2500);
+                    }
+                    else
+                    {
+                        ConsoleRenderingService.ShowMessageBox("❌ Duyệt đăng ký thất bại! Vui lòng thử lại.", true, 2500);
+                    }
+                }
+                else if (confirm == "r" || confirm == "reject")
+                {
+                    Console.SetCursorPosition(borderLeft + 2, borderTop + 24);
+                    Console.Write("Nhập lý do từ chối: ");
+                    var reason = Console.ReadLine()?.Trim() ?? "Không đạt yêu cầu";
+                    
+                    bool rejected = await _tournamentService.RejectRegistrationAsync(registrationId);
+                    if (rejected)
+                    {
+                        ConsoleRenderingService.ShowMessageBox($"❌ Đã từ chối đăng ký của {selectedRegistration.TeamName}!", false, 2500);
+                    }
+                    else
+                    {
+                        ConsoleRenderingService.ShowMessageBox("❌ Từ chối đăng ký thất bại! Vui lòng thử lại.", true, 2500);
+                    }
                 }
                 else
                 {
-                    ConsoleRenderingService.ShowMessageBox("❌ Duyệt đăng ký thất bại!", true, 2000);
+                    ConsoleRenderingService.ShowMessageBox("Đã hủy thao tác", false, 1000);
                 }
             }
-            */
         }
         catch (Exception ex)
         {
-            ConsoleRenderingService.ShowMessageBox($"Lỗi: {ex.Message}", true, 3000);
+            ConsoleRenderingService.ShowMessageBox($"Lỗi khi duyệt đăng ký: {ex.Message}", true, 3000);
         }
     }
 
@@ -519,15 +513,8 @@ public class TournamentManagementHandler
             Console.Clear();
             ConsoleRenderingService.DrawBorder("DANH SÁCH ĐỘI", 80, 20);
 
-            // Sample team data
-            var sampleTeams = new[]
-            {
-                new { Id = 1, Name = "Shadow Legends", Leader = "ProPlayer1", Members = 5, Game = "LoL", Status = "Active" },
-                new { Id = 2, Name = "Fire Dragons", Leader = "GameMaster", Members = 4, Game = "CS:GO", Status = "Active" },
-                new { Id = 3, Name = "Storm Raiders", Leader = "TacticalLead", Members = 6, Game = "Valorant", Status = "Active" },
-                new { Id = 4, Name = "Ice Wolves", Leader = "ColdStrike", Members = 5, Game = "Dota 2", Status = "Pending" },
-                new { Id = 5, Name = "Thunder Bolts", Leader = "QuickStrike", Members = 4, Game = "CS:GO", Status = "Active" }
-            };
+            // Get real team data from service
+            var teams = await _teamService.GetAllTeamsAsync();
 
             int borderLeft = (Console.WindowWidth - 80) / 2;
             int borderTop = (Console.WindowHeight - 20) / 4;
@@ -537,33 +524,50 @@ public class TournamentManagementHandler
             Console.SetCursorPosition(borderLeft + 2, borderTop + 3);
             Console.WriteLine(new string('─', 70));
 
-            Console.SetCursorPosition(borderLeft + 2, borderTop + 4);
-            Console.WriteLine($"{"ID",-3} {"Tên đội",-18} {"Leader",-12} {"Members",-8} {"Game",-10} {"Status",-8}");
-            Console.SetCursorPosition(borderLeft + 2, borderTop + 5);
-            Console.WriteLine(new string('─', 70));
-
-            int currentRow = borderTop + 6;
-            for (int i = 0; i < sampleTeams.Length; i++)
+            if (!teams.Any())
             {
-                var team = sampleTeams[i];
-                Console.SetCursorPosition(borderLeft + 2, currentRow + i);
-
-                Console.ForegroundColor = team.Status == "Active" ? ConsoleColor.Green : ConsoleColor.Yellow;
-                Console.WriteLine($"{team.Id,-3} {team.Name,-18} {team.Leader,-12} {team.Members,-8} {team.Game,-10} {team.Status,-8}");
+                Console.SetCursorPosition(borderLeft + 2, borderTop + 5);
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine("Chưa có đội nào trong hệ thống.");
                 Console.ResetColor();
+            }
+            else
+            {
+                Console.SetCursorPosition(borderLeft + 2, borderTop + 4);
+                Console.WriteLine($"{"ID",-3} {"Tên đội",-18} {"Leader",-12} {"Members",-8} {"Created",-12} {"Status",-8}");
+                Console.SetCursorPosition(borderLeft + 2, borderTop + 5);
+                Console.WriteLine(new string('─', 70));
+
+                int currentRow = borderTop + 6;
+                for (int i = 0; i < Math.Min(teams.Count, 8); i++)
+                {
+                    var team = teams[i];
+                    Console.SetCursorPosition(borderLeft + 2, currentRow + i);
+
+                    Console.ForegroundColor = team.Status == "Active" ? ConsoleColor.Green : ConsoleColor.Yellow;
+                    var createdDate = team.CreatedAt.ToString("dd/MM/yyyy");
+                    Console.WriteLine($"{team.Id,-3} {team.Name,-18} {team.LeaderName,-12} {team.MemberCount,-8} {createdDate,-12} {team.Status,-8}");
+                    Console.ResetColor();
+                }
+
+                if (teams.Count > 8)
+                {
+                    Console.SetCursorPosition(borderLeft + 2, currentRow + 8);
+                    Console.ForegroundColor = ConsoleColor.Cyan;
+                    Console.WriteLine($"... và {teams.Count - 8} đội khác");
+                    Console.ResetColor();
+                }
             }
 
             Console.SetCursorPosition(borderLeft + 2, borderTop + 16);
-            Console.WriteLine($"Tổng cộng: {sampleTeams.Length} đội");
+            Console.WriteLine($"Tổng cộng: {teams.Count} đội");
             Console.SetCursorPosition(borderLeft + 2, borderTop + 17);
             Console.WriteLine("Nhấn phím bất kỳ để tiếp tục...");
             Console.ReadKey(true);
-
-            await Task.CompletedTask;
         }
         catch (Exception ex)
         {
-            ConsoleRenderingService.ShowMessageBox($"Lỗi: {ex.Message}", true, 3000);
+            ConsoleRenderingService.ShowMessageBox($"Lỗi khi tải danh sách đội: {ex.Message}", true, 3000);
         }
     }
 
@@ -590,17 +594,8 @@ public class TournamentManagementHandler
                 return;
             }
 
-            // Sample search results
-            var allTeams = new[]
-            {
-                new { Id = 1, Name = "Shadow Legends", Leader = "ProPlayer1", Members = 5, Game = "LoL", Status = "Active" },
-                new { Id = 2, Name = "Fire Dragons", Leader = "GameMaster", Members = 4, Game = "CS:GO", Status = "Active" },
-                new { Id = 3, Name = "Storm Raiders", Leader = "TacticalLead", Members = 6, Game = "Valorant", Status = "Active" },
-                new { Id = 4, Name = "Ice Wolves", Leader = "ColdStrike", Members = 5, Game = "Dota 2", Status = "Pending" },
-                new { Id = 5, Name = "Thunder Bolts", Leader = "QuickStrike", Members = 4, Game = "CS:GO", Status = "Active" }
-            };
-
-            var searchResults = allTeams.Where(t => t.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)).ToArray();
+            // Use real team search service
+            var searchResults = await _teamService.SearchTeamsAsync(searchTerm);
 
             Console.SetCursorPosition(borderLeft + 2, borderTop + 4);
             Console.WriteLine($"📊 Kết quả tìm kiếm cho: '{searchTerm}'");
@@ -612,37 +607,45 @@ public class TournamentManagementHandler
                 Console.SetCursorPosition(borderLeft + 2, borderTop + 7);
                 Console.ForegroundColor = ConsoleColor.Yellow;
                 Console.WriteLine("Không tìm thấy đội nào phù hợp.");
+                Console.ResetColor();
             }
             else
             {
                 Console.SetCursorPosition(borderLeft + 2, borderTop + 6);
-                Console.WriteLine($"{"ID",-3} {"Tên đội",-18} {"Leader",-12} {"Members",-8} {"Game",-10} {"Status",-8}");
+                Console.WriteLine($"{"ID",-3} {"Tên đội",-18} {"Leader",-12} {"Members",-8} {"Created",-12} {"Status",-8}");
                 Console.SetCursorPosition(borderLeft + 2, borderTop + 7);
                 Console.WriteLine(new string('─', 70));
 
                 int currentRow = borderTop + 8;
-                for (int i = 0; i < searchResults.Length; i++)
+                for (int i = 0; i < Math.Min(searchResults.Count, 6); i++)
                 {
                     var team = searchResults[i];
                     Console.SetCursorPosition(borderLeft + 2, currentRow + i);
                     Console.ForegroundColor = team.Status == "Active" ? ConsoleColor.Green : ConsoleColor.Yellow;
-                    Console.WriteLine($"{team.Id,-3} {team.Name,-18} {team.Leader,-12} {team.Members,-8} {team.Game,-10} {team.Status,-8}");
+                    var createdDate = team.CreatedAt.ToString("dd/MM/yyyy");
+                    Console.WriteLine($"{team.Id,-3} {team.Name,-18} {team.LeaderName,-12} {team.MemberCount,-8} {createdDate,-12} {team.Status,-8}");
+                    Console.ResetColor();
+                }
+
+                if (searchResults.Count > 6)
+                {
+                    Console.SetCursorPosition(borderLeft + 2, currentRow + 6);
+                    Console.ForegroundColor = ConsoleColor.Cyan;
+                    Console.WriteLine($"... và {searchResults.Count - 6} đội khác");
                     Console.ResetColor();
                 }
 
                 Console.SetCursorPosition(borderLeft + 2, borderTop + 16);
-                Console.WriteLine($"Tìm thấy: {searchResults.Length} đội");
+                Console.WriteLine($"Tìm thấy: {searchResults.Count} đội");
             }
 
             Console.SetCursorPosition(borderLeft + 2, borderTop + 17);
             Console.WriteLine("Nhấn phím bất kỳ để tiếp tục...");
             Console.ReadKey(true);
-
-            await Task.CompletedTask;
         }
         catch (Exception ex)
         {
-            ConsoleRenderingService.ShowMessageBox($"Lỗi: {ex.Message}", true, 3000);
+            ConsoleRenderingService.ShowMessageBox($"Lỗi tìm kiếm: {ex.Message}", true, 3000);
         }
     }
 
@@ -663,13 +666,21 @@ public class TournamentManagementHandler
             Console.WriteLine("✅ Phê duyệt các đội mới đăng ký");
             Console.WriteLine();
 
-            // Sample pending teams
-            var pendingTeams = new[]
+            // Get real pending teams from service
+            var pendingTeams = await _teamService.GetPendingTeamsAsync();
+
+            if (!pendingTeams.Any())
             {
-                new { Id = 6, Name = "Lightning Strikes", Leader = "FastPlayer", Members = 3, Game = "Valorant", Status = "Pending" },
-                new { Id = 7, Name = "Mystic Warriors", Leader = "MagicUser", Members = 5, Game = "LoL", Status = "Pending" },
-                new { Id = 8, Name = "Cyber Ninjas", Leader = "SilentKill", Members = 4, Game = "CS:GO", Status = "Pending" }
-            };
+                Console.SetCursorPosition(borderLeft + 2, borderTop + 4);
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine("Hiện tại không có đội nào đang chờ phê duyệt.");
+                Console.ResetColor();
+                
+                Console.SetCursorPosition(borderLeft + 2, borderTop + 17);
+                Console.WriteLine("Nhấn phím bất kỳ để tiếp tục...");
+                Console.ReadKey(true);
+                return;
+            }
 
             Console.SetCursorPosition(borderLeft + 2, borderTop + 4);
             Console.WriteLine("Đội chờ phê duyệt:");
@@ -677,46 +688,56 @@ public class TournamentManagementHandler
             Console.WriteLine(new string('─', 70));
 
             int currentRow = borderTop + 6;
-            for (int i = 0; i < pendingTeams.Length; i++)
+            for (int i = 0; i < Math.Min(pendingTeams.Count, 5); i++)
             {
                 var team = pendingTeams[i];
                 Console.SetCursorPosition(borderLeft + 2, currentRow + i * 2);
-                Console.WriteLine($"{i + 1}. {team.Name} ({team.Game})");
+                Console.WriteLine($"{i + 1}. {team.Name}");
                 Console.SetCursorPosition(borderLeft + 4, currentRow + i * 2 + 1);
-                Console.WriteLine($"   👤 Leader: {team.Leader} | 👥 {team.Members} members");
+                var createdDate = team.CreatedAt.ToString("dd/MM/yyyy");
+                Console.WriteLine($"   👤 Leader: {team.LeaderName} | 👥 {team.MemberCount} members | 📅 {createdDate}");
             }
 
-            Console.SetCursorPosition(borderLeft + 2, currentRow + pendingTeams.Length * 2 + 1);
-            Console.Write("Chọn đội để duyệt (1-3, 0=thoát): ");
+            Console.SetCursorPosition(borderLeft + 2, currentRow + Math.Min(pendingTeams.Count, 5) * 2 + 1);
+            Console.Write($"Chọn đội để duyệt (1-{Math.Min(pendingTeams.Count, 5)}, 0=thoát): ");
 
-            if (int.TryParse(Console.ReadLine(), out int choice) && choice > 0 && choice <= pendingTeams.Length)
+            if (int.TryParse(Console.ReadLine(), out int choice) && choice > 0 && choice <= Math.Min(pendingTeams.Count, 5))
             {
                 var selectedTeam = pendingTeams[choice - 1];
 
-                Console.SetCursorPosition(borderLeft + 2, currentRow + pendingTeams.Length * 2 + 3);
+                Console.SetCursorPosition(borderLeft + 2, currentRow + Math.Min(pendingTeams.Count, 5) * 2 + 3);
                 Console.Write($"Duyệt đội '{selectedTeam.Name}'? (y/n): ");
                 var confirm = Console.ReadLine()?.ToLower();
 
                 if (confirm == "y" || confirm == "yes")
                 {
-                    ConsoleRenderingService.ShowMessageBox($"✅ Đã duyệt đội '{selectedTeam.Name}' thành công!", false, 2500);
+                    bool success = await _teamService.ApproveTeamAsync(selectedTeam.Id);
+                    if (success)
+                    {
+                        ConsoleRenderingService.ShowMessageBox($"✅ Đã duyệt đội '{selectedTeam.Name}' thành công!", false, 2500);
+                    }
+                    else
+                    {
+                        ConsoleRenderingService.ShowMessageBox($"❌ Không thể duyệt đội '{selectedTeam.Name}'. Vui lòng thử lại.", true, 2500);
+                    }
                 }
                 else
                 {
                     ConsoleRenderingService.ShowMessageBox("❌ Đã hủy", false, 1000);
                 }
             }
-
-            await Task.CompletedTask;
         }
         catch (Exception ex)
         {
-            ConsoleRenderingService.ShowMessageBox($"Lỗi: {ex.Message}", true, 3000);
+            ConsoleRenderingService.ShowMessageBox($"Lỗi khi duyệt đội: {ex.Message}", true, 3000);
         }
     }
 
     /// <summary>
     /// Phê duyệt thành viên đội
+    /// </summary>
+    /// <summary>
+    /// Phê duyệt thành viên gia nhập đội
     /// </summary>
     private async Task ApproveTeamMembersAsync()
     {
@@ -732,13 +753,21 @@ public class TournamentManagementHandler
             Console.WriteLine("👥 Phê duyệt thành viên gia nhập đội");
             Console.WriteLine();
 
-            // Sample member requests
-            var memberRequests = new[]
+            // Get real join requests from service
+            var joinRequests = await _teamService.GetPendingTeamJoinRequestsAsync();
+
+            if (!joinRequests.Any())
             {
-                new { Id = 1, Player = "NewPlayer123", Team = "Shadow Legends", Role = "Support", Exp = "2 years" },
-                new { Id = 2, Player = "ProGamer456", Team = "Fire Dragons", Role = "Carry", Exp = "3 years" },
-                new { Id = 3, Player = "SkillMaster", Team = "Storm Raiders", Role = "Mid", Exp = "1.5 years" }
-            };
+                Console.SetCursorPosition(borderLeft + 2, borderTop + 4);
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine("Hiện tại không có yêu cầu gia nhập đội nào đang chờ phê duyệt.");
+                Console.ResetColor();
+                
+                Console.SetCursorPosition(borderLeft + 2, borderTop + 17);
+                Console.WriteLine("Nhấn phím bất kỳ để tiếp tục...");
+                Console.ReadKey(true);
+                return;
+            }
 
             Console.SetCursorPosition(borderLeft + 2, borderTop + 4);
             Console.WriteLine("Yêu cầu gia nhập đội:");
@@ -746,43 +775,65 @@ public class TournamentManagementHandler
             Console.WriteLine(new string('─', 70));
 
             int currentRow = borderTop + 6;
-            for (int i = 0; i < memberRequests.Length; i++)
+            for (int i = 0; i < Math.Min(joinRequests.Count, 4); i++)
             {
-                var req = memberRequests[i];
+                var req = joinRequests[i];
                 Console.SetCursorPosition(borderLeft + 2, currentRow + i * 3);
-                Console.WriteLine($"{i + 1}. {req.Player} → {req.Team}");
+                Console.WriteLine($"{i + 1}. {req.PlayerName} → {req.TeamName}");
                 Console.SetCursorPosition(borderLeft + 4, currentRow + i * 3 + 1);
-                Console.WriteLine($"   🎯 Role: {req.Role}");
+                var requestDate = req.RequestDate.ToString("dd/MM/yyyy");
+                Console.WriteLine($"   📅 Ngày yêu cầu: {requestDate}");
                 Console.SetCursorPosition(borderLeft + 4, currentRow + i * 3 + 2);
-                Console.WriteLine($"   ⏱️ Experience: {req.Exp}");
+                Console.WriteLine($"   💬 Lời nhắn: {req.Message ?? "Không có"}");
             }
 
-            Console.SetCursorPosition(borderLeft + 2, currentRow + memberRequests.Length * 3 + 1);
-            Console.Write("Chọn yêu cầu để duyệt (1-3, 0=thoát): ");
+            Console.SetCursorPosition(borderLeft + 2, currentRow + Math.Min(joinRequests.Count, 4) * 3 + 1);
+            Console.Write($"Chọn yêu cầu để duyệt (1-{Math.Min(joinRequests.Count, 4)}, 0=thoát): ");
 
-            if (int.TryParse(Console.ReadLine(), out int choice) && choice > 0 && choice <= memberRequests.Length)
+            if (int.TryParse(Console.ReadLine(), out int choice) && choice > 0 && choice <= Math.Min(joinRequests.Count, 4))
             {
-                var selectedReq = memberRequests[choice - 1];
+                var selectedReq = joinRequests[choice - 1];
 
-                Console.SetCursorPosition(borderLeft + 2, currentRow + memberRequests.Length * 3 + 3);
-                Console.Write($"Duyệt {selectedReq.Player} gia nhập {selectedReq.Team}? (y/n): ");
+                Console.SetCursorPosition(borderLeft + 2, currentRow + Math.Min(joinRequests.Count, 4) * 3 + 3);
+                Console.Write($"Duyệt {selectedReq.PlayerName} gia nhập {selectedReq.TeamName}? (y/n): ");
                 var confirm = Console.ReadLine()?.ToLower();
 
                 if (confirm == "y" || confirm == "yes")
                 {
-                    ConsoleRenderingService.ShowMessageBox($"✅ Đã duyệt {selectedReq.Player} gia nhập đội {selectedReq.Team}!", false, 3000);
+                    bool success = await _teamService.ApproveTeamJoinRequestAsync(selectedReq.RequestId);
+                    if (success)
+                    {
+                        ConsoleRenderingService.ShowMessageBox($"✅ Đã duyệt {selectedReq.PlayerName} gia nhập đội {selectedReq.TeamName}!", false, 3000);
+                    }
+                    else
+                    {
+                        ConsoleRenderingService.ShowMessageBox($"❌ Không thể duyệt yêu cầu. Vui lòng thử lại.", true, 2500);
+                    }
                 }
                 else
                 {
-                    ConsoleRenderingService.ShowMessageBox("❌ Đã từ chối", false, 1000);
+                    Console.SetCursorPosition(borderLeft + 2, currentRow + Math.Min(joinRequests.Count, 4) * 3 + 5);
+                    Console.Write("Từ chối yêu cầu này? (y/n): ");
+                    var rejectConfirm = Console.ReadLine()?.ToLower();
+                    
+                    if (rejectConfirm == "y" || rejectConfirm == "yes")
+                    {
+                        bool rejected = await _teamService.RejectTeamJoinRequestAsync(selectedReq.RequestId);
+                        if (rejected)
+                        {
+                            ConsoleRenderingService.ShowMessageBox($"❌ Đã từ chối yêu cầu của {selectedReq.PlayerName}", false, 2000);
+                        }
+                    }
+                    else
+                    {
+                        ConsoleRenderingService.ShowMessageBox("Đã hủy thao tác", false, 1000);
+                    }
                 }
             }
-
-            await Task.CompletedTask;
         }
         catch (Exception ex)
         {
-            ConsoleRenderingService.ShowMessageBox($"Lỗi: {ex.Message}", true, 3000);
+            ConsoleRenderingService.ShowMessageBox($"Lỗi khi duyệt thành viên: {ex.Message}", true, 3000);
         }
     }
 }

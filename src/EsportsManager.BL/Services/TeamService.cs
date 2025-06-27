@@ -363,8 +363,124 @@ namespace EsportsManager.BL.Services
                 UserId = member.UserID,
                 Username = "Unknown", // TODO: Get actual username from User entity
                 Role = member.IsLeader ? "Leader" : "Member",
-                JoinedAt = member.JoinDate,
+                JoinDate = member.JoinDate,
                 Status = member.Status ?? "Active"
+            };
+        }
+
+        #endregion
+
+        #region Admin Methods
+
+        /// <summary>
+        /// Lấy danh sách team chờ phê duyệt (Admin function)
+        /// </summary>
+        public async Task<List<TeamInfoDto>> GetPendingTeamsAsync()
+        {
+            try
+            {
+                var pendingTeams = await _teamRepository.GetPendingTeamsAsync();
+                return pendingTeams.Select(MapToTeamInfoDto).ToList();
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Error getting pending teams: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
+        /// Phê duyệt team mới (Admin function)
+        /// </summary>
+        public async Task<bool> ApproveTeamAsync(int teamId)
+        {
+            try
+            {
+                return await _teamRepository.ApproveTeamAsync(teamId);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Error approving team {teamId}: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
+        /// Từ chối team mới (Admin function)
+        /// </summary>
+        public async Task<bool> RejectTeamAsync(int teamId)
+        {
+            try
+            {
+                return await _teamRepository.RejectTeamAsync(teamId);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Error rejecting team {teamId}: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
+        /// Lấy danh sách yêu cầu tham gia team chờ phê duyệt (Admin function)
+        /// </summary>
+        public async Task<List<TeamJoinRequestDto>> GetPendingTeamJoinRequestsAsync()
+        {
+            try
+            {
+                var pendingRequests = await _teamRepository.GetPendingJoinRequestsAsync();
+                return pendingRequests.Select(MapToTeamJoinRequestDto).ToList();
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Error getting pending join requests: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
+        /// Phê duyệt yêu cầu tham gia team (Admin function)
+        /// </summary>
+        public async Task<bool> ApproveTeamJoinRequestAsync(int requestId)
+        {
+            try
+            {
+                return await _teamRepository.ApproveJoinRequestAsync(requestId);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Error approving join request {requestId}: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
+        /// Từ chối yêu cầu tham gia team (Admin function)
+        /// </summary>
+        public async Task<bool> RejectTeamJoinRequestAsync(int requestId)
+        {
+            try
+            {
+                return await _teamRepository.RejectJoinRequestAsync(requestId);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Error rejecting join request {requestId}: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
+        /// Map TeamJoinRequest entity to TeamJoinRequestDto
+        /// </summary>
+        private TeamJoinRequestDto MapToTeamJoinRequestDto(object joinRequest)
+        {
+            // This is a placeholder mapping - will need to be implemented based on actual TeamJoinRequest entity
+            // For now, returning a basic DTO structure
+            return new TeamJoinRequestDto
+            {
+                RequestId = 0, // TODO: Map from actual entity
+                TeamId = 0,    // TODO: Map from actual entity
+                TeamName = "Unknown", // TODO: Map from actual entity
+                PlayerId = 0,  // TODO: Map from actual entity
+                PlayerName = "Unknown", // TODO: Map from actual entity
+                RequestDate = DateTime.UtcNow, // TODO: Map from actual entity
+                Status = "Pending", // TODO: Map from actual entity
+                Message = string.Empty // TODO: Map from actual entity
             };
         }
 

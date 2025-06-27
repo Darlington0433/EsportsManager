@@ -51,8 +51,8 @@ public class ServiceManager
     public AdminUIController CreateAdminController(UserProfileDto adminUser)
     {
         // Create handlers
-        var userManagementHandler = new UserManagementHandler(_userService);
-        var tournamentManagementHandler = new TournamentManagementHandler(_tournamentService);
+        var userManagementHandler = new UserManagementHandler(_userService, _achievementService);
+        var tournamentManagementHandler = new TournamentManagementHandler(adminUser, _tournamentService, _teamService);
         var systemStatsHandler = new SystemStatsHandler(_userService, _tournamentService, _teamService);
         var donationReportHandler = new DonationReportHandler(_walletService, _userService);
         var votingResultsHandler = new VotingResultsHandler(_userService, _tournamentService, _votingService);

@@ -68,7 +68,7 @@ public class AdminUIController : BaseController, IAdminUIController
                     ManageUsersAsync().GetAwaiter().GetResult();
                     break;
                 case 1:
-                    _userManagementHandler.ApprovePendingAccountsAsync().GetAwaiter().GetResult();
+                    _tournamentManagementHandler.ManageTournamentsAsync().GetAwaiter().GetResult();
                     break;
                 case 2:
                     _tournamentManagementHandler.ApproveTournamentRegistrationsAsync().GetAwaiter().GetResult();

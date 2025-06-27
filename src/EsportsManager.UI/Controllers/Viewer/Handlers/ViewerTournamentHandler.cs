@@ -31,27 +31,81 @@ namespace EsportsManager.UI.Controllers.Viewer.Handlers
 
                 if (tournaments.Count == 0)
                 {
-                    ConsoleRenderingService.ShowMessageBox("Hiện tại không có giải đấu nào!", false, 2000);
+                    // Set cursor vào giữa border để hiển thị thông báo
+                    int centerX = (Console.WindowWidth - 30) / 2;
+                    int centerY = Console.WindowHeight / 2;
+                    Console.SetCursorPosition(centerX, centerY);
+                    Console.ForegroundColor = ConsoleColor.Yellow;
+                    Console.WriteLine("Hiện tại không có giải đấu nào!");
+                    Console.ResetColor();
+                    Console.SetCursorPosition(centerX - 10, centerY + 2);
+                    Console.WriteLine("Nhấn phím bất kỳ để tiếp tục...");
+                    Console.ReadKey(true);
                     return;
                 }
 
-                Console.WriteLine("🏆 Danh sách tất cả giải đấu:");
-                Console.WriteLine("─".PadRight(78, '─'));
-                Console.WriteLine("STT | Tên giải đấu               | Trạng thái    | Phí tham gia");
-                Console.WriteLine("─".PadRight(78, '─'));
+                // Tính vị trí để hiển thị data bên trong border
+                int borderLeft = (Console.WindowWidth - 80) / 2;
+                int borderTop = (Console.WindowHeight - 20) / 4;
 
-                for (int i = 0; i < tournaments.Count; i++)
+                // Header
+                Console.SetCursorPosition(borderLeft + 2, borderTop + 2);
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.WriteLine($"{"STT",-5} {"Tên giải đấu",-25} {"Trạng thái",-12} {"Phí tham gia",-15} {"Ngày bắt đầu",-12}");
+                
+                // Separator line
+                Console.SetCursorPosition(borderLeft + 2, borderTop + 3);
+                Console.WriteLine(new string('─', 70));
+
+                // Data rows
+                int currentRow = borderTop + 4;
+                int maxRows = 12; // Giới hạn số dòng hiển thị để vừa trong border
+                int displayedRows = 0;
+
+                for (int i = 0; i < tournaments.Count && displayedRows < maxRows; i++)
                 {
                     var tournament = tournaments[i];
-                    Console.WriteLine($"{i + 1,3} | {tournament.Name,-25} | {tournament.Status,-12} | {tournament.EntryFee,12:N0} VND");
+                    Console.SetCursorPosition(borderLeft + 2, currentRow);
+                    
+                    // Set color based on tournament status
+                    Console.ForegroundColor = tournament.Status switch
+                    {
+                        "Active" => ConsoleColor.Green,
+                        "Completed" => ConsoleColor.Blue,
+                        "Draft" => ConsoleColor.Yellow,
+                        _ => ConsoleColor.Gray
+                    };
+
+                    var row = string.Format("{0,-5} {1,-25} {2,-12} {3,-15} {4,-12}",
+                        i + 1,
+                        tournament.TournamentName.Length > 24 ? tournament.TournamentName.Substring(0, 24) : tournament.TournamentName,
+                        tournament.Status,
+                        $"{tournament.EntryFee:N0} VND",
+                        tournament.StartDate.ToString("dd/MM/yyyy"));
+
+                    Console.WriteLine(row);
+                    currentRow++;
+                    displayedRows++;
                 }
 
-                Console.WriteLine("\nNhấn Enter để tiếp tục...");
-                Console.ReadLine();
+                // Nếu có nhiều dữ liệu hơn, hiển thị thông báo
+                if (tournaments.Count > maxRows)
+                {
+                    Console.SetCursorPosition(borderLeft + 2, currentRow + 1);
+                    Console.ForegroundColor = ConsoleColor.Yellow;
+                    Console.WriteLine($"... và {tournaments.Count - maxRows} giải đấu khác");
+                }
+
+                Console.ResetColor();
+                Console.SetCursorPosition(borderLeft + 2, borderTop + 16);
+                Console.WriteLine($"Tổng cộng: {tournaments.Count} giải đấu");
+                Console.SetCursorPosition(borderLeft + 2, borderTop + 17);
+                Console.WriteLine("Nhấn phím bất kỳ để tiếp tục...");
+                Console.ReadKey(true);
             }
             catch (Exception ex)
             {
-                ConsoleRenderingService.ShowMessageBox($"❌ Lỗi: {ex.Message}", false, 2000);
+                ConsoleRenderingService.ShowMessageBox($"❌ Lỗi: {ex.Message}", true, 3000);
             }
         }
 
@@ -67,17 +121,39 @@ namespace EsportsManager.UI.Controllers.Viewer.Handlers
 
                 if (tournaments.Count == 0)
                 {
-                    ConsoleRenderingService.ShowMessageBox("Hiện tại không có giải đấu nào!", false, 2000);
+                    // Set cursor vào giữa border để hiển thị thông báo
+                    int centerX = (Console.WindowWidth - 30) / 2;
+                    int centerY = Console.WindowHeight / 2;
+                    Console.SetCursorPosition(centerX, centerY);
+                    Console.ForegroundColor = ConsoleColor.Yellow;
+                    Console.WriteLine("Hiện tại không có giải đấu nào!");
+                    Console.ResetColor();
+                    Console.SetCursorPosition(centerX - 10, centerY + 2);
+                    Console.WriteLine("Nhấn phím bất kỳ để tiếp tục...");
+                    Console.ReadKey(true);
                     return;
                 }
 
+                // Tính vị trí để hiển thị data bên trong border
+                int borderLeft = (Console.WindowWidth - 80) / 2;
+                int borderTop = (Console.WindowHeight - 20) / 4;
+
+                Console.SetCursorPosition(borderLeft + 2, borderTop + 2);
+                Console.ForegroundColor = ConsoleColor.White;
                 Console.WriteLine("🏆 Chọn giải đấu để xem bảng xếp hạng:");
-                for (int i = 0; i < tournaments.Count; i++)
+
+                int currentRow = borderTop + 4;
+                for (int i = 0; i < tournaments.Count && i < 10; i++)
                 {
-                    Console.WriteLine($"{i + 1}. {tournaments[i].Name}");
+                    Console.SetCursorPosition(borderLeft + 2, currentRow + i);
+                    Console.ForegroundColor = ConsoleColor.Green;
+                    Console.WriteLine($"{i + 1}. {tournaments[i].TournamentName}");
                 }
 
-                Console.Write($"\nNhập số thứ tự giải đấu (1-{tournaments.Count}): ");
+                Console.ResetColor();
+                Console.SetCursorPosition(borderLeft + 2, borderTop + 16);
+                Console.Write($"Nhập số thứ tự giải đấu (1-{tournaments.Count}): ");
+                
                 if (int.TryParse(Console.ReadLine(), out int choice) && choice >= 1 && choice <= tournaments.Count)
                 {
                     var selectedTournament = tournaments[choice - 1];
@@ -85,12 +161,12 @@ namespace EsportsManager.UI.Controllers.Viewer.Handlers
                 }
                 else
                 {
-                    ConsoleRenderingService.ShowMessageBox("Lựa chọn không hợp lệ!", false, 1500);
+                    ConsoleRenderingService.ShowMessageBox("Lựa chọn không hợp lệ!", true, 1500);
                 }
             }
             catch (Exception ex)
             {
-                ConsoleRenderingService.ShowMessageBox($"❌ Lỗi: {ex.Message}", false, 2000);
+                ConsoleRenderingService.ShowMessageBox($"❌ Lỗi: {ex.Message}", true, 2000);
             }
         }
 
@@ -99,35 +175,76 @@ namespace EsportsManager.UI.Controllers.Viewer.Handlers
             try
             {
                 Console.Clear();
-                ConsoleRenderingService.DrawBorder("BẢNG XẾP HẠNG", 80, 15);
+                ConsoleRenderingService.DrawBorder("BẢNG XẾP HẠNG", 80, 20);
 
                 var standings = await _tournamentService.GetTournamentLeaderboardAsync(tournamentId);
 
+                // Tính vị trí để hiển thị data bên trong border
+                int borderLeft = (Console.WindowWidth - 80) / 2;
+                int borderTop = (Console.WindowHeight - 20) / 4;
+
                 if (standings != null && standings.Count > 0)
                 {
-                    Console.WriteLine("📊 Bảng xếp hạng hiện tại:");
-                    Console.WriteLine("─".PadRight(78, '─'));
-                    Console.WriteLine("Hạng | Tên đội               | Vị trí | Tiền thưởng | Thành viên");
-                    Console.WriteLine("─".PadRight(78, '─'));
+                    // Header
+                    Console.SetCursorPosition(borderLeft + 2, borderTop + 2);
+                    Console.ForegroundColor = ConsoleColor.White;
+                    Console.WriteLine($"{"Hạng",-6} {"Tên đội",-20} {"Vị trí",-8} {"Tiền thưởng",-15} {"Thành viên",-10}");
+                    
+                    // Separator line
+                    Console.SetCursorPosition(borderLeft + 2, borderTop + 3);
+                    Console.WriteLine(new string('─', 65));
 
-                    for (int i = 0; i < standings.Count; i++)
+                    // Data rows
+                    int currentRow = borderTop + 4;
+                    int maxRows = 12;
+                    int displayedRows = 0;
+
+                    for (int i = 0; i < standings.Count && displayedRows < maxRows; i++)
                     {
                         var team = standings[i];
+                        Console.SetCursorPosition(borderLeft + 2, currentRow);
+                        
+                        // Set color based on rank
+                        Console.ForegroundColor = team.Rank switch
+                        {
+                            1 => ConsoleColor.Yellow,
+                            2 => ConsoleColor.Gray,
+                            3 => ConsoleColor.DarkYellow,
+                            _ => ConsoleColor.Green
+                        };
+
                         string rank = GetRankIcon(team.Rank);
-                        Console.WriteLine($" {rank}   | {team.TeamName,-20} | {team.Position,6} | {team.PrizeMoney,11:C} | {team.TeamSize,9}");
+                        var row = string.Format("{0,-6} {1,-20} {2,-8} {3,-15} {4,-10}",
+                            rank,
+                            team.TeamName.Length > 19 ? team.TeamName.Substring(0, 19) : team.TeamName,
+                            team.Position,
+                            $"{team.PrizeMoney:N0} VND",
+                            team.TeamSize);
+
+                        Console.WriteLine(row);
+                        currentRow++;
+                        displayedRows++;
                     }
+
+                    Console.ResetColor();
+                    Console.SetCursorPosition(borderLeft + 2, borderTop + 16);
+                    Console.WriteLine($"Tổng cộng: {standings.Count} đội thi đấu");
                 }
                 else
                 {
+                    Console.SetCursorPosition(borderLeft + 2, borderTop + 8);
+                    Console.ForegroundColor = ConsoleColor.Yellow;
                     Console.WriteLine("📝 Chưa có dữ liệu xếp hạng cho giải đấu này");
+                    Console.ResetColor();
                 }
 
-                Console.WriteLine("\nNhấn Enter để tiếp tục...");
-                Console.ReadLine();
+                Console.SetCursorPosition(borderLeft + 2, borderTop + 17);
+                Console.WriteLine("Nhấn phím bất kỳ để tiếp tục...");
+                Console.ReadKey(true);
             }
             catch (Exception ex)
             {
-                ConsoleRenderingService.ShowMessageBox($"❌ Lỗi: {ex.Message}", false, 2000);
+                ConsoleRenderingService.ShowMessageBox($"❌ Lỗi: {ex.Message}", true, 2000);
             }
         }
 

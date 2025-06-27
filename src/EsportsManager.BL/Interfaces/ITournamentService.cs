@@ -89,5 +89,30 @@ namespace EsportsManager.BL.Interfaces
                                                                                                                               /// Lấy bảng xếp hạng đầy đủ của tournament
                                                                                                                               /// </summary>
         Task<List<TournamentLeaderboardDto>> GetTournamentLeaderboardAsync(int tournamentId);
+
+        /// <summary>
+        /// Lấy danh sách đăng ký tham gia tournament đang chờ duyệt (Admin function)
+        /// </summary>
+        Task<List<TournamentRegistrationDto>> GetPendingRegistrationsAsync();
+
+        /// <summary>
+        /// Lấy danh sách đăng ký tham gia tournament theo trạng thái (Admin function)
+        /// </summary>
+        Task<List<TournamentRegistrationDto>> GetRegistrationsByStatusAsync(string status);
+
+        /// <summary>
+        /// Phê duyệt đăng ký tham gia tournament (Admin function)
+        /// </summary>
+        Task<bool> ApproveRegistrationAsync(int registrationId);
+
+        /// <summary>
+        /// Từ chối đăng ký tham gia tournament (Admin function)
+        /// </summary>
+        Task<bool> RejectRegistrationAsync(int registrationId);
+
+        /// <summary>
+        /// Lấy thông tin chi tiết đăng ký theo ID (Admin function)
+        /// </summary>
+        Task<TournamentRegistrationDto?> GetRegistrationByIdAsync(int registrationId);
     }
 }

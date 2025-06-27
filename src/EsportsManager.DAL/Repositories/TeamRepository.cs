@@ -583,5 +583,173 @@ namespace EsportsManager.DAL.Repositories
         }
 
         #endregion
+
+        #region Admin Operations
+
+        public async Task<List<Team>> GetPendingTeamsAsync()
+        {
+            try
+            {
+                using var connection = _context.CreateConnection();
+                const string sql = @"
+                    SELECT TeamID, TeamName, Description, GameID, CreatedBy, LogoURL, 
+                           MaxMembers, CreatedAt, IsActive, Status
+                    FROM Teams 
+                    WHERE Status = 'Pending'
+                    ORDER BY CreatedAt DESC";
+
+                var teams = await connection.QueryAsync<Team>(sql);
+                return teams.ToList();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting pending teams");
+                throw;
+            }
+        }
+
+        public async Task<bool> ApproveTeamAsync(int teamId)
+        {
+            try
+            {
+                using var connection = _context.CreateConnection();
+                const string sql = @"
+                    UPDATE Teams 
+                    SET Status = 'Active', IsActive = 1
+                    WHERE TeamID = @TeamID AND Status = 'Pending'";
+
+                var rowsAffected = await connection.ExecuteAsync(sql, new { TeamID = teamId });
+                return rowsAffected > 0;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error approving team: {TeamId}", teamId);
+                throw;
+            }
+        }
+
+        public async Task<bool> RejectTeamAsync(int teamId)
+        {
+            try
+            {
+                using var connection = _context.CreateConnection();
+                const string sql = @"
+                    UPDATE Teams 
+                    SET Status = 'Rejected', IsActive = 0
+                    WHERE TeamID = @TeamID AND Status = 'Pending'";
+
+                var rowsAffected = await connection.ExecuteAsync(sql, new { TeamID = teamId });
+                return rowsAffected > 0;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error rejecting team: {TeamId}", teamId);
+                throw;
+            }
+        }
+
+        public async Task<List<object>> GetPendingJoinRequestsAsync()
+        {
+            try
+            {
+                using var connection = _context.CreateConnection();
+                const string sql = @"
+                    SELECT jr.ID as RequestId, jr.TeamID, jr.UserID, jr.RequestedAt, jr.Status,
+                           t.TeamName, u.FullName as PlayerName
+                    FROM JoinRequests jr
+                    INNER JOIN Teams t ON jr.TeamID = t.TeamID
+                    INNER JOIN Users u ON jr.UserID = u.UserID
+                    WHERE jr.Status = 'Pending'
+                    ORDER BY jr.RequestedAt DESC";
+
+                var requests = await connection.QueryAsync<object>(sql);
+                return requests.ToList();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting pending join requests");
+                throw;
+            }
+        }
+
+        public async Task<bool> ApproveJoinRequestAsync(int requestId)
+        {
+            try
+            {
+                using var connection = _context.CreateConnection();
+                using var transaction = connection.BeginTransaction();
+
+                try
+                {
+                    // Get the join request details
+                    const string getRequestSql = @"
+                        SELECT TeamID, UserID FROM JoinRequests 
+                        WHERE ID = @RequestId AND Status = 'Pending'";
+                    
+                    var request = await connection.QuerySingleOrDefaultAsync<dynamic>(
+                        getRequestSql, new { RequestId = requestId }, transaction);
+
+                    if (request == null)
+                    {
+                        transaction.Rollback();
+                        return false;
+                    }
+
+                    // Add user to team
+                    const string addMemberSql = @"
+                        INSERT INTO TeamMembers (TeamID, UserID, IsLeader, JoinDate, Status)
+                        VALUES (@TeamID, @UserID, 0, GETDATE(), 'Active')";
+
+                    await connection.ExecuteAsync(addMemberSql, new 
+                    { 
+                        TeamID = request.TeamID, 
+                        UserID = request.UserID 
+                    }, transaction);
+
+                    // Update join request status
+                    const string updateRequestSql = @"
+                        UPDATE JoinRequests 
+                        SET Status = 'Approved' 
+                        WHERE ID = @RequestId";
+
+                    await connection.ExecuteAsync(updateRequestSql, new { RequestId = requestId }, transaction);
+
+                    transaction.Commit();
+                    return true;
+                }
+                catch
+                {
+                    transaction.Rollback();
+                    throw;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error approving join request: {RequestId}", requestId);
+                throw;
+            }
+        }
+
+        public async Task<bool> RejectJoinRequestAsync(int requestId)
+        {
+            try
+            {
+                using var connection = _context.CreateConnection();
+                const string sql = @"
+                    UPDATE JoinRequests 
+                    SET Status = 'Rejected'
+                    WHERE ID = @RequestId AND Status = 'Pending'";
+
+                var rowsAffected = await connection.ExecuteAsync(sql, new { RequestId = requestId });
+                return rowsAffected > 0;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error rejecting join request: {RequestId}", requestId);
+                throw;
+            }
+        }
+
+        #endregion
     }
 }

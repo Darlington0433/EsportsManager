@@ -358,7 +358,7 @@ namespace EsportsManager.UI.Controllers.Player.Handlers
                     Console.ForegroundColor = member.Role == "Leader" ? ConsoleColor.Yellow : ConsoleColor.Green;
                     var role = member.Role == "Leader" ? "👑 Leader" : "👤 Member";
                     var status = member.Status == "Active" ? "✅ Active" : "⏳ Pending";
-                    Console.WriteLine($"{member.Username,-20} {role,-15} {member.JoinedAt:dd/MM/yyyy,-15} {status,-10}");
+                    Console.WriteLine($"{member.Username,-20} {role,-15} {member.JoinDate:dd/MM/yyyy,-15} {status,-10}");
                     currentRow++;
                 }
 

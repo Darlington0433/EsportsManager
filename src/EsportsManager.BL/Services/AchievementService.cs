@@ -258,5 +258,79 @@ namespace EsportsManager.BL.Services
         }
 
         #endregion
+
+        #region Admin Methods
+
+        /// <summary>
+        /// Admin: Gán achievement/danh hiệu cho người chơi
+        /// </summary>
+        public async Task<bool> AssignAchievementToPlayerAsync(int userId, string achievementName, string description)
+        {
+            try
+            {
+                // TODO: Implement actual database operations to assign achievements
+                // For now, return true as a placeholder
+                _logger.LogInformation($"Assigning achievement '{achievementName}' to user {userId}: {description}");
+                return await Task.FromResult(true);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error assigning achievement to player {UserId}: {AchievementName}", userId, achievementName);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Admin: Lấy danh sách tất cả achievements có sẵn
+        /// </summary>
+        public async Task<List<string>> GetAvailableAchievementsAsync()
+        {
+            try
+            {
+                // TODO: Implement actual database query to get available achievements
+                // For now, return a predefined list
+                var achievements = new List<string>
+                {
+                    "Tournament Champion",
+                    "Team Leader",
+                    "MVP Player",
+                    "Rising Star",
+                    "Veteran Player",
+                    "Fair Play Award",
+                    "Community Contributor",
+                    "Strategic Mastermind",
+                    "Consistent Performer",
+                    "Breakthrough Player"
+                };
+
+                return await Task.FromResult(achievements);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting available achievements");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Admin: Xóa achievement khỏi người chơi
+        /// </summary>
+        public async Task<bool> RemoveAchievementFromPlayerAsync(int userId, string achievementName)
+        {
+            try
+            {
+                // TODO: Implement actual database operations to remove achievements
+                // For now, return true as a placeholder
+                _logger.LogInformation($"Removing achievement '{achievementName}' from user {userId}");
+                return await Task.FromResult(true);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error removing achievement from player {UserId}: {AchievementName}", userId, achievementName);
+                return false;
+            }
+        }
+
+        #endregion
     }
 }

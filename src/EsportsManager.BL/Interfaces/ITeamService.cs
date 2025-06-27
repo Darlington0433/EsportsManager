@@ -74,5 +74,35 @@ namespace EsportsManager.BL.Interfaces
                                                                                                 /// Tìm kiếm team theo tên
                                                                                                 /// </summary>
         Task<List<TeamInfoDto>> SearchTeamsAsync(string searchTerm);
+
+        /// <summary>
+        /// Lấy danh sách team chờ phê duyệt (Admin function)
+        /// </summary>
+        Task<List<TeamInfoDto>> GetPendingTeamsAsync();
+
+        /// <summary>
+        /// Phê duyệt team mới (Admin function)
+        /// </summary>
+        Task<bool> ApproveTeamAsync(int teamId);
+
+        /// <summary>
+        /// Từ chối team mới (Admin function)
+        /// </summary>
+        Task<bool> RejectTeamAsync(int teamId);
+
+        /// <summary>
+        /// Lấy danh sách yêu cầu tham gia team chờ phê duyệt (Admin function)
+        /// </summary>
+        Task<List<TeamJoinRequestDto>> GetPendingTeamJoinRequestsAsync();
+
+        /// <summary>
+        /// Phê duyệt yêu cầu tham gia team (Admin function)
+        /// </summary>
+        Task<bool> ApproveTeamJoinRequestAsync(int requestId);
+
+        /// <summary>
+        /// Từ chối yêu cầu tham gia team (Admin function)
+        /// </summary>
+        Task<bool> RejectTeamJoinRequestAsync(int requestId);
     }
 }

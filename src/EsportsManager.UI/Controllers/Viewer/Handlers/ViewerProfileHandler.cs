@@ -33,29 +33,44 @@ namespace EsportsManager.UI.Controllers.Viewer.Handlers
 
                 var userInfo = await _userService.GetUserByIdAsync(_currentUser.Id);
 
-                if (userInfo.IsSuccess)
+                int borderLeft = (Console.WindowWidth - 80) / 2;
+                int borderTop = (Console.WindowHeight - 15) / 4;
+
+                if (userInfo.IsSuccess && userInfo.Data != null)
                 {
                     var user = userInfo.Data;
-                    Console.WriteLine($"👤 Tên đăng nhập: {user.Username}");
-                    Console.WriteLine($"📧 Email: {user.Email ?? "Chưa cập nhật"}");
-                    Console.WriteLine($"👨 Họ tên: {user.FullName ?? "Chưa cập nhật"}");
-                    Console.WriteLine($"📱 Số điện thoại: {user.PhoneNumber ?? "Chưa cập nhật"}");
-                    Console.WriteLine($"🎭 Vai trò: {user.Role}");
-                    Console.WriteLine($"📅 Ngày tạo tài khoản: {user.CreatedAt:dd/MM/yyyy HH:mm}");
-                    Console.WriteLine($"🕐 Lần đăng nhập cuối: {user.LastLoginAt?.ToString("dd/MM/yyyy HH:mm") ?? "Chưa có"}");
-                    Console.WriteLine($"⭐ Trạng thái: {user.Status}");
+                    Console.SetCursorPosition(borderLeft + 2, borderTop + 2);
+                    Console.WriteLine($"👤 Tên đăng nhập: {user?.Username ?? "Chưa cập nhật"}");
+                    Console.SetCursorPosition(borderLeft + 2, borderTop + 3);
+                    Console.WriteLine($"📧 Email: {user?.Email ?? "Chưa cập nhật"}");
+                    Console.SetCursorPosition(borderLeft + 2, borderTop + 4);
+                    Console.WriteLine($"👨 Họ tên: {user?.FullName ?? "Chưa cập nhật"}");
+                    Console.SetCursorPosition(borderLeft + 2, borderTop + 5);
+                    Console.WriteLine($"📱 Số điện thoại: {user?.PhoneNumber ?? "Chưa cập nhật"}");
+                    Console.SetCursorPosition(borderLeft + 2, borderTop + 6);
+                    Console.WriteLine($"🎭 Vai trò: {user?.Role ?? "Chưa cập nhật"}");
+                    Console.SetCursorPosition(borderLeft + 2, borderTop + 7);
+                    Console.WriteLine($"📅 Ngày tạo tài khoản: {(user?.CreatedAt != null ? user.CreatedAt.ToString("dd/MM/yyyy HH:mm") : "Chưa có")}");
+                    Console.SetCursorPosition(borderLeft + 2, borderTop + 8);
+                    Console.WriteLine($"🕐 Lần đăng nhập cuối: {(user?.LastLoginAt != null ? user.LastLoginAt.Value.ToString("dd/MM/yyyy HH:mm") : "Chưa có")}");
+                    Console.SetCursorPosition(borderLeft + 2, borderTop + 9);
+                    Console.WriteLine($"⭐ Trạng thái: {user?.Status ?? "Chưa cập nhật"}");
                 }
                 else
                 {
-                    ConsoleRenderingService.ShowMessageBox("Không thể tải thông tin người dùng!", false, 2000);
+                    Console.SetCursorPosition(borderLeft + 2, borderTop + 6);
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("Không thể tải thông tin người dùng!");
+                    Console.ResetColor();
                 }
 
-                Console.WriteLine("\nNhấn Enter để tiếp tục...");
-                Console.ReadLine();
+                Console.SetCursorPosition(borderLeft + 2, borderTop + 12);
+                Console.WriteLine("Nhấn phím bất kỳ để tiếp tục...");
+                Console.ReadKey(true);
             }
             catch (Exception ex)
             {
-                ConsoleRenderingService.ShowMessageBox($"❌ Lỗi: {ex.Message}", false, 2000);
+                ConsoleRenderingService.ShowMessageBox($"❌ Lỗi: {ex.Message}", true, 2000);
             }
         }
 
@@ -68,27 +83,39 @@ namespace EsportsManager.UI.Controllers.Viewer.Handlers
 
                 // Lấy thông tin hiện tại
                 var currentInfo = await _userService.GetUserByIdAsync(_currentUser.Id);
-                if (!currentInfo.IsSuccess)
+                int borderLeft = (Console.WindowWidth - 80) / 2;
+                int borderTop = (Console.WindowHeight - 15) / 4;
+                if (!currentInfo.IsSuccess || currentInfo.Data == null)
                 {
-                    ConsoleRenderingService.ShowMessageBox("Không thể tải thông tin hiện tại!", false, 2000);
+                    Console.SetCursorPosition(borderLeft + 2, borderTop + 6);
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("Không thể tải thông tin hiện tại!");
+                    Console.ResetColor();
                     return;
                 }
 
                 var user = currentInfo.Data;
+                Console.SetCursorPosition(borderLeft + 2, borderTop + 2);
                 Console.WriteLine("Thông tin hiện tại:");
-                Console.WriteLine($"📧 Email: {user.Email ?? "Chưa có"}");
-                Console.WriteLine($"👨 Họ tên: {user.FullName ?? "Chưa có"}");
-                Console.WriteLine($"📱 Số điện thoại: {user.PhoneNumber ?? "Chưa có"}");
-                Console.WriteLine();
+                Console.SetCursorPosition(borderLeft + 2, borderTop + 3);
+                Console.WriteLine($"📧 Email: {user?.Email ?? "Chưa có"}");
+                Console.SetCursorPosition(borderLeft + 2, borderTop + 4);
+                Console.WriteLine($"👨 Họ tên: {user?.FullName ?? "Chưa có"}");
+                Console.SetCursorPosition(borderLeft + 2, borderTop + 5);
+                Console.WriteLine($"📱 Số điện thoại: {user?.PhoneNumber ?? "Chưa có"}");
 
+                Console.SetCursorPosition(borderLeft + 2, borderTop + 7);
                 Console.WriteLine("Nhập thông tin mới (Enter để bỏ qua):");
 
+                Console.SetCursorPosition(borderLeft + 2, borderTop + 8);
                 Console.Write("Email mới: ");
                 string? newEmail = Console.ReadLine()?.Trim();
 
+                Console.SetCursorPosition(borderLeft + 2, borderTop + 9);
                 Console.Write("Họ tên mới: ");
                 string? newFullName = Console.ReadLine()?.Trim();
 
+                Console.SetCursorPosition(borderLeft + 2, borderTop + 10);
                 Console.Write("Số điện thoại mới: ");
                 string? newPhoneNumber = Console.ReadLine()?.Trim();
 
@@ -134,12 +161,19 @@ namespace EsportsManager.UI.Controllers.Viewer.Handlers
                 Console.Clear();
                 ConsoleRenderingService.DrawBorder("ĐỔI MẬT KHẨU", 80, 15);
 
+                int borderLeft = (Console.WindowWidth - 80) / 2;
+                int borderTop = (Console.WindowHeight - 15) / 4;
+
+                Console.SetCursorPosition(borderLeft + 2, borderTop + 2);
                 Console.WriteLine("🔐 Thay đổi mật khẩu");
+                Console.SetCursorPosition(borderLeft + 2, borderTop + 3);
                 Console.WriteLine("─".PadRight(50, '─'));
 
+                Console.SetCursorPosition(borderLeft + 2, borderTop + 4);
                 Console.Write("Mật khẩu hiện tại: ");
                 string currentPassword = ReadPassword();
 
+                Console.SetCursorPosition(borderLeft + 2, borderTop + 5);
                 Console.Write("Mật khẩu mới: ");
                 string newPassword = ReadPassword();
 
@@ -149,6 +183,7 @@ namespace EsportsManager.UI.Controllers.Viewer.Handlers
                     return;
                 }
 
+                Console.SetCursorPosition(borderLeft + 2, borderTop + 6);
                 Console.Write("Xác nhận mật khẩu mới: ");
                 string confirmPassword = ReadPassword();
 
@@ -204,6 +239,33 @@ namespace EsportsManager.UI.Controllers.Viewer.Handlers
 
             Console.WriteLine();
             return password;
+        }
+
+        public void ShowSimpleInfo(UserDto user)
+        {
+            Console.Clear();
+            ConsoleRenderingService.DrawBorder("THÔNG TIN NGƯỜI DÙNG", 80, 15);
+            int borderLeft = (Console.WindowWidth - 80) / 2;
+            int borderTop = (Console.WindowHeight - 15) / 4;
+            Console.SetCursorPosition(borderLeft + 2, borderTop + 2);
+            Console.WriteLine($"👤 Tên đăng nhập: {user?.Username ?? "Chưa cập nhật"}");
+            Console.SetCursorPosition(borderLeft + 2, borderTop + 3);
+            Console.WriteLine($"📧 Email: {user?.Email ?? "Chưa cập nhật"}");
+            Console.SetCursorPosition(borderLeft + 2, borderTop + 4);
+            Console.WriteLine($"👨 Họ tên: {user?.FullName ?? "Chưa cập nhật"}");
+            Console.SetCursorPosition(borderLeft + 2, borderTop + 5);
+            Console.WriteLine($"📱 Số điện thoại: {user?.PhoneNumber ?? "Chưa cập nhật"}");
+            Console.SetCursorPosition(borderLeft + 2, borderTop + 6);
+            Console.WriteLine($"🎭 Vai trò: {user?.Role ?? "Chưa cập nhật"}");
+            Console.SetCursorPosition(borderLeft + 2, borderTop + 7);
+            Console.WriteLine($"📅 Ngày tạo tài khoản: {(user?.CreatedAt != null ? user.CreatedAt.ToString("dd/MM/yyyy HH:mm") : "Chưa có")}");
+            Console.SetCursorPosition(borderLeft + 2, borderTop + 8);
+            Console.WriteLine($"🕐 Lần đăng nhập cuối: {(user?.LastLoginAt != null ? user.LastLoginAt.Value.ToString("dd/MM/yyyy HH:mm") : "Chưa có")}");
+            Console.SetCursorPosition(borderLeft + 2, borderTop + 9);
+            Console.WriteLine($"⭐ Trạng thái: {user?.Status ?? "Chưa cập nhật"}");
+            Console.SetCursorPosition(borderLeft + 2, borderTop + 12);
+            Console.WriteLine("Nhấn phím bất kỳ để tiếp tục...");
+            Console.ReadKey(true);
         }
     }
 }

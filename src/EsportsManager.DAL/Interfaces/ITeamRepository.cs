@@ -45,5 +45,13 @@ namespace EsportsManager.DAL.Interfaces
         Task<bool> TransferLeadershipAsync(int teamId, int currentLeaderId, int newLeaderId);
         Task<List<Team>> GetTeamsWithMemberCountAsync();
         Task<bool> IsPlayerLeaderOfAnyTeamAsync(int playerId);
+
+        // Admin Operations
+        Task<List<Team>> GetPendingTeamsAsync();
+        Task<bool> ApproveTeamAsync(int teamId);
+        Task<bool> RejectTeamAsync(int teamId);
+        Task<List<object>> GetPendingJoinRequestsAsync(); // TODO: Define proper entity type
+        Task<bool> ApproveJoinRequestAsync(int requestId);
+        Task<bool> RejectJoinRequestAsync(int requestId);
     }
 }

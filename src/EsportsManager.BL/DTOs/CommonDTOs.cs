@@ -17,18 +17,6 @@ namespace EsportsManager.BL.DTOs
     }
 
     /// <summary>
-    /// DTO thành viên team
-    /// </summary>
-    public class TeamMemberDto
-    {
-        public int UserId { get; set; }
-        public string Username { get; set; } = string.Empty;
-        public string Role { get; set; } = "Member"; // Leader, Member
-        public DateTime JoinedAt { get; set; }
-        public string Status { get; set; } = "Active";
-    }
-
-    /// <summary>
     /// DTO thông tin công khai của team cho viewer
     /// </summary>
     public class TeamPublicInfoDto

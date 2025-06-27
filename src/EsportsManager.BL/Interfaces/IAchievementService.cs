@@ -35,5 +35,20 @@ namespace EsportsManager.BL.Interfaces
         /// Lấy xếp hạng hiện tại của người chơi
         /// </summary>
         Task<int> GetPlayerRankingAsync(int userId);
+
+        /// <summary>
+        /// Admin: Gán achievement/danh hiệu cho người chơi
+        /// </summary>
+        Task<bool> AssignAchievementToPlayerAsync(int userId, string achievementName, string description);
+
+        /// <summary>
+        /// Admin: Lấy danh sách tất cả achievements có sẵn
+        /// </summary>
+        Task<List<string>> GetAvailableAchievementsAsync();
+
+        /// <summary>
+        /// Admin: Xóa achievement khỏi người chơi
+        /// </summary>
+        Task<bool> RemoveAchievementFromPlayerAsync(int userId, string achievementName);
     }
 }
