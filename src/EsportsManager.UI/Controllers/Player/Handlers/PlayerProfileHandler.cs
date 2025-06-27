@@ -75,20 +75,29 @@ namespace EsportsManager.UI.Controllers.Player.Handlers
                 var currentInfo = await GetPersonalInfoAsync();
                 if (currentInfo == null)
                 {
+                    int borderLeft = (Console.WindowWidth - 80) / 2;
+                    int borderTop = (Console.WindowHeight - 15) / 4;
+                    Console.SetCursorPosition(borderLeft + 2, borderTop + 12);
                     ConsoleRenderingService.ShowMessageBox("Không thể tải thông tin hiện tại!", true, 2000);
                     return;
                 }
 
+                int borderLeft2 = (Console.WindowWidth - 80) / 2;
+                int borderTop2 = (Console.WindowHeight - 15) / 4;
+                int cursorY = borderTop2 + 2;
+                Console.SetCursorPosition(borderLeft2 + 2, cursorY++);
                 Console.WriteLine("Thông tin hiện tại:");
+                Console.SetCursorPosition(borderLeft2 + 2, cursorY++);
                 Console.WriteLine($"Email: {currentInfo.Email ?? "Chưa có"}");
+                Console.SetCursorPosition(borderLeft2 + 2, cursorY++);
                 Console.WriteLine($"Họ tên: {currentInfo.FullName ?? "Chưa có"}");
-                Console.WriteLine();
-
+                cursorY++;
+                Console.SetCursorPosition(borderLeft2 + 2, cursorY++);
                 Console.Write("Email mới (Enter để bỏ qua): ");
-                string newEmail = Console.ReadLine()?.Trim();
-
+                string newEmail = Console.ReadLine()?.Trim() ?? "";
+                Console.SetCursorPosition(borderLeft2 + 2, cursorY++);
                 Console.Write("Họ tên mới (Enter để bỏ qua): ");
-                string newFullName = Console.ReadLine()?.Trim();
+                string newFullName = Console.ReadLine()?.Trim() ?? "";
 
                 if (!string.IsNullOrEmpty(newEmail) || !string.IsNullOrEmpty(newFullName))
                 {
@@ -100,6 +109,7 @@ namespace EsportsManager.UI.Controllers.Player.Handlers
 
                     bool success = await UpdatePersonalInfoAsync(updateDto);
 
+                    Console.SetCursorPosition(borderLeft2 + 2, borderTop2 + 12);
                     if (success)
                     {
                         ConsoleRenderingService.ShowMessageBox("Cập nhật thông tin thành công!", false, 3000);
@@ -111,11 +121,15 @@ namespace EsportsManager.UI.Controllers.Player.Handlers
                 }
                 else
                 {
+                    Console.SetCursorPosition(borderLeft2 + 2, borderTop2 + 12);
                     ConsoleRenderingService.ShowMessageBox("Không có thông tin nào được thay đổi!", false, 2000);
                 }
             }
             catch (Exception ex)
             {
+                int borderLeft = (Console.WindowWidth - 80) / 2;
+                int borderTop = (Console.WindowHeight - 15) / 4;
+                Console.SetCursorPosition(borderLeft + 2, borderTop + 12);
                 ConsoleRenderingService.ShowMessageBox($"Lỗi: {ex.Message}", true, 3000);
             }
         }

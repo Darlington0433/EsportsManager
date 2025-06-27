@@ -60,7 +60,7 @@ namespace EsportsManager.UI.Controllers.Viewer.Handlers
                     switch (selection)
                     {
                         case 0:
-                            await HandleTopUpAsync();
+                            await HandleTopUpAsync(borderLeft, borderTop);
                             break;
                         case 1:
                             await HandleTransactionHistoryAsync();
@@ -78,12 +78,15 @@ namespace EsportsManager.UI.Controllers.Viewer.Handlers
                 }
                 catch (Exception ex)
                 {
+                    int borderLeft = (Console.WindowWidth - 80) / 2;
+                    int borderTop = (Console.WindowHeight - 20) / 4;
+                    Console.SetCursorPosition(borderLeft + 2, borderTop + 18);
                     ConsoleRenderingService.ShowMessageBox($"❌ Lỗi hệ thống: {ex.Message}", true, 2000);
                 }
             }
         }
 
-        private async Task HandleTopUpAsync()
+        private async Task HandleTopUpAsync(int borderLeft, int borderTop)
         {
             try
             {
@@ -91,9 +94,11 @@ namespace EsportsManager.UI.Controllers.Viewer.Handlers
                 ConsoleRenderingService.DrawBorder("NẠP TIỀN VÀO VÍ", 80, 18);
 
                 var wallet = await _walletService.GetWalletByUserIdAsync(_currentUser.Id);
+                Console.SetCursorPosition(borderLeft + 2, borderTop + 2);
                 Console.WriteLine($"💰 Số dư hiện tại: {wallet?.Balance ?? 0:N0} VND");
-                Console.WriteLine();
+                int cursorY = borderTop + 4;
 
+                Console.SetCursorPosition(borderLeft + 2, cursorY++);
                 Console.WriteLine("💳 Chọn phương thức thanh toán:");
                 var paymentMethods = new[]
                 {
@@ -110,33 +115,42 @@ namespace EsportsManager.UI.Controllers.Viewer.Handlers
                 string[] methodNames = { "BankTransfer", "CreditCard", "EWallet" };
                 string selectedMethod = methodNames[methodSelection];
 
+                Console.SetCursorPosition(borderLeft + 2, cursorY++);
                 Console.WriteLine($"\n📋 Nhập thông tin nạp tiền:");
+                Console.SetCursorPosition(borderLeft + 2, cursorY++);
                 Console.WriteLine($"Số tiền tối thiểu: {WalletConstants.MIN_TOP_UP_AMOUNT:N0} VND");
+                Console.SetCursorPosition(borderLeft + 2, cursorY++);
                 Console.WriteLine($"Số tiền tối đa: {WalletConstants.MAX_TOP_UP_AMOUNT:N0} VND");
+                Console.SetCursorPosition(borderLeft + 2, cursorY);
                 Console.Write("Số tiền nạp: ");
-
                 if (!decimal.TryParse(Console.ReadLine(), out decimal amount))
                 {
+                    Console.SetCursorPosition(borderLeft + 2, cursorY + 1);
                     ConsoleRenderingService.ShowMessageBox("Số tiền không hợp lệ!", true, 1500);
                     return;
                 }
 
-                // Use validation service from BL layer
                 var validationResult = _validationService.ValidateTopUpRequest(amount);
                 if (!validationResult.IsValid)
                 {
+                    Console.SetCursorPosition(borderLeft + 2, cursorY + 2);
                     ConsoleRenderingService.ShowMessageBox(validationResult.ErrorMessage, true, 2000);
                     return;
                 }
 
-                // Handle specific payment method input
-                string paymentDetails = await GetPaymentDetailsAsync(selectedMethod, amount);
+                string paymentDetails = await GetPaymentDetailsAsync(selectedMethod, amount, borderLeft, cursorY + 3);
                 if (string.IsNullOrEmpty(paymentDetails)) return;
 
+                cursorY += 5;
+                Console.SetCursorPosition(borderLeft + 2, cursorY++);
                 Console.WriteLine($"\n💰 Xác nhận nạp {amount:N0} VND?");
+                Console.SetCursorPosition(borderLeft + 2, cursorY++);
                 Console.WriteLine($"💳 Phương thức: {GetMethodDisplayName(selectedMethod)}");
+                Console.SetCursorPosition(borderLeft + 2, cursorY++);
                 Console.WriteLine($"💵 Phí giao dịch: {amount * 0.005m:N0} VND (0.5%)");
+                Console.SetCursorPosition(borderLeft + 2, cursorY++);
                 Console.WriteLine($"💸 Tổng thanh toán: {amount * 1.005m:N0} VND");
+                Console.SetCursorPosition(borderLeft + 2, cursorY);
                 Console.Write("Xác nhận (y/n): ");
 
                 var confirmation = Console.ReadLine()?.ToLower();
@@ -153,69 +167,85 @@ namespace EsportsManager.UI.Controllers.Viewer.Handlers
                     var result = await _walletService.DepositAsync(_currentUser.Id, depositDto);
                     if (result.Success)
                     {
+                        Console.SetCursorPosition(borderLeft + 2, cursorY + 2);
                         ConsoleRenderingService.ShowMessageBox($"✅ Nạp tiền thành công! Số dư mới: {result.NewBalance:N0} VND", false, 3000);
+                        Console.SetCursorPosition(borderLeft + 2, cursorY + 3);
                         ConsoleRenderingService.ShowMessageBox($"📄 Mã giao dịch: {depositDto.ReferenceCode}", false, 2000);
                     }
                     else
                     {
+                        Console.SetCursorPosition(borderLeft + 2, cursorY + 2);
                         ConsoleRenderingService.ShowMessageBox($"❌ Nạp tiền thất bại: {result.Message}", true, 2000);
                     }
                 }
                 else
                 {
+                    Console.SetCursorPosition(borderLeft + 2, cursorY + 2);
                     ConsoleRenderingService.ShowMessageBox("❌ Đã hủy giao dịch", false, 1500);
                 }
             }
             catch (Exception ex)
             {
+                Console.SetCursorPosition(borderLeft + 2, borderTop + 16);
                 ConsoleRenderingService.ShowMessageBox($"❌ Lỗi: {ex.Message}", true, 3000);
             }
         }
 
-        private async Task<string> GetPaymentDetailsAsync(string method, decimal amount)
+        private async Task<string> GetPaymentDetailsAsync(string method, decimal amount, int borderLeft, int cursorY)
         {
             try
             {
                 switch (method)
                 {
                     case "BankTransfer":
+                        Console.SetCursorPosition(borderLeft + 2, cursorY++);
                         Console.WriteLine("\n🏦 Thông tin chuyển khoản:");
+                        Console.SetCursorPosition(borderLeft + 2, cursorY++);
                         Console.WriteLine("📋 Ngân hàng: Vietcombank");
+                        Console.SetCursorPosition(borderLeft + 2, cursorY++);
                         Console.WriteLine("📋 Số tài khoản: 1234567890");
+                        Console.SetCursorPosition(borderLeft + 2, cursorY++);
                         Console.WriteLine("📋 Tên tài khoản: ESPORTS MANAGER SYSTEM");
+                        Console.SetCursorPosition(borderLeft + 2, cursorY++);
                         Console.WriteLine($"📋 Số tiền: {amount * 1.005m:N0} VND");
+                        Console.SetCursorPosition(borderLeft + 2, cursorY++);
                         Console.WriteLine("📋 Nội dung: NAP TIEN [Username]");
-                        Console.WriteLine();
+                        Console.SetCursorPosition(borderLeft + 2, cursorY++);
                         Console.Write("Nhập mã OTP từ ngân hàng: ");
                         var otp = Console.ReadLine();
                         return string.IsNullOrEmpty(otp) ? "" : $"OTP: {otp}";
 
                     case "CreditCard":
-                        Console.Write("\nNhập số thẻ (16 số): ");
+                        Console.SetCursorPosition(borderLeft + 2, cursorY++);
+                        Console.Write("Nhập số thẻ (16 số): ");
                         var cardNumber = Console.ReadLine();
+                        Console.SetCursorPosition(borderLeft + 2, cursorY++);
                         Console.Write("Nhập tên chủ thẻ: ");
                         var cardHolder = Console.ReadLine();
+                        Console.SetCursorPosition(borderLeft + 2, cursorY++);
                         Console.Write("Nhập MM/YY: ");
                         var expiry = Console.ReadLine();
+                        Console.SetCursorPosition(borderLeft + 2, cursorY++);
                         Console.Write("Nhập CVV: ");
                         var cvv = Console.ReadLine();
                         
                         if (string.IsNullOrEmpty(cardNumber) || string.IsNullOrEmpty(cardHolder) || 
                             string.IsNullOrEmpty(expiry) || string.IsNullOrEmpty(cvv))
                         {
+                            Console.SetCursorPosition(borderLeft + 2, cursorY++);
                             ConsoleRenderingService.ShowMessageBox("Thông tin thẻ không đầy đủ!", true, 2000);
                             return "";
                         }
                         return $"Card: ****{cardNumber?.Substring(cardNumber.Length - 4)}";
 
                     case "EWallet":
+                        Console.SetCursorPosition(borderLeft + 2, cursorY++);
                         Console.WriteLine("\n📱 Chọn ví điện tử:");
                         var ewallets = new[] { "MoMo", "ZaloPay", "ViettelPay", "Hủy" };
                         int ewalletChoice = InteractiveMenuService.DisplayInteractiveMenu("VÍ ĐIỆN TỬ", ewallets);
-                        
                         if (ewalletChoice == -1 || ewalletChoice == 3) return "";
-                        
-                        Console.Write($"\nNhập số điện thoại {ewallets[ewalletChoice]}: ");
+                        Console.SetCursorPosition(borderLeft + 2, cursorY++);
+                        Console.Write($"Nhập số điện thoại {ewallets[ewalletChoice]}: ");
                         var phone = Console.ReadLine();
                         return string.IsNullOrEmpty(phone) ? "" : $"{ewallets[ewalletChoice]}: {phone}";
 
@@ -376,201 +406,6 @@ namespace EsportsManager.UI.Controllers.Viewer.Handlers
         }
 
         // Helper methods for payment management
-        private async Task AddPaymentMethodAsync()
-        {
-            try
-            {
-                Console.Clear();
-                ConsoleRenderingService.DrawBorder("THÊM PHƯƠNG THỨC THANH TOÁN", 80, 20);
-
-                var methodTypes = new[]
-                {
-                    "Chuyển khoản ngân hàng",
-                    "Thẻ tín dụng/ghi nợ", 
-                    "Ví điện tử (MoMo, ZaloPay, etc.)"
-                };
-
-                int typeSelection = InteractiveMenuService.DisplayInteractiveMenu("CHỌN LOẠI THANH TOÁN", methodTypes);
-                if (typeSelection == -1) return;
-
-                string methodType = typeSelection switch
-                {
-                    0 => "BankTransfer",
-                    1 => "CreditCard", 
-                    2 => "EWallet",
-                    _ => "BankTransfer"
-                };
-
-                Console.WriteLine($"\n� Thêm {GetMethodDisplayName(methodType)}:");
-                
-                string name, details;
-                switch (methodType)
-                {
-                    case "BankTransfer":
-                        Console.Write("Tên ngân hàng: ");
-                        name = Console.ReadLine()?.Trim() ?? "";
-                        Console.Write("Số tài khoản: ");
-                        details = Console.ReadLine()?.Trim() ?? "";
-                        break;
-                    case "CreditCard":
-                        Console.Write("Tên chủ thẻ: ");
-                        name = Console.ReadLine()?.Trim() ?? "";
-                        Console.Write("Số thẻ (4 số cuối): ");
-                        var cardNumber = Console.ReadLine()?.Trim() ?? "";
-                        details = $"****-****-****-{cardNumber}";
-                        break;
-                    case "EWallet":
-                        Console.Write("Tên ví điện tử: ");
-                        name = Console.ReadLine()?.Trim() ?? "";
-                        Console.Write("Số điện thoại/Email: ");
-                        details = Console.ReadLine()?.Trim() ?? "";
-                        break;
-                    default:
-                        name = details = "";
-                        break;
-                }
-
-                if (!string.IsNullOrEmpty(name) && !string.IsNullOrEmpty(details))
-                {
-                    // In real app, this would save to database
-                    ConsoleRenderingService.ShowMessageBox($"✅ Đã thêm {GetMethodDisplayName(methodType)}: {name}", true, 2000);
-                }
-                else
-                {
-                    ConsoleRenderingService.ShowMessageBox("❌ Thông tin không đầy đủ!", false, 2000);
-                }
-            }
-            catch (Exception ex)
-            {
-                ConsoleRenderingService.ShowMessageBox($"❌ Lỗi: {ex.Message}", false, 2000);
-            }
-        }
-
-        private async Task ViewPaymentMethodsAsync()
-        {
-            try
-            {
-                Console.Clear();
-                ConsoleRenderingService.DrawBorder("DANH SÁCH PHƯƠNG THỨC THANH TOÁN", 80, 25);
-
-                // Mock data - in real app, load from database
-                var paymentMethods = new[]
-                {
-                    new { Type = "BankTransfer", Name = "Vietcombank", Details = "1234567890", IsDefault = true },
-                    new { Type = "CreditCard", Name = "Visa Card", Details = "****-****-****-1234", IsDefault = false },
-                    new { Type = "EWallet", Name = "MoMo", Details = "0901234567", IsDefault = false }
-                };
-
-                Console.WriteLine("� Danh sách phương thức thanh toán đã lưu:\n");
-
-                for (int i = 0; i < paymentMethods.Length; i++)
-                {
-                    var method = paymentMethods[i];
-                    string defaultMark = method.IsDefault ? " [MẶC ĐỊNH]" : "";
-                    string typeDisplay = GetMethodDisplayName(method.Type);
-                    
-                    Console.WriteLine($"{i + 1}. {typeDisplay}{defaultMark}");
-                    Console.WriteLine($"   📄 {method.Name}");
-                    Console.WriteLine($"   🔢 {method.Details}");
-                    Console.WriteLine();
-                }
-
-                if (!paymentMethods.Any())
-                {
-                    Console.WriteLine("🔍 Chưa có phương thức thanh toán nào được lưu.");
-                }
-
-                Console.WriteLine("\nNhấn Enter để tiếp tục...");
-                Console.ReadLine();
-            }
-            catch (Exception ex)
-            {
-                ConsoleRenderingService.ShowMessageBox($"❌ Lỗi: {ex.Message}", false, 2000);
-            }
-        }
-
-        private async Task UpdatePaymentMethodAsync()
-        {
-            try
-            {
-                Console.Clear();
-                ConsoleRenderingService.DrawBorder("CẬP NHẬT PHƯƠNG THỨC THANH TOÁN", 80, 20);
-
-                // Mock data - show available methods
-                var methods = new[]
-                {
-                    "Vietcombank - 1234567890",
-                    "Visa Card - ****1234",
-                    "MoMo - 0901234567"
-                };
-
-                int selection = InteractiveMenuService.DisplayInteractiveMenu("CHỌN PHƯƠNG THỨC CẬP NHẬT", methods);
-                if (selection == -1) return;
-
-                Console.WriteLine($"\n� Cập nhật: {methods[selection]}");
-                Console.Write("Tên mới (để trống nếu không đổi): ");
-                var newName = Console.ReadLine()?.Trim();
-                
-                Console.Write("Thông tin mới (để trống nếu không đổi): ");
-                var newDetails = Console.ReadLine()?.Trim();
-
-                if (!string.IsNullOrEmpty(newName) || !string.IsNullOrEmpty(newDetails))
-                {
-                    ConsoleRenderingService.ShowMessageBox("✅ Đã cập nhật thông tin thanh toán!", true, 2000);
-                }
-                else
-                {
-                    ConsoleRenderingService.ShowMessageBox("ℹ️ Không có thay đổi nào.", false, 1500);
-                }
-            }
-            catch (Exception ex)
-            {
-                ConsoleRenderingService.ShowMessageBox($"❌ Lỗi: {ex.Message}", false, 2000);
-            }
-        }
-
-        private async Task DeletePaymentMethodAsync()
-        {
-            try
-            {
-                Console.Clear();
-                ConsoleRenderingService.DrawBorder("XÓA PHƯƠNG THỨC THANH TOÁN", 80, 20);
-
-                // Mock data - show available methods
-                var methods = new[]
-                {
-                    "Vietcombank - 1234567890",
-                    "Visa Card - ****1234", 
-                    "MoMo - 0901234567"
-                };
-
-                if (!methods.Any())
-                {
-                    ConsoleRenderingService.ShowMessageBox("� Không có phương thức thanh toán nào để xóa.", false, 2000);
-                    return;
-                }
-
-                int selection = InteractiveMenuService.DisplayInteractiveMenu("CHỌN PHƯƠNG THỨC XÓA", methods);
-                if (selection == -1) return;
-
-                Console.WriteLine($"\n⚠️ Bạn có chắc muốn xóa: {methods[selection]}? (y/N)");
-                var confirm = Console.ReadLine()?.Trim().ToLower();
-
-                if (confirm == "y" || confirm == "yes")
-                {
-                    ConsoleRenderingService.ShowMessageBox("✅ Đã xóa phương thức thanh toán!", true, 2000);
-                }
-                else
-                {
-                    ConsoleRenderingService.ShowMessageBox("❌ Đã hủy thao tác xóa.", false, 1500);
-                }
-            }
-            catch (Exception ex)
-            {
-                ConsoleRenderingService.ShowMessageBox($"❌ Lỗi: {ex.Message}", false, 2000);
-            }
-        }
-
         private string GetMethodDisplayName(string method)
         {
             return method switch
@@ -585,6 +420,251 @@ namespace EsportsManager.UI.Controllers.Viewer.Handlers
         private string GenerateReferenceCode()
         {
             return $"TOP{DateTime.Now:yyyyMMddHHmmss}{new Random().Next(1000, 9999)}";
+        }
+
+        private Task AddPaymentMethodAsync()
+        {
+            try
+            {
+                Console.Clear();
+                ConsoleRenderingService.DrawBorder("THÊM PHƯƠNG THỨC THANH TOÁN", 80, 20);
+                int borderLeft = (Console.WindowWidth - 80) / 2;
+                int borderTop = (Console.WindowHeight - 20) / 4;
+                int cursorY = borderTop + 2;
+
+                var methodTypes = new[]
+                {
+                    "Chuyển khoản ngân hàng",
+                    "Thẻ tín dụng/ghi nợ", 
+                    "Ví điện tử (MoMo, ZaloPay, etc.)"
+                };
+
+                int typeSelection = InteractiveMenuService.DisplayInteractiveMenu("CHỌN LOẠI THANH TOÁN", methodTypes);
+                if (typeSelection == -1) return Task.CompletedTask;
+
+                string methodType = typeSelection switch
+                {
+                    0 => "BankTransfer",
+                    1 => "CreditCard", 
+                    2 => "EWallet",
+                    _ => "BankTransfer"
+                };
+
+                Console.SetCursorPosition(borderLeft + 2, cursorY++);
+                Console.WriteLine($"➕ Thêm {GetMethodDisplayName(methodType)}:");
+                string name, details;
+                switch (methodType)
+                {
+                    case "BankTransfer":
+                        Console.SetCursorPosition(borderLeft + 2, cursorY++);
+                        Console.Write("Tên ngân hàng: ");
+                        name = Console.ReadLine()?.Trim() ?? "";
+                        Console.SetCursorPosition(borderLeft + 2, cursorY++);
+                        Console.Write("Số tài khoản: ");
+                        details = Console.ReadLine()?.Trim() ?? "";
+                        break;
+                    case "CreditCard":
+                        Console.SetCursorPosition(borderLeft + 2, cursorY++);
+                        Console.Write("Tên chủ thẻ: ");
+                        name = Console.ReadLine()?.Trim() ?? "";
+                        Console.SetCursorPosition(borderLeft + 2, cursorY++);
+                        Console.Write("Số thẻ (4 số cuối): ");
+                        var cardNumber = Console.ReadLine()?.Trim() ?? "";
+                        details = $"****-****-****-{cardNumber}";
+                        break;
+                    case "EWallet":
+                        Console.SetCursorPosition(borderLeft + 2, cursorY++);
+                        Console.Write("Tên ví điện tử: ");
+                        name = Console.ReadLine()?.Trim() ?? "";
+                        Console.SetCursorPosition(borderLeft + 2, cursorY++);
+                        Console.Write("Số điện thoại/Email: ");
+                        details = Console.ReadLine()?.Trim() ?? "";
+                        break;
+                    default:
+                        name = details = "";
+                        break;
+                }
+
+                if (!string.IsNullOrEmpty(name) && !string.IsNullOrEmpty(details))
+                {
+                    Console.SetCursorPosition(borderLeft + 2, cursorY++);
+                    ConsoleRenderingService.ShowMessageBox($"✅ Đã thêm {GetMethodDisplayName(methodType)}: {name}", true, 2000);
+                }
+                else
+                {
+                    Console.SetCursorPosition(borderLeft + 2, cursorY++);
+                    ConsoleRenderingService.ShowMessageBox("❌ Thông tin không đầy đủ!", false, 2000);
+                }
+            }
+            catch (Exception ex)
+            {
+                int borderLeft = (Console.WindowWidth - 80) / 2;
+                int borderTop = (Console.WindowHeight - 20) / 4;
+                Console.SetCursorPosition(borderLeft + 2, borderTop + 18);
+                ConsoleRenderingService.ShowMessageBox($"❌ Lỗi: {ex.Message}", false, 2000);
+            }
+            return Task.CompletedTask;
+        }
+
+        private Task ViewPaymentMethodsAsync()
+        {
+            try
+            {
+                Console.Clear();
+                ConsoleRenderingService.DrawBorder("DANH SÁCH PHƯƠNG THỨC THANH TOÁN", 80, 25);
+                int borderLeft = (Console.WindowWidth - 80) / 2;
+                int borderTop = (Console.WindowHeight - 25) / 4;
+                int cursorY = borderTop + 2;
+
+                // Mock data - in real app, load from database
+                var paymentMethods = new[]
+                {
+                    new { Type = "BankTransfer", Name = "Vietcombank", Details = "1234567890", IsDefault = true },
+                    new { Type = "CreditCard", Name = "Visa Card", Details = "****-****-****-1234", IsDefault = false },
+                    new { Type = "EWallet", Name = "MoMo", Details = "0901234567", IsDefault = false }
+                };
+
+                Console.SetCursorPosition(borderLeft + 2, cursorY++);
+                Console.WriteLine("📋 Danh sách phương thức thanh toán đã lưu:");
+                cursorY++;
+                for (int i = 0; i < paymentMethods.Length; i++)
+                {
+                    var method = paymentMethods[i];
+                    string defaultMark = method.IsDefault ? " [MẶC ĐỊNH]" : "";
+                    string typeDisplay = GetMethodDisplayName(method.Type);
+                    Console.SetCursorPosition(borderLeft + 2, cursorY++);
+                    Console.WriteLine($"{i + 1}. {typeDisplay}{defaultMark}");
+                    Console.SetCursorPosition(borderLeft + 4, cursorY++);
+                    Console.WriteLine($"📄 {method.Name}");
+                    Console.SetCursorPosition(borderLeft + 4, cursorY++);
+                    Console.WriteLine($"🔢 {method.Details}");
+                    cursorY++;
+                }
+
+                if (!paymentMethods.Any())
+                {
+                    Console.SetCursorPosition(borderLeft + 2, cursorY++);
+                    Console.WriteLine("🔍 Chưa có phương thức thanh toán nào được lưu.");
+                }
+
+                Console.SetCursorPosition(borderLeft + 2, cursorY++);
+                Console.WriteLine("Nhấn Enter để tiếp tục...");
+                Console.ReadLine();
+            }
+            catch (Exception ex)
+            {
+                int borderLeft = (Console.WindowWidth - 80) / 2;
+                int borderTop = (Console.WindowHeight - 25) / 4;
+                Console.SetCursorPosition(borderLeft + 2, borderTop + 22);
+                ConsoleRenderingService.ShowMessageBox($"❌ Lỗi: {ex.Message}", false, 2000);
+            }
+            return Task.CompletedTask;
+        }
+
+        private Task UpdatePaymentMethodAsync()
+        {
+            try
+            {
+                Console.Clear();
+                ConsoleRenderingService.DrawBorder("CẬP NHẬT PHƯƠNG THỨC THANH TOÁN", 80, 20);
+                int borderLeft = (Console.WindowWidth - 80) / 2;
+                int borderTop = (Console.WindowHeight - 20) / 4;
+                int cursorY = borderTop + 2;
+
+                // Mock data - show available methods
+                var methods = new[]
+                {
+                    "Vietcombank - 1234567890",
+                    "Visa Card - ****1234",
+                    "MoMo - 0901234567"
+                };
+
+                int selection = InteractiveMenuService.DisplayInteractiveMenu("CHỌN PHƯƠNG THỨC CẬP NHẬT", methods);
+                if (selection == -1) return Task.CompletedTask;
+
+                Console.SetCursorPosition(borderLeft + 2, cursorY++);
+                Console.WriteLine($"✏️ Cập nhật: {methods[selection]}");
+                Console.SetCursorPosition(borderLeft + 2, cursorY++);
+                Console.Write("Tên mới (để trống nếu không đổi): ");
+                var newName = Console.ReadLine()?.Trim();
+                Console.SetCursorPosition(borderLeft + 2, cursorY++);
+                Console.Write("Thông tin mới (để trống nếu không đổi): ");
+                var newDetails = Console.ReadLine()?.Trim();
+
+                if (!string.IsNullOrEmpty(newName) || !string.IsNullOrEmpty(newDetails))
+                {
+                    Console.SetCursorPosition(borderLeft + 2, cursorY++);
+                    ConsoleRenderingService.ShowMessageBox("✅ Đã cập nhật thông tin thanh toán!", true, 2000);
+                }
+                else
+                {
+                    Console.SetCursorPosition(borderLeft + 2, cursorY++);
+                    ConsoleRenderingService.ShowMessageBox("ℹ️ Không có thay đổi nào.", false, 1500);
+                }
+            }
+            catch (Exception ex)
+            {
+                int borderLeft = (Console.WindowWidth - 80) / 2;
+                int borderTop = (Console.WindowHeight - 20) / 4;
+                Console.SetCursorPosition(borderLeft + 2, borderTop + 18);
+                ConsoleRenderingService.ShowMessageBox($"❌ Lỗi: {ex.Message}", false, 2000);
+            }
+            return Task.CompletedTask;
+        }
+
+        private Task DeletePaymentMethodAsync()
+        {
+            try
+            {
+                Console.Clear();
+                ConsoleRenderingService.DrawBorder("XÓA PHƯƠNG THỨC THANH TOÁN", 80, 20);
+                int borderLeft = (Console.WindowWidth - 80) / 2;
+                int borderTop = (Console.WindowHeight - 20) / 4;
+                int cursorY = borderTop + 2;
+
+                // Mock data - show available methods
+                var methods = new[]
+                {
+                    "Vietcombank - 1234567890",
+                    "Visa Card - ****1234", 
+                    "MoMo - 0901234567"
+                };
+
+                if (!methods.Any())
+                {
+                    Console.SetCursorPosition(borderLeft + 2, cursorY++);
+                    ConsoleRenderingService.ShowMessageBox("❌ Không có phương thức thanh toán nào để xóa.", false, 2000);
+                    return Task.CompletedTask;
+                }
+
+                int selection = InteractiveMenuService.DisplayInteractiveMenu("CHỌN PHƯƠNG THỨC XÓA", methods);
+                if (selection == -1) return Task.CompletedTask;
+
+                Console.SetCursorPosition(borderLeft + 2, cursorY++);
+                Console.WriteLine($"🗑️ Xóa: {methods[selection]}");
+                Console.SetCursorPosition(borderLeft + 2, cursorY++);
+                Console.Write("Xác nhận (y/n): ");
+
+                var confirmation = Console.ReadLine()?.ToLower();
+                if (confirmation == "y" || confirmation == "yes")
+                {
+                    Console.SetCursorPosition(borderLeft + 2, cursorY++);
+                    ConsoleRenderingService.ShowMessageBox("✅ Đã xóa phương thức thanh toán!", true, 2000);
+                }
+                else
+                {
+                    Console.SetCursorPosition(borderLeft + 2, cursorY++);
+                    ConsoleRenderingService.ShowMessageBox("❌ Đã hủy thao tác", false, 1500);
+                }
+            }
+            catch (Exception ex)
+            {
+                int borderLeft = (Console.WindowWidth - 80) / 2;
+                int borderTop = (Console.WindowHeight - 20) / 4;
+                Console.SetCursorPosition(borderLeft + 2, borderTop + 18);
+                ConsoleRenderingService.ShowMessageBox($"❌ Lỗi: {ex.Message}", false, 2000);
+            }
+            return Task.CompletedTask;
         }
     }
 }
