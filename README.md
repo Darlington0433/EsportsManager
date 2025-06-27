@@ -72,7 +72,7 @@
 
 ```bash
 # Tải về repository
-git clone https://github.com/your-username/esports-manager.git
+git clone https://github.com/Darlington0433/EsportsManager
 cd esports-manager
 
 # Khôi phục các package
