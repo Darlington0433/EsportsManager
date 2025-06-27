@@ -69,7 +69,7 @@ public class TournamentManagementHandler
             Console.Clear();
             ConsoleRenderingService.DrawBorder("DANH SÁCH GIẢI ĐẤU", 120, 25);
 
-            if (!tournaments.Any())
+            if (tournaments == null || !tournaments.Any())
             {
                 ConsoleRenderingService.ShowNotification("Chưa có giải đấu nào trong hệ thống.", ConsoleColor.Yellow);
                 return;
@@ -224,57 +224,34 @@ public class TournamentManagementHandler
             Console.Clear();
             ConsoleRenderingService.DrawBorder("DUYỆT ĐĂNG KÝ GIẢI ĐẤU", 80, 20);
 
-            // TODO: Get pending tournament registrations
-            // For now, show a demo message
-            await Task.Delay(100); // Add await to satisfy compiler
-
             int borderLeft = (Console.WindowWidth - 80) / 2;
             int borderTop = (Console.WindowHeight - 20) / 4;
-            int centerX = (Console.WindowWidth - 40) / 2;
-            int centerY = Console.WindowHeight / 2;
 
-            Console.SetCursorPosition(centerX, centerY);
-            Console.ForegroundColor = ConsoleColor.Cyan;
-            Console.WriteLine("📋 DEMO: Duyệt đăng ký giải đấu");
+            // TODO: Cần bổ sung phương thức GetPendingRegistrationsAsync vào ITournamentService và triển khai trong TournamentService
+            Console.SetCursorPosition(borderLeft + 2, borderTop + 2);
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine("⚠️ Tính năng chưa được triển khai đầy đủ");
             Console.WriteLine();
 
-            // Sample data since tournament service methods aren't fully implemented
-            Console.SetCursorPosition(centerX - 15, centerY + 2);
-            Console.WriteLine("Danh sách đăng ký mẫu:");
-            Console.SetCursorPosition(centerX - 15, centerY + 3);
-            Console.WriteLine("1. ProGamer123 → LoL Championship 2025");
-            Console.SetCursorPosition(centerX - 15, centerY + 4);
-            Console.WriteLine("2. SharpShooter → CS:GO Open Tournament");
-            Console.SetCursorPosition(centerX - 15, centerY + 5);
-            Console.WriteLine("3. TacticalMaster → Valorant Pro League");
+            Console.SetCursorPosition(borderLeft + 2, borderTop + 4);
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.WriteLine("Cần bổ sung các phương thức sau vào ITournamentService:");
+            Console.SetCursorPosition(borderLeft + 2, borderTop + 5);
+            Console.WriteLine("- GetPendingRegistrationsAsync()");
+            Console.SetCursorPosition(borderLeft + 2, borderTop + 6);
+            Console.WriteLine("- ApproveRegistrationAsync(int registrationId)");
 
-            Console.SetCursorPosition(centerX - 10, centerY + 7);
-            Console.Write("Chọn đăng ký (1-3, 0=thoát): ");
-            if (int.TryParse(Console.ReadLine(), out int choice) && choice > 0 && choice <= 3)
-            {
-                var playerNames = new[] { "ProGamer123", "SharpShooter", "TacticalMaster" };
-                var tournamentNames = new[] { "LoL Championship 2025", "CS:GO Open Tournament", "Valorant Pro League" };
-
-                Console.SetCursorPosition(centerX - 10, centerY + 8);
-                Console.Write($"Duyệt {playerNames[choice - 1]}? (y/n): ");
-                var confirm = Console.ReadLine()?.ToLower();
-
-                if (confirm == "y" || confirm == "yes")
-                {
-                    ConsoleRenderingService.ShowMessageBox($"✅ Đã duyệt {playerNames[choice - 1]} tham gia {tournamentNames[choice - 1]}!", false, 2500);
-                }
-                else
-                {
-                    ConsoleRenderingService.ShowMessageBox("❌ Đã hủy", false, 1000);
-                }
-            }
+            Console.SetCursorPosition(borderLeft + 2, borderTop + 8);
+            Console.WriteLine("Vui lòng liên hệ với team phát triển để hoàn thiện tính năng này.");
 
             Console.ResetColor();
-            Console.SetCursorPosition(centerX - 10, centerY + 7);
-            Console.WriteLine("Nhấn phím bất kỳ để tiếp tục...");
+            Console.SetCursorPosition(borderLeft + 2, borderTop + 10);
+            Console.WriteLine("Nhấn phím bất kỳ để quay lại...");
             Console.ReadKey(true);
 
-            /* TODO: Implement when ITournamentService has required methods
+            await Task.CompletedTask; // Để đảm bảo phương thức có await
+
+            /* TODO: Triển khai khi bổ sung các phương thức vào ITournamentService
             var pendingRegistrations = await _tournamentService.GetPendingRegistrationsAsync();
             
             if (pendingRegistrations == null || !pendingRegistrations.Any())
@@ -313,7 +290,7 @@ public class TournamentManagementHandler
             if (int.TryParse(Console.ReadLine(), out int registrationId) && registrationId > 0)
             {
                 var result = await _tournamentService.ApproveRegistrationAsync(registrationId);
-                if (result.IsSuccess)
+                if (result)
                 {
                     ConsoleRenderingService.ShowMessageBox("✅ Đã duyệt đăng ký thành công!", false, 2000);
                 }
