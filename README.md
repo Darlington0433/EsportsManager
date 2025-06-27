@@ -281,7 +281,7 @@ Dự án này được cấp phép theo giấy phép MIT - xem file [LICENSE](LI
 
 ## 👥 Tác giả
 
-- **Quan Nguyen** - _Sinh viên VTC Academy_ - [GitHub Profile](https://github.com/Darlington0433)
+- **Phan Nhật Quân và mọi người** - _Sinh viên VTC Academy_ - [GitHub Profile](https://github.com/Darlington0433)
 - **Email**: quannnd2004@gmail.com
 - **Trường**: VTC Academy
 - **Contributors** - Xem [danh sách người đóng góp](https://github.com/Darlington0433/EsportsManager/graphs/contributors)
@@ -303,6 +303,6 @@ Dự án này được cấp phép theo giấy phép MIT - xem file [LICENSE](LI
 [![GitHub stars](https://img.shields.io/github/stars/Darlington0433/EsportsManager?style=social)](https://github.com/Darlington0433/EsportsManager/stargazers)
 [![GitHub forks](https://img.shields.io/github/forks/Darlington0433/EsportsManager?style=social)](https://github.com/Darlington0433/EsportsManager/network)
 
-Được tạo với ❤️ bởi Quan Nguyen - Sinh viên VTC Academy
+Được tạo với ❤️ bởi Phan Nhật Quân và mọi người - Sinh viên VTC Academy
 
 </div>
