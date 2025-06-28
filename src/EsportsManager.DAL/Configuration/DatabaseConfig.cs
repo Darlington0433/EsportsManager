@@ -1,4 +1,4 @@
-using System;
+using EsportsManager.DAL.Constants;
 
 namespace EsportsManager.DAL.Configuration
 {    /// <summary>
@@ -8,9 +8,36 @@ namespace EsportsManager.DAL.Configuration
     {
         /// <summary>
         /// Connection string mặc định cho MySQL
+        /// Format: Server={0};Database={1};Uid={2};Pwd={3};CharSet={4};Port={5}
         /// </summary>
-        public static string DefaultConnectionString =>
-            "Server=localhost;Database=EsportsManager;Uid=root;Pwd=123456;CharSet=utf8mb4;";
+        private const string CONNECTION_STRING_FORMAT = 
+            "Server={0};Database={1};Uid={2};Pwd={3};CharSet={4};Port={5}";
+
+        /// <summary>
+        /// Các thông số mặc định cho kết nối
+        /// </summary>
+        private static class Defaults
+        {
+            public const string SERVER = DatabaseConstants.MySQL.DEFAULT_HOST;
+            public const string DATABASE = DatabaseConstants.MySQL.DEFAULT_DATABASE;
+            public const string USER = DatabaseConstants.MySQL.DEFAULT_USER;
+            public const string PASSWORD = DatabaseConstants.MySQL.DEFAULT_PASSWORD;
+            public const string CHARSET = DatabaseConstants.Connection.DEFAULT_CHARSET;
+            public const string PORT = DatabaseConstants.MySQL.DEFAULT_PORT;
+        }
+
+        /// <summary>
+        /// Lấy connection string mặc định
+        /// </summary>
+        public static string DefaultConnectionString => string.Format(
+            CONNECTION_STRING_FORMAT,
+            Defaults.SERVER,
+            Defaults.DATABASE, 
+            Defaults.USER,
+            Defaults.PASSWORD,
+            Defaults.CHARSET,
+            Defaults.PORT
+        );
 
         /// <summary>
         /// Connection string cho MySQL (alias cho DefaultConnectionString)
@@ -27,7 +54,7 @@ namespace EsportsManager.DAL.Configuration
         }        /// <summary>
                  /// Timeout cho các command database (giây)
                  /// </summary>
-        public static int CommandTimeout => 30;
+        public static int CommandTimeout => DatabaseConstants.Connection.DEFAULT_COMMAND_TIMEOUT;
 
         /// <summary>
         /// Lấy timeout từ ConfigurationManager
@@ -40,7 +67,7 @@ namespace EsportsManager.DAL.Configuration
         /// <summary>
         /// Số lần retry khi kết nối database thất bại
         /// </summary>
-        public static int RetryCount => 3;
+        public static int RetryCount => DatabaseConstants.Connection.DEFAULT_RETRY_COUNT;
 
         /// <summary>
         /// Lấy số lần retry từ ConfigurationManager
@@ -53,7 +80,7 @@ namespace EsportsManager.DAL.Configuration
         /// <summary>
         /// Delay giữa các lần retry (milliseconds)
         /// </summary>
-        public static int RetryDelay => 1000;
+        public static int RetryDelay => DatabaseConstants.Connection.DEFAULT_RETRY_DELAY;
 
         /// <summary>
         /// Lấy delay giữa các lần retry từ ConfigurationManager

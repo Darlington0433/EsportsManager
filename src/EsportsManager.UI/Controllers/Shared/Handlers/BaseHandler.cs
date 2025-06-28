@@ -1,7 +1,8 @@
 using System;
 using System.Threading.Tasks;
 using EsportsManager.BL.DTOs;
-using EsportsManager.UI.ConsoleUI.Utilities;
+using EsportsManager.UI.Constants;
+using EsportsManager.UI.Utilities;
 using EsportsManager.UI.Controllers.MenuHandlers.Interfaces.Shared;
 
 namespace EsportsManager.UI.Controllers.MenuHandlers.Shared
@@ -24,16 +25,7 @@ namespace EsportsManager.UI.Controllers.MenuHandlers.Shared
         /// </summary>
         protected async Task ExecuteOperationAsync(Func<Task> operation, string operationName)
         {
-            try
-            {
-                await operation();
-                await LogOperationAsync(operationName, true);
-            }
-            catch (Exception ex)
-            {
-                HandleException(ex, operationName);
-                await LogOperationAsync(operationName, false, ex.Message);
-            }
+            await UIHelper.ExecuteWithErrorHandlingAsync(operation, operationName);
         }
 
         /// <summary>
@@ -44,7 +36,7 @@ namespace EsportsManager.UI.Controllers.MenuHandlers.Shared
         {
             if (input == null)
             {
-                ConsoleRenderingService.ShowMessageBox("❌ Dữ liệu đầu vào không hợp lệ!", true, 2000);
+                UIHelper.ShowError(UIConstants.Messages.INVALID_INPUT);
                 return false;
             }
             return await Task.FromResult(true);
@@ -55,11 +47,7 @@ namespace EsportsManager.UI.Controllers.MenuHandlers.Shared
         /// </summary>
         public virtual void HandleException(Exception ex, string operation)
         {
-            var errorMessage = $"❌ Lỗi trong {operation}: {ex.Message}";
-            ConsoleRenderingService.ShowMessageBox(errorMessage, true, 3000);
-            
-            // Log detailed error for debugging (in real app, use proper logging)
-            Console.WriteLine($"[ERROR] {DateTime.Now:yyyy-MM-dd HH:mm:ss} - {operation}: {ex}");
+            UIHelper.HandleError(ex, operation);
         }
 
         /// <summary>
@@ -85,10 +73,7 @@ namespace EsportsManager.UI.Controllers.MenuHandlers.Shared
         /// </summary>
         protected bool ShowConfirmationDialog(string message)
         {
-            Console.WriteLine($"\n⚠️  {message}");
-            Console.Write("Bạn có chắc chắn muốn tiếp tục? (y/N): ");
-            var input = Console.ReadLine()?.Trim().ToLower();
-            return input == "y" || input == "yes";
+            return UIHelper.ShowConfirmDialog(message);
         }
 
         /// <summary>
@@ -96,7 +81,7 @@ namespace EsportsManager.UI.Controllers.MenuHandlers.Shared
         /// </summary>
         protected void ShowSuccessMessage(string message)
         {
-            ConsoleRenderingService.ShowMessageBox($"✅ {message}", false, 2000);
+            UIHelper.ShowSuccess(message);
         }
 
         /// <summary>
@@ -104,7 +89,47 @@ namespace EsportsManager.UI.Controllers.MenuHandlers.Shared
         /// </summary>
         protected void ShowErrorMessage(string message)
         {
-            ConsoleRenderingService.ShowMessageBox($"❌ {message}", true, 2000);
+            UIHelper.ShowError(message);
+        }
+
+        /// <summary>
+        /// Common method to display warning message
+        /// </summary>
+        protected void ShowWarningMessage(string message)
+        {
+            UIHelper.ShowWarning(message);
+        }
+
+        /// <summary>
+        /// Common method to display info message
+        /// </summary>
+        protected void ShowInfoMessage(string message)
+        {
+            UIHelper.ShowInfo(message);
+        }
+
+        /// <summary>
+        /// Common method to display delete confirmation dialog
+        /// </summary>
+        protected bool ShowDeleteConfirmationDialog()
+        {
+            return UIHelper.ShowDeleteConfirmDialog();
+        }
+
+        /// <summary>
+        /// Common method to display update confirmation dialog
+        /// </summary>
+        protected bool ShowUpdateConfirmationDialog()
+        {
+            return UIHelper.ShowUpdateConfirmDialog();
+        }
+
+        /// <summary>
+        /// Draws a titled border
+        /// </summary>
+        protected void DrawTitledBorder(string title, int width = UIConstants.Border.DEFAULT_WIDTH, int height = UIConstants.Border.DEFAULT_HEIGHT)
+        {
+            UIHelper.DrawTitledBorder(title, width, height);
         }
     }
 }

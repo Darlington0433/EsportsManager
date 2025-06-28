@@ -113,7 +113,7 @@ class Program
     // ═══════════════════════════════════════════════════════════════    // Data Context - Scoped để maintain connection consistency
     services.AddScoped<DataContext>();    // Repository Pattern - Scoped để share với DataContext
     services.AddScoped<IUsersRepository, UsersRepository>();
-    services.AddScoped<EsportsManager.DAL.Interfaces.ITeamRepository, EsportsManager.DAL.Repositories.TeamRepository>();
+    services.AddScoped<ITeamRepository, TeamRepository>();
     services.AddScoped<IVotesRepository, VotesRepository>();
     services.AddScoped<IFeedbackRepository, FeedbackRepository>();
     services.AddScoped<ISystemSettingsRepository, SystemSettingsRepository>();
@@ -130,6 +130,13 @@ class Program
     // - Validation Service
     // - Caching Service
     // - etc.
+
+    // ═══════════════════════════════════════════════════════════════
+    // UI LAYER SERVICES
+    // ═══════════════════════════════════════════════════════════════
+    services.AddScoped<ConsoleUI.UserRoleSelector>();
+    services.AddScoped<ConsoleUI.Utilities.ConsoleRenderingService>();
+    services.AddScoped<ConsoleUI.Utilities.InteractiveMenuService>();
   }
 
   // ═══════════════════════════════════════════════════════════════

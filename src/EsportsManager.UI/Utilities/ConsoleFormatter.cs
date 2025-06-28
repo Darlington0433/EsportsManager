@@ -1,4 +1,5 @@
 using System;
+using EsportsManager.BL.Constants;
 
 namespace EsportsManager.UI.Utilities;
 
@@ -7,22 +8,88 @@ namespace EsportsManager.UI.Utilities;
 /// </summary>
 public static class ConsoleFormatter
 {
-    // Console dimensions
-    public const int PREFERRED_WIDTH = 120;
-    public const int PREFERRED_HEIGHT = 30;
-    public const int BUFFER_HEIGHT = 3000;
+    /// <summary>
+    /// Kích thước mặc định cho console window
+    /// </summary>
+    public static class WindowSize
+    {
+        public static int Width => AppConstants.UI.CONSOLE_WIDTH;
+        public static int Height => AppConstants.UI.CONSOLE_HEIGHT;
+        public static int BufferHeight => AppConstants.UI.CONSOLE_BUFFER;
+    }
     
-    // Console colors theme
+    /// <summary>
+    /// Theme màu sắc cho console
+    /// </summary>
     public static class Theme
     {
+        /// <summary>
+        /// Màu nền mặc định
+        /// </summary>
         public static readonly ConsoleColor Background = ConsoleColor.Black;
+
+        /// <summary>
+        /// Màu chữ chính
+        /// </summary>
         public static readonly ConsoleColor Primary = ConsoleColor.White;
+
+        /// <summary>
+        /// Màu chữ phụ
+        /// </summary>
         public static readonly ConsoleColor Secondary = ConsoleColor.Gray;
+
+        /// <summary>
+        /// Màu nhấn mạnh
+        /// </summary>
         public static readonly ConsoleColor Accent = ConsoleColor.Cyan;
+
+        /// <summary>
+        /// Màu thông báo thành công
+        /// </summary>
         public static readonly ConsoleColor Success = ConsoleColor.Green;
+
+        /// <summary>
+        /// Màu cảnh báo
+        /// </summary>
         public static readonly ConsoleColor Warning = ConsoleColor.Yellow;
+
+        /// <summary>
+        /// Màu lỗi
+        /// </summary>
         public static readonly ConsoleColor Error = ConsoleColor.Red;
+
+        /// <summary>
+        /// Màu thông tin
+        /// </summary>
         public static readonly ConsoleColor Info = ConsoleColor.Blue;
+    }
+
+    /// <summary>
+    /// Khởi tạo console window với kích thước và màu sắc mặc định
+    /// </summary>
+    public static void InitializeConsole()
+    {
+        try
+        {
+            Console.SetWindowSize(WindowSize.Width, WindowSize.Height);
+            Console.SetBufferSize(WindowSize.Width, WindowSize.BufferHeight);
+            Console.BackgroundColor = Theme.Background;
+            Console.ForegroundColor = Theme.Primary;
+            Console.Clear();
+        }
+        catch (Exception)
+        {
+            // Ignore errors when running in environments that don't support window size changes
+        }
+    }
+
+    /// <summary>
+    /// Reset màu console về mặc định
+    /// </summary>
+    public static void ResetColors()
+    {
+        Console.BackgroundColor = Theme.Background;
+        Console.ForegroundColor = Theme.Primary;
     }
 
     /// <summary>
@@ -108,15 +175,6 @@ public static class ConsoleFormatter
     public static void SetColor(ConsoleColor color)
     {
         Console.ForegroundColor = color;
-    }
-    
-    /// <summary>
-    /// Reset màu về mặc định
-    /// </summary>
-    public static void ResetColor()
-    {
-        Console.ForegroundColor = Theme.Primary;
-        Console.BackgroundColor = Theme.Background;
     }
     
     /// <summary>

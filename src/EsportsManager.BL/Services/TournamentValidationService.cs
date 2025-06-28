@@ -1,5 +1,8 @@
 using EsportsManager.BL.Constants;
 using EsportsManager.BL.DTOs;
+using EsportsManager.BL.Utilities;
+using System;
+using System.Collections.Generic;
 
 namespace EsportsManager.BL.Services;
 
@@ -13,11 +16,12 @@ public class TournamentValidationService
     /// </summary>
     public static (bool IsValid, string ErrorMessage) ValidateTournamentName(string? tournamentName)
     {
-        if (string.IsNullOrEmpty(tournamentName?.Trim()))
+        var errors = new List<string>();
+        if (ValidationHelper.IsNullOrEmpty(tournamentName, "Tên giải đấu", errors) ||
+            !ValidationHelper.ValidateLength(tournamentName!, "Tên giải đấu", 3, 100, errors))
         {
-            return (false, "Tên giải đấu không được để trống!");
+            return (false, string.Join("; ", errors));
         }
-        
         return (true, string.Empty);
     }
     
@@ -26,11 +30,11 @@ public class TournamentValidationService
     /// </summary>
     public static (bool IsValid, string ErrorMessage) ValidateGameId(int gameId)
     {
-        if (gameId < TournamentConstants.MIN_GAME_ID || !TournamentConstants.GAME_TYPES.ContainsKey(gameId))
+        var errors = new List<string>();
+        if (!ValidationHelper.IsValidValue(gameId, TournamentConstants.GAME_TYPES.Keys, "Game ID", errors))
         {
-            return (false, "Game ID không hợp lệ!");
+            return (false, string.Join("; ", errors));
         }
-        
         return (true, string.Empty);
     }
     
@@ -39,6 +43,8 @@ public class TournamentValidationService
     /// </summary>
     public static (bool IsValid, string ErrorMessage, int ValidatedValue) ValidateMaxTeams(string? input)
     {
+        var errors = new List<string>();
+        
         if (string.IsNullOrEmpty(input?.Trim()))
         {
             return (true, string.Empty, TournamentConstants.DEFAULT_MAX_TEAMS);
@@ -49,14 +55,9 @@ public class TournamentValidationService
             return (false, "Số team tối đa phải là số nguyên!", TournamentConstants.DEFAULT_MAX_TEAMS);
         }
         
-        if (maxTeams < TournamentConstants.MIN_MAX_TEAMS)
+        if (maxTeams < TournamentConstants.MIN_MAX_TEAMS || maxTeams > TournamentConstants.MAX_MAX_TEAMS)
         {
-            return (false, $"Số team tối đa phải ít nhất {TournamentConstants.MIN_MAX_TEAMS}!", TournamentConstants.DEFAULT_MAX_TEAMS);
-        }
-        
-        if (maxTeams > TournamentConstants.MAX_MAX_TEAMS)
-        {
-            return (false, $"Số team tối đa không được vượt quá {TournamentConstants.MAX_MAX_TEAMS}!", TournamentConstants.DEFAULT_MAX_TEAMS);
+            return (false, $"Số team tối đa phải từ {TournamentConstants.MIN_MAX_TEAMS} đến {TournamentConstants.MAX_MAX_TEAMS}!", TournamentConstants.DEFAULT_MAX_TEAMS);
         }
         
         return (true, string.Empty, maxTeams);
@@ -67,6 +68,8 @@ public class TournamentValidationService
     /// </summary>
     public static (bool IsValid, string ErrorMessage, decimal ValidatedValue) ValidateEntryFee(string? input)
     {
+        var errors = new List<string>();
+        
         if (string.IsNullOrEmpty(input?.Trim()))
         {
             return (true, string.Empty, TournamentConstants.DEFAULT_ENTRY_FEE);
@@ -77,14 +80,9 @@ public class TournamentValidationService
             return (false, "Phí tham gia phải là số!", TournamentConstants.DEFAULT_ENTRY_FEE);
         }
         
-        if (entryFee < TournamentConstants.MIN_ENTRY_FEE)
+        if (!ValidationHelper.IsValidAmount(entryFee, TournamentConstants.MIN_ENTRY_FEE, TournamentConstants.MAX_ENTRY_FEE, errors))
         {
-            return (false, "Phí tham gia không được âm!", TournamentConstants.DEFAULT_ENTRY_FEE);
-        }
-        
-        if (entryFee > TournamentConstants.MAX_ENTRY_FEE)
-        {
-            return (false, $"Phí tham gia không được vượt quá {TournamentConstants.MAX_ENTRY_FEE:N0} VND!", TournamentConstants.DEFAULT_ENTRY_FEE);
+            return (false, string.Join("; ", errors), TournamentConstants.DEFAULT_ENTRY_FEE);
         }
         
         return (true, string.Empty, entryFee);
@@ -101,6 +99,35 @@ public class TournamentValidationService
             StartDate: now.AddDays(TournamentConstants.DEFAULT_START_DAYS),
             EndDate: now.AddDays(TournamentConstants.DEFAULT_END_DAYS)
         );
+    }
+
+    /// <summary>
+    /// Validates tournament dates
+    /// </summary>
+    public static (bool IsValid, string ErrorMessage) ValidateTournamentDates(
+        DateTime registrationDeadline,
+        DateTime startDate,
+        DateTime endDate)
+    {
+        var errors = new List<string>();
+        var now = DateTime.Now;
+
+        if (!ValidationHelper.IsValidDate(registrationDeadline, now, startDate, errors))
+        {
+            return (false, string.Join("; ", errors));
+        }
+
+        if (!ValidationHelper.IsValidDate(startDate, registrationDeadline, endDate, errors))
+        {
+            return (false, string.Join("; ", errors));
+        }
+
+        if (!ValidationHelper.IsValidDate(endDate, startDate, now.AddYears(1), errors))
+        {
+            return (false, string.Join("; ", errors));
+        }
+
+        return (true, string.Empty);
     }
     
     /// <summary>
@@ -121,9 +148,30 @@ public class TournamentValidationService
         if (dto.MaxTeams < TournamentConstants.MIN_MAX_TEAMS || dto.MaxTeams > TournamentConstants.MAX_MAX_TEAMS)
             errors.Add($"Số team tối đa phải từ {TournamentConstants.MIN_MAX_TEAMS} đến {TournamentConstants.MAX_MAX_TEAMS}!");
             
-        if (dto.EntryFee < TournamentConstants.MIN_ENTRY_FEE || dto.EntryFee > TournamentConstants.MAX_ENTRY_FEE)
-            errors.Add($"Phí tham gia phải từ {TournamentConstants.MIN_ENTRY_FEE:N0} đến {TournamentConstants.MAX_ENTRY_FEE:N0} VND!");
+        if (!ValidationHelper.IsValidAmount(dto.EntryFee, TournamentConstants.MIN_ENTRY_FEE, TournamentConstants.MAX_ENTRY_FEE, errors))
+            errors.Add(string.Join("; ", errors));
+
+        var datesValidation = ValidateTournamentDates(dto.RegistrationDeadline, dto.StartDate, dto.EndDate);
+        if (!datesValidation.IsValid)
+            errors.Add(datesValidation.ErrorMessage);
         
         return (errors.Count == 0, errors);
+    }
+
+    /// <summary>
+    /// Validates tournament banner image
+    /// </summary>
+    public static (bool IsValid, string ErrorMessage) ValidateTournamentBanner(string? fileName, long fileSize)
+    {
+        var errors = new List<string>();
+        var validExtensions = new[] { ".jpg", ".jpeg", ".png" };
+        
+        if (!string.IsNullOrEmpty(fileName))
+        {
+            ValidationHelper.IsValidFileExtension(fileName, validExtensions, errors);
+            ValidationHelper.IsValidFileSize(fileSize, 10 * 1024 * 1024, errors); // 10MB max
+        }
+        
+        return errors.Count > 0 ? (false, string.Join("; ", errors)) : (true, string.Empty);
     }
 }

@@ -6,15 +6,21 @@ using System.Linq;
 
 namespace EsportsManager.BL.Models;
 
+/// <summary>
+/// BusinessResult - Lớp wrapper cho kết quả xử lý business logic có dữ liệu trả về
+/// Sử dụng generic để có thể trả về bất kỳ kiểu dữ liệu nào
+/// </summary>
 public class BusinessResult<T>
 {
     public bool IsSuccess { get; set; }
-    public T? Data { get; set; }
     public string? ErrorMessage { get; set; }
-    public List<string> Errors { get; set; } = new();
     public string? ErrorCode { get; set; }
-    public Exception? Exception { get; set; }
+    public T? Data { get; set; }
+    public List<string> Errors { get; set; } = new();
 
+    /// <summary>
+    /// Tạo kết quả thành công với dữ liệu
+    /// </summary>
     public static BusinessResult<T> Success(T data)
     {
         return new BusinessResult<T>
@@ -25,9 +31,8 @@ public class BusinessResult<T>
     }
 
     /// <summary>
-    /// Tạo kết quả thất bại với một thông báo lỗi
+    /// Tạo kết quả thất bại với thông báo lỗi
     /// </summary>
-
     public static BusinessResult<T> Failure(string errorMessage)
     {
         return new BusinessResult<T>
@@ -38,7 +43,7 @@ public class BusinessResult<T>
     }
 
     /// <summary>
-    /// Tạo kết quả thất bại với danh sách các lỗi
+    /// Tạo kết quả thất bại với danh sách lỗi
     /// </summary>
     public static BusinessResult<T> Failure(List<string> errors)
     {
@@ -46,21 +51,7 @@ public class BusinessResult<T>
         {
             IsSuccess = false,
             Errors = errors,
-            ErrorMessage = string.Join("; ", errors) // Gộp tất cả lỗi thành một chuỗi
-        };
-    }
-
-    /// <summary>
-    /// Tạo kết quả thất bại với exception
-    /// </summary>
-    public static BusinessResult<T> Failure(string errorMessage, Exception exception)
-    {
-        return new BusinessResult<T>
-        {
-            IsSuccess = false,
-            ErrorMessage = errorMessage,
-            Exception = exception,
-            ErrorCode = exception.GetType().Name
+            ErrorMessage = string.Join("; ", errors)
         };
     }
 
@@ -127,19 +118,19 @@ public class BusinessResult
     }
 
     /// <summary>
-    /// Tạo kết quả thất bại không có dữ liệu
+    /// Tạo kết quả thất bại với thông báo lỗi
     /// </summary>
     public static BusinessResult Failure(string errorMessage)
     {
         return new BusinessResult
         {
             IsSuccess = false,
-            ErrorMessage = errorMessage,
-            Errors = new List<string> { errorMessage }
+            ErrorMessage = errorMessage
         };
     }
 
-    /// <summary>    /// Tạo kết quả thất bại với danh sách các lỗi
+    /// <summary>
+    /// Tạo kết quả thất bại với danh sách lỗi
     /// </summary>
     public static BusinessResult Failure(List<string> errors)
     {
@@ -154,41 +145,15 @@ public class BusinessResult
 
 /// <summary>
 /// AuthenticationResult - Kết quả xác thực người dùng
-/// Chứa thông tin về việc đăng nhập thành công hay thất bại
-/// Nếu thành công sẽ có thông tin user, nếu thất bại sẽ có thông báo lỗi
+/// Chứa thông tin cơ bản của user sau khi xác thực thành công
 /// </summary>
 public class AuthenticationResult
 {
-
-
-    /// <summary>
-    /// Cho biết có xác thực thành công hay không
-    /// </summary>
     public bool IsAuthenticated { get; set; }
-
-    /// <summary>
-    /// ID của user nếu xác thực thành công
-    /// </summary>
-    public int? UserId { get; set; }
-
-    /// <summary>
-    /// Tên đăng nhập nếu xác thực thành công
-    /// </summary>
+    public int UserId { get; set; }
     public string? Username { get; set; }
-
-    /// <summary>
-    /// Vai trò của user nếu xác thực thành công
-    /// </summary>
     public string? Role { get; set; }
-
-    /// <summary>
-    /// Thông báo lỗi nếu xác thực thất bại
-    /// </summary>
     public string? ErrorMessage { get; set; }
-
-
-
-
 
     /// <summary>
     /// Tạo kết quả xác thực thành công
@@ -215,19 +180,13 @@ public class AuthenticationResult
             ErrorMessage = errorMessage
         };
     }
-
-
 }
 
 /// <summary>
 /// ValidationResult - Kết quả validation dữ liệu
-/// Sử dụng để kiểm tra tính hợp lệ của dữ liệu đầu vào
-/// Có thể chứa nhiều lỗi validation cùng lúc
 /// </summary>
 public class ValidationResult
 {
-
-
     /// <summary>
     /// Cho biết dữ liệu có hợp lệ hay không
     /// </summary>
@@ -238,43 +197,73 @@ public class ValidationResult
     /// </summary>
     public List<string> Errors { get; set; } = new();
 
-
-
-
+    /// <summary>
+    /// Thông báo lỗi tổng hợp
+    /// </summary>
+    public string ErrorMessage => string.Join("; ", Errors);
 
     /// <summary>
     /// Tạo kết quả validation thành công
     /// </summary>
-
     public static ValidationResult Success()
     {
         return new ValidationResult { IsValid = true };
     }
 
     /// <summary>
-    /// Tạo kết quả validation thất bại với nhiều lỗi
+    /// Tạo kết quả validation thất bại với một lỗi
     /// </summary>
-    public static ValidationResult Failure(params string[] errors)
+    public static ValidationResult Failure(string error)
     {
-        return new ValidationResult
-        {
+        return new ValidationResult 
+        { 
             IsValid = false,
-            Errors = errors.ToList() // Chuyển array thành List
+            Errors = new List<string> { error }
         };
     }
 
     /// <summary>
-    /// Tạo kết quả validation thất bại với danh sách lỗi
+    /// Tạo kết quả validation thất bại với nhiều lỗi
     /// </summary>
-
-    public static ValidationResult Failure(List<string> errors)
+    public static ValidationResult Failure(IEnumerable<string> errors)
     {
         return new ValidationResult
         {
             IsValid = false,
-            Errors = errors
+            Errors = new List<string>(errors)
         };
     }
 
+    /// <summary>
+    /// Thêm lỗi vào kết quả validation
+    /// </summary>
+    public ValidationResult AddError(string error)
+    {
+        Errors.Add(error);
+        IsValid = false;
+        return this;
+    }
 
+    /// <summary>
+    /// Thêm nhiều lỗi vào kết quả validation
+    /// </summary>
+    public ValidationResult AddErrors(IEnumerable<string> errors)
+    {
+        Errors.AddRange(errors);
+        IsValid = false;
+        return this;
+    }
+
+    /// <summary>
+    /// Kết hợp hai kết quả validation
+    /// </summary>
+    public ValidationResult Combine(ValidationResult other)
+    {
+        if (!other.IsValid)
+        {
+            IsValid = false;
+            Errors.AddRange(other.Errors);
+        }
+        return this;
+    }
 }
