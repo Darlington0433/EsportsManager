@@ -166,7 +166,7 @@ public class DonationReportHandler : IDonationReportHandler
             Console.ForegroundColor = ConsoleColor.White;
             Console.WriteLine(header.Length > width ? header.Substring(0, width) : header.PadRight(width));
             Console.SetCursorPosition(left, top + 1);
-            Console.WriteLine(new string('─', Math.Min(70, width)));
+            Console.WriteLine(new string('─', header.Length));
             int rank = 1;
             int row = top + 2;
             foreach (var receiver in topReceivers.Take(maxRows))
@@ -182,6 +182,8 @@ public class DonationReportHandler : IDonationReportHandler
             Console.ResetColor();
             Console.SetCursorPosition(left, row + 1);
             Console.WriteLine("Nhấn phím bất kỳ để tiếp tục...".PadRight(width));
+            Console.SetCursorPosition(0, row + borderHeight + 2);
+            Console.WriteLine("Nhấn phím bất kỳ để tiếp tục...");
             Console.ReadKey(true);
         }
         catch (Exception ex)
@@ -210,9 +212,9 @@ public class DonationReportHandler : IDonationReportHandler
             ConsoleRenderingService.DrawBorder("TOP NGƯỜI DONATION", 80, 20);
 
             Console.WriteLine("🎖️ TOP NGƯỜI DONATION NHIỀU NHẤT:");
-            Console.WriteLine(new string('─', 70));
+            Console.WriteLine(new string('═', 70));
             Console.WriteLine($"{"Hạng",5} {"Username",15} {"Số donation",12} {"Tổng tiền",15} {"Donation gần nhất",20}");
-            Console.WriteLine(new string('─', 70));
+            Console.WriteLine(new string('═', 70));
 
             int rank = 1;
             foreach (var donator in topDonators)
@@ -227,6 +229,8 @@ public class DonationReportHandler : IDonationReportHandler
             }
 
             Console.WriteLine("\nNhấn phím bất kỳ để tiếp tục...");
+            Console.SetCursorPosition(0, 22);
+            Console.WriteLine("Nhấn phím bất kỳ để tiếp tục...");
             Console.ReadKey(true);
         }
         catch (Exception ex)
@@ -841,6 +845,8 @@ public class DonationReportHandler : IDonationReportHandler
             }
 
             Console.WriteLine("\nNhấn phím bất kỳ để tiếp tục...");
+            Console.SetCursorPosition(0, 25);
+            Console.WriteLine("Nhấn phím bất kỳ để tiếp tục...");
             Console.ReadKey(true);
         }
         catch (Exception ex)

@@ -8,14 +8,12 @@ using EsportsManager.UI.Controllers.MenuHandlers.Shared;
 
 namespace EsportsManager.UI.Controllers.Admin.Handlers;
 
-public class AdminTournamentManagementHandler
-public class TournamentManagementHandler : BaseHandler
+public class AdminTournamentManagementHandler : BaseHandler
 {
     private readonly ITournamentService _tournamentService;
     private readonly ITeamService _teamService;
 
-    public AdminTournamentManagementHandler(ITournamentService tournamentService)
-    public TournamentManagementHandler(UserProfileDto currentUser, ITournamentService tournamentService, ITeamService teamService) : base(currentUser)
+    public AdminTournamentManagementHandler(UserProfileDto currentUser, ITournamentService tournamentService, ITeamService teamService) : base(currentUser)
     {
         _tournamentService = tournamentService;
         _teamService = teamService;
@@ -88,31 +86,31 @@ public class TournamentManagementHandler : BaseHandler
                 return;
             }
             // Header
-            var header = string.Format("{0,-5} {1,-30} {2,-15} {3,-10} {4,-10} {5,-15}",
+            var header = string.Format("{0,-5} {1,-30} {2,-15} {3,-12} {4,-12} {5,-15}",
                 "ID", "Tên giải đấu", "Trạng thái", "Ngày bắt đầu", "Ngày kết thúc", "Tổng giải thưởng");
             Console.SetCursorPosition(left, top);
             Console.ForegroundColor = ConsoleColor.White;
             Console.WriteLine(header.Length > width ? header.Substring(0, width) : header.PadRight(width));
-            Console.SetCursorPosition(left, top + 1);
-            Console.WriteLine(new string('─', Math.Min(110, width)));
+            // Kẻ ngang full border, không có ký tự đầu/cuối
+            DrawSeparatorLine(left, top + 1, width);
             // Data rows
             int displayCount = Math.Min(tournaments.Count, maxRows);
             for (int i = 0; i < displayCount; i++)
             {
                 var t = tournaments[i];
-                Console.SetCursorPosition(left, top + 2 + i);
-                var row = string.Format("{0,-5} {1,-30} {2,-15} {3,-10:dd/MM} {4,-10:dd/MM} {5,-15:N0}",
+                Console.SetCursorPosition(left, top + 3 + i);
+                var row = string.Format("{0,-5} {1,-30} {2,-15} {3,-12} {4,-12} {5,-15}",
                     t.TournamentId,
                     t.TournamentName.Length > 29 ? t.TournamentName.Substring(0, 29) : t.TournamentName,
                     t.Status,
-                    t.StartDate,
-                    t.EndDate,
-                    t.PrizePool);
+                    t.StartDate.ToString("dd/MM/yyyy"),
+                    t.EndDate.ToString("dd/MM/yyyy"),
+                    t.PrizePool.ToString("N0"));
                 Console.WriteLine(row.Length > width ? row.Substring(0, width) : row.PadRight(width));
             }
             Console.ResetColor();
             // Footer
-            int footerY = top + 2 + maxRows;
+            int footerY = top + 3 + maxRows;
             string totalInfo = $"Tổng cộng: {tournaments.Count} giải đấu";
             if (totalInfo.Length > width) totalInfo = totalInfo.Substring(0, width);
             Console.SetCursorPosition(left, footerY);
@@ -282,7 +280,7 @@ public class TournamentManagementHandler : BaseHandler
             Console.ForegroundColor = ConsoleColor.White;
             Console.WriteLine($"{"ID",-5} {"Team",-20} {"Tournament",-25} {"Leader",-15} {"Date",-12} {"Members",-8}");
             Console.SetCursorPosition(borderLeft + 2, borderTop + 3);
-            Console.WriteLine(new string('─', 110));
+            DrawSeparatorLine(borderLeft + 2, borderTop + 3, 110);
 
             int currentRow = borderTop + 4;
             for (int i = 0; i < Math.Min(pendingRegistrations.Count, 15); i++)
@@ -399,26 +397,41 @@ public class TournamentManagementHandler : BaseHandler
         }
     }
 
+    private string CenterText(string text, int width)
+    {
+        if (string.IsNullOrEmpty(text)) return new string(' ', width);
+        int padding = width - text.Length;
+        int padLeft = padding / 2;
+        int padRight = padding - padLeft;
+        return new string(' ', padLeft) + text + new string(' ', padRight);
+    }
+
     private void DisplayTournamentsTable(IEnumerable<TournamentInfoDto> tournaments)
     {
-        var header = string.Format("{0,-5} {1,-30} {2,-20} {3,-15} {4,-15} {5,-12} {6,-10}",
-            "ID", "Tên giải đấu", "Game", "Ngày bắt đầu", "Ngày kết thúc", "Trạng thái", "Số team");
-        Console.WriteLine("\n" + header);
-        Console.WriteLine(new string('─', 110));
+        // Lấy vị trí content của border ngoài
+        int borderWidth = 120;
+        int borderHeight = 25;
+        var (left, top, contentWidth) = ConsoleRenderingService.GetBorderContentPosition(borderWidth, borderHeight);
+        // Định nghĩa format với độ rộng phù hợp cho ngày dd/MM/yyyy (10 ký tự)
+        string format = "{0,-4} {1,-28} {2,-14} {3,-12} {4,-12} {5,-18}";
+        var header = string.Format(format,
+            "ID", "Tên giải đấu", "Trạng thái", "Ngày bắt đầu", "Ngày kết thúc", "Tổng giải thưởng");
+        int width = header.Length;
+        Console.SetCursorPosition(left, Console.CursorTop + 1);
+        Console.WriteLine(header);
+        DrawSeparatorLine(left, Console.CursorTop, width);
 
-        foreach (var tournament in tournaments)
+        foreach (var t in tournaments)
         {
-            var tournamentName = TournamentStatsService.FormatTournamentNameForDisplay(tournament.TournamentName) +
-                (tournament.TournamentName.Length > TournamentConstants.MAX_TOURNAMENT_NAME_DISPLAY ? ".." : "");
-
-            var row = string.Format("{0,-5} {1,-30} {2,-20} {3,-15} {4,-15} {5,-12} {6,-10}",
-                tournament.TournamentId,
+            var tournamentName = t.TournamentName.Length > 28 ? t.TournamentName.Substring(0, 28) : t.TournamentName;
+            var row = string.Format(format,
+                t.TournamentId,
                 tournamentName,
-                tournament.GameName ?? "N/A",
-                tournament.StartDate.ToString("dd/MM/yyyy"),
-                tournament.EndDate.ToString("dd/MM/yyyy"),
-                tournament.Status,
-                tournament.RegisteredTeams);
+                t.Status,
+                t.StartDate.ToString("dd/MM/yyyy"),
+                t.EndDate.ToString("dd/MM/yyyy"),
+                t.PrizePool.ToString("N0"));
+            Console.SetCursorPosition(left, Console.CursorTop);
             Console.WriteLine(row);
         }
     }
@@ -559,7 +572,7 @@ public class TournamentManagementHandler : BaseHandler
             Console.SetCursorPosition(borderLeft + 2, borderTop + 2);
             Console.WriteLine("📋 Danh sách tất cả đội trong hệ thống:");
             Console.SetCursorPosition(borderLeft + 2, borderTop + 3);
-            Console.WriteLine(new string('─', 70));
+            DrawSeparatorLine(borderLeft + 2, borderTop + 3, 70);
 
             if (!teams.Any())
             {
@@ -573,7 +586,7 @@ public class TournamentManagementHandler : BaseHandler
                 Console.SetCursorPosition(borderLeft + 2, borderTop + 4);
                 Console.WriteLine($"{"ID",-3} {"Tên đội",-18} {"Leader",-12} {"Members",-8} {"Created",-12} {"Status",-8}");
                 Console.SetCursorPosition(borderLeft + 2, borderTop + 5);
-                Console.WriteLine(new string('─', 70));
+                DrawSeparatorLine(borderLeft + 2, borderTop + 5, 70);
 
                 int currentRow = borderTop + 6;
                 for (int i = 0; i < Math.Min(teams.Count, 8); i++)
@@ -637,7 +650,7 @@ public class TournamentManagementHandler : BaseHandler
             Console.SetCursorPosition(borderLeft + 2, borderTop + 4);
             Console.WriteLine($"📊 Kết quả tìm kiếm cho: '{searchTerm}'");
             Console.SetCursorPosition(borderLeft + 2, borderTop + 5);
-            Console.WriteLine(new string('─', 70));
+            DrawSeparatorLine(borderLeft + 2, borderTop + 5, 70);
 
             if (!searchResults.Any())
             {
@@ -651,7 +664,7 @@ public class TournamentManagementHandler : BaseHandler
                 Console.SetCursorPosition(borderLeft + 2, borderTop + 6);
                 Console.WriteLine($"{"ID",-3} {"Tên đội",-18} {"Leader",-12} {"Members",-8} {"Created",-12} {"Status",-8}");
                 Console.SetCursorPosition(borderLeft + 2, borderTop + 7);
-                Console.WriteLine(new string('─', 70));
+                DrawSeparatorLine(borderLeft + 2, borderTop + 7, 70);
 
                 int currentRow = borderTop + 8;
                 for (int i = 0; i < Math.Min(searchResults.Count, 6); i++)
@@ -722,7 +735,7 @@ public class TournamentManagementHandler : BaseHandler
             Console.SetCursorPosition(borderLeft + 2, borderTop + 4);
             Console.WriteLine("Đội chờ phê duyệt:");
             Console.SetCursorPosition(borderLeft + 2, borderTop + 5);
-            Console.WriteLine(new string('─', 70));
+            DrawSeparatorLine(borderLeft + 2, borderTop + 5, 70);
 
             int currentRow = borderTop + 6;
             for (int i = 0; i < Math.Min(pendingTeams.Count, 5); i++)
@@ -809,7 +822,7 @@ public class TournamentManagementHandler : BaseHandler
             Console.SetCursorPosition(borderLeft + 2, borderTop + 4);
             Console.WriteLine("Yêu cầu gia nhập đội:");
             Console.SetCursorPosition(borderLeft + 2, borderTop + 5);
-            Console.WriteLine(new string('─', 70));
+            DrawSeparatorLine(borderLeft + 2, borderTop + 5, 70);
 
             int currentRow = borderTop + 6;
             for (int i = 0; i < Math.Min(joinRequests.Count, 4); i++)
@@ -872,5 +885,11 @@ public class TournamentManagementHandler : BaseHandler
         {
             ConsoleRenderingService.ShowMessageBox($"Lỗi khi duyệt thành viên: {ex.Message}", true, 3000);
         }
+    }
+
+    private static void DrawSeparatorLine(int left, int top, int width)
+    {
+        Console.SetCursorPosition(left, top);
+        Console.WriteLine(new string('─', width));
     }
 }

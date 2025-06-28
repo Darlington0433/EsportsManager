@@ -31,11 +31,13 @@ public class UserManagementHandler
 
             if (!result.IsSuccess || result.Data == null || !result.Data.Any())
             {
-                Console.SetCursorPosition(borderLeft + 2, borderBottom + 1);
+                Console.SetCursorPosition(borderLeft + 2, borderTop + 3);
                 Console.ForegroundColor = ConsoleColor.Yellow;
-                Console.WriteLine("Không có người dùng nào.");
+                Console.WriteLine("Không có người dùng nào.".PadRight(76));
                 Console.ResetColor();
-                Console.SetCursorPosition(borderLeft + 2, borderBottom + 2);
+                Console.SetCursorPosition(borderLeft + 2, borderTop + 4);
+                Console.WriteLine("".PadRight(76)); // clear line in border
+                Console.SetCursorPosition(0, borderBottom + 2);
                 Console.WriteLine("Nhấn phím bất kỳ để tiếp tục...");
                 Console.ReadKey(true);
                 return;
@@ -44,7 +46,7 @@ public class UserManagementHandler
             Console.SetCursorPosition(borderLeft + 2, borderTop + 2);
 
             Console.SetCursorPosition(borderLeft + 2, borderBottom + 1);
-            Console.WriteLine($"Tổng cộng: {result.Data.Count()} người dùng");
+            Console.WriteLine($"Tổng cộng: {result.Data.Count()} người dùng".PadRight(76));
             // Đã bỏ gọi PrintUserListShortcuts ở đây để tránh trùng lặp
 
             int selectedIndex = 0;
@@ -69,7 +71,7 @@ public class UserManagementHandler
                 Console.ForegroundColor = ConsoleColor.White;
                 Console.WriteLine(header);
                 Console.SetCursorPosition(borderLeft + 2, tableStartY + 1);
-                Console.WriteLine(new string('─', 70));
+                Console.WriteLine(new string('─', header.Length));
                 // Data rows
                 for (int i = 0; i < pageUsers.Count; i++)
                 {

@@ -66,7 +66,7 @@ public class TeamManagementHandler
                 var (contentLeft, contentTop, contentWidth) = ConsoleRenderingService.GetBorderContentPosition(borderWidth, borderHeight);
                 Console.SetCursorPosition(contentLeft, contentTop);
                 Console.ForegroundColor = ConsoleColor.Yellow;
-                Console.WriteLine("Không có đội nào trong hệ thống".PadRight(contentWidth));
+                Console.WriteLine("Không có đội nào trong hệ thống.".PadRight(contentWidth));
                 Console.ResetColor();
                 Console.SetCursorPosition(contentLeft, contentTop + 1);
                 Console.WriteLine("Nhấn phím bất kỳ để tiếp tục...".PadRight(contentWidth));
@@ -83,7 +83,7 @@ public class TeamManagementHandler
             Console.ForegroundColor = ConsoleColor.White;
             Console.WriteLine(header.Length > width ? header.Substring(0, width) : header.PadRight(width));
             Console.SetCursorPosition(left, top + 1);
-            Console.WriteLine(new string('─', Math.Min(70, width)));
+            Console.WriteLine(new string('─', header.Length));
             // Data rows
             int displayCount = Math.Min(result.Count(), maxRows);
             for (int i = 0; i < displayCount; i++)
@@ -157,7 +157,7 @@ public class TeamManagementHandler
             Console.ForegroundColor = ConsoleColor.White;
             Console.WriteLine(header.Length > width ? header.Substring(0, width) : header.PadRight(width));
             Console.SetCursorPosition(left, top + 1);
-            Console.WriteLine(new string('─', Math.Min(70, width)));
+            Console.WriteLine(new string('─', header.Length));
             // Data rows
             int displayCount = Math.Min(result.Count(), maxRows);
             for (int i = 0; i < displayCount; i++)
@@ -229,7 +229,7 @@ public class TeamManagementHandler
             Console.SetCursorPosition(borderLeft + 2, borderTop + 4);
             Console.WriteLine("Danh sách đội chờ duyệt:");
             Console.SetCursorPosition(borderLeft + 2, borderTop + 5);
-            Console.WriteLine(new string('─', 70));
+            Console.WriteLine(new string('═', 70));
 
             int currentRow = borderTop + 6;
             int displayCount = Math.Min(pendingTeams.Count, 5);  // Giới hạn hiển thị tối đa 5 đội

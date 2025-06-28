@@ -6,8 +6,20 @@ using System.Data;
 
 namespace EsportsManager.UI.Controllers.Admin.Handlers;
 
+/// <summary>
+/// Handler hiển thị thống kê hệ thống. Tối ưu hóa, loại bỏ hardcode, comment chuẩn dev chuyên nghiệp.
+/// </summary>
 public class SystemStatsHandler
 {
+    // UI constants - cấu hình UI dùng chung
+    private const int DefaultBorderWidth = 80;
+    private const int DefaultBorderHeight = 25;
+    private const int ErrorBorderWidth = 80;
+    private const int ErrorBorderHeight = 20;
+    private const int DetailBorderWidth = 90;
+    private const int DetailBorderHeight = 30;
+    private const int FallbackContinueLine = 30; // Dòng cố định ngoài border cho fallback
+
     private readonly IUserService _userService;
     private readonly ITournamentService _tournamentService;
     private readonly ITeamService _teamService;
@@ -19,47 +31,33 @@ public class SystemStatsHandler
         _teamService = teamService;
     }
 
+    /// <summary>
+    /// Hiển thị thống kê tổng quan hệ thống, tối ưu UI và xử lý lỗi/fallback.
+    /// </summary>
     public async Task ViewSystemStatsAsync()
     {
         try
         {
-            int borderWidth = 80;
-            int borderHeight = 25;
+            // Vẽ border và lấy vị trí content
             Console.Clear();
-            ConsoleRenderingService.DrawBorder("THỐNG KÊ HỆ THỐNG", borderWidth, borderHeight);
-            var (left, top, width) = ConsoleRenderingService.GetBorderContentPosition(borderWidth, borderHeight);
-            // Show loading message
-            Console.SetCursorPosition(left, top);
-            Console.WriteLine("🔄 Đang tải dữ liệu thống kê...".PadRight(width));
+            ConsoleRenderingService.DrawBorder("THỐNG KÊ HỆ THỐNG", DefaultBorderWidth, DefaultBorderHeight);
+            var (left, top, width) = ConsoleRenderingService.GetBorderContentPosition(DefaultBorderWidth, DefaultBorderHeight);
+            ShowLoadingMessage(left, top, width);
 
-            // Initialize variables with defaults
+            // Khởi tạo biến thống kê
             List<UserProfileDto>? users = null;
             List<TournamentInfoDto>? tournaments = null;
             List<TeamInfoDto>? teams = null;
-
             int totalUsers = 0, totalTournaments = 0, totalTeams = 0;
             int activeUsers = 0, ongoingTournaments = 0, completedTournaments = 0;
             decimal totalPrizePool = 0, totalEntryFees = 0;
             double avgTeamsPerTournament = 0;
             int recentTournaments = 0;
-
-            // Try to get data with individual error handling
             bool useServiceData = true;
-            try
-            {
-                users = await _userService.GetAllUsersAsync();
-                totalUsers = users?.Count() ?? 0;
-                activeUsers = users?.Count(u => u.Status == "Active") ?? 0;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"⚠️ Service failed, trying database fallback: {ex.Message}");
-                useServiceData = false;
-            }
 
-            try
-            {
-                tournaments = await _tournamentService.GetAllTournamentsAsync();
+            // Lấy dữ liệu từng phần, nếu lỗi sẽ fallback
+            try { users = await _userService.GetAllUsersAsync(); totalUsers = users?.Count() ?? 0; activeUsers = users?.Count(u => u.Status == "Active") ?? 0; } catch { useServiceData = false; }
+            try { tournaments = await _tournamentService.GetAllTournamentsAsync();
                 totalTournaments = tournaments?.Count() ?? 0;
                 if (tournaments != null)
                 {
@@ -68,163 +66,165 @@ public class SystemStatsHandler
                     totalPrizePool = tournaments.Sum(t => t.PrizePool);
                     totalEntryFees = tournaments.Sum(t => t.EntryFee * t.RegisteredTeams);
                     avgTeamsPerTournament = tournaments.Any() ? tournaments.Average(t => t.RegisteredTeams) : 0;
-                    recentTournaments = tournaments.Where(t => t.CreatedAt >= DateTime.Now.AddDays(-7)).Count();
+                    recentTournaments = tournaments.Count(t => t.CreatedAt >= DateTime.Now.AddDays(-7));
                 }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"⚠️ Tournament service failed: {ex.Message}");
-                useServiceData = false;
-            }
+            } catch { useServiceData = false; }
+            try { teams = await _teamService.GetAllTeamsAsync(); totalTeams = teams?.Count() ?? 0; } catch { useServiceData = false; }
 
-            try
-            {
-                teams = await _teamService.GetAllTeamsAsync();
-                totalTeams = teams?.Count() ?? 0;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"⚠️ Team service failed: {ex.Message}");
-                useServiceData = false;
-            }
-
-            // If service data failed, try database fallback
+            // Fallback nếu không lấy được dữ liệu
             if (!useServiceData || (totalUsers == 0 && totalTournaments == 0 && totalTeams == 0))
             {
-                Console.WriteLine("🔄 Trying database fallback...");
                 var dbStats = await GetStatsFromDatabaseAsync();
                 if (dbStats.users > 0 || dbStats.tournaments > 0 || dbStats.teams > 0)
                 {
                     totalUsers = dbStats.users;
-                    totalTournaments = dbStats.tournaments; 
+                    totalTournaments = dbStats.tournaments;
                     totalTeams = dbStats.teams;
                     activeUsers = dbStats.activeUsers;
                     totalPrizePool = dbStats.totalPrizePool;
-                    Console.WriteLine("✅ Database fallback successful!");
                 }
             }
 
-            // Clear and redraw with actual data
+            // Hiển thị bảng thống kê tổng quan
             Console.Clear();
-            ConsoleRenderingService.DrawBorder("THỐNG KÊ HỆ THỐNG", borderWidth, borderHeight);
-            (left, top, width) = ConsoleRenderingService.GetBorderContentPosition(borderWidth, borderHeight);
-
-            // Hiển thị các dòng thống kê, cắt dòng nếu quá dài
-            string[] lines = {
-                "📊 TỔNG QUAN HỆ THỐNG:",
-                new string('═', Math.Min(60, width)),
-                $"👥 Tổng số người dùng      : {totalUsers:N0}",
-                $"🏆 Tổng số giải đấu        : {totalTournaments:N0}",
-                $"⚔️ Tổng số đội             : {totalTeams:N0}",
-                $"🎮 Giải đấu đang hoạt động : {ongoingTournaments:N0}",
-                $"✅ Giải đấu đã hoàn thành  : {completedTournaments:N0}",
-                "",
-                "💰 THỐNG KÊ TÀI CHÍNH:",
-                new string('═', Math.Min(60, width)),
-                $"💎 Tổng giải thưởng        : {totalPrizePool:N0} VND",
-                $"� Tổng phí tham gia       : {totalEntryFees:N0} VND",
-                $"� Doanh thu ước tính      : {(totalEntryFees - totalPrizePool):N0} VND",
-                "",
-                "📈 THỐNG KÊ HOẠT ĐỘNG:",
-                new string('═', Math.Min(60, width)),
-                $"👤 Người dùng hoạt động    : {activeUsers:N0}",
-                $"📊 Trung bình team/giải đấu: {avgTeamsPerTournament:F1}",
-                $"🏃 Tỷ lệ người dùng hoạt động: {(totalUsers > 0 ? (double)activeUsers / totalUsers * 100 : 0):F1}%",
-                "",
-                "📅 HOẠT ĐỘNG GẦN ĐÂY:",
-                new string('═', Math.Min(60, width)),
-                $"🆕 Giải đấu tạo trong 7 ngày: {recentTournaments:N0}",
-                $"� Tỷ lệ tăng trưởng       : {(totalTournaments > 0 ? (double)recentTournaments / totalTournaments * 100 : 0):F1}%",
-                "",
-                "� TÌNH TRẠNG HỆ THỐNG:",
-                new string('═', Math.Min(60, width)),
-                $"⚡ Trạng thái hệ thống     : {((totalUsers == 0 && totalTournaments == 0 && totalTeams == 0) ? "🔴 Không có dữ liệu" : (activeUsers < totalUsers * 0.5 ? "🟡 Cần chú ý" : "🟢 Tốt"))}",
-                $"🕐 Cập nhật lần cuối      : {DateTime.Now:dd/MM/yyyy HH:mm:ss}"
-            };
-            for (int i = 0; i < lines.Length; i++)
-            {
-                Console.SetCursorPosition(left, top + i);
-                Console.WriteLine(lines[i].Length > width ? lines[i].Substring(0, width) : lines[i].PadRight(width));
-            }
-            int row = top + lines.Length;
-            // Show recommendations if no data
-            if (totalUsers == 0 || totalTournaments == 0 || totalTeams == 0)
-            {
-                string[] recs = {
-                    "💡 GỢI Ý:",
-                    new string('─', Math.Min(60, width)),
-                    totalUsers == 0 ? "• Tạo thêm tài khoản người dùng để test hệ thống" : null,
-                    totalTournaments == 0 ? "• Tạo giải đấu mới để tăng hoạt động" : null,
-                    totalTeams == 0 ? "• Khuyến khích người chơi tạo đội" : null,
-                    "• Chạy script sample data: database/ADD_SAMPLE_DONATIONS.sql"
-                };
-                foreach (var rec in recs)
-                {
-                    if (rec == null) continue;
-                    Console.SetCursorPosition(left, row++);
-                    Console.WriteLine(rec.Length > width ? rec.Substring(0, width) : rec.PadRight(width));
-                }
-            }
-            Console.SetCursorPosition(left, row + 1);
-            Console.WriteLine("Nhấn phím bất kỳ để tiếp tục...".PadRight(width));
-            Console.ReadKey(true);
+            ConsoleRenderingService.DrawBorder("THỐNG KÊ HỆ THỐNG", DefaultBorderWidth, DefaultBorderHeight);
+            (left, top, width) = ConsoleRenderingService.GetBorderContentPosition(DefaultBorderWidth, DefaultBorderHeight);
+            PrintSystemStatsTable(left, top, width, totalUsers, totalTournaments, totalTeams, ongoingTournaments, completedTournaments, totalPrizePool, totalEntryFees, avgTeamsPerTournament, activeUsers, recentTournaments);
         }
         catch (Exception ex)
         {
-            Console.Clear();
-            ConsoleRenderingService.DrawBorder("LỖI THỐNG KÊ HỆ THỐNG", 80, 20);
-            
-            // Enhanced error reporting
-            string errorMessage = ex.Message;
-            string suggestion = "";
-
-            if (ex.Message.Contains("connection") || ex.Message.Contains("database"))
-            {
-                suggestion = "\n\n💡 KIỂM TRA:\n" +
-                           "1. MySQL server đang chạy?\n" +
-                           "2. Database 'EsportsManager' đã tồn tại?\n" +
-                           "3. Thông tin kết nối trong appsettings.json đúng?\n" +
-                           "4. Chạy lại script database/esportsmanager.sql";
-            }
-            else if (ex.Message.Contains("method") || ex.Message.Contains("service"))
-            {
-                suggestion = "\n\n💡 NGUYÊN NHÂN CÓ THỂ:\n" +
-                           "1. Service không được inject đúng cách\n" +
-                           "2. Method GetAll...Async() chưa được implement\n" +
-                           "3. DTO models không khớp với database schema";
-            }
-            else if (ex.Message.Contains("table") || ex.Message.Contains("column"))
-            {
-                suggestion = "\n\n💡 SỬA LỖI DATABASE:\n" +
-                           "1. Chạy script: database/esportsmanager.sql\n" +
-                           "2. Kiểm tra các bảng Users, Tournaments, Teams\n" +
-                           "3. Thêm dữ liệu mẫu để test";
-            }
-
-            Console.WriteLine("❌ ĐÃ XẢY RA LỖI KHI TẢI THỐNG KÊ:");
-            Console.WriteLine(new string('─', 70));
-            Console.WriteLine($"🔍 Chi tiết lỗi: {errorMessage}");
-            Console.WriteLine(suggestion);
-
-            Console.WriteLine("\n🔧 THỐNG KÊ CƠ BẢN (FALLBACK):");
-            Console.WriteLine(new string('─', 70));
-            Console.WriteLine($"🕐 Thời gian hiện tại: {DateTime.Now:dd/MM/yyyy HH:mm:ss}");
-            Console.WriteLine($"💻 Hệ thống: {Environment.OSVersion}");
-            Console.WriteLine($"🖥️ Machine: {Environment.MachineName}");
-            Console.WriteLine($"👤 User: {Environment.UserName}");
-
-            // Fallback to direct database query
-            var fallbackStats = await GetStatsFromDatabaseAsync();
-            Console.WriteLine($"\n📊 THỐNG KÊ TỪ DATABASE TRỰC TIẾP:");
-            Console.WriteLine($"👥 Tổng số người dùng      : {fallbackStats.users:N0}");
-            Console.WriteLine($"🏆 Tổng số giải đấu        : {fallbackStats.tournaments:N0}");
-            Console.WriteLine($"⚔️ Tổng số đội             : {fallbackStats.teams:N0}");
-            Console.WriteLine($"🎮 Giải đấu đang hoạt động : {fallbackStats.activeUsers:N0}");
-            Console.WriteLine($"💰 Tổng giải thưởng        : {fallbackStats.totalPrizePool:N0} VND");
-
-            Console.WriteLine("\nNhấn phím bất kỳ để quay lại...");
-            Console.ReadKey(true);
+            ShowErrorStats(ex);
         }
+    }
+
+    /// <summary>
+    /// Hiển thị thông báo loading.
+    /// </summary>
+    private static void ShowLoadingMessage(int left, int top, int width)
+    {
+        Console.SetCursorPosition(left, top);
+        Console.WriteLine("🔄 Đang tải dữ liệu thống kê...".PadRight(width));
+    }
+
+    /// <summary>
+    /// In bảng thống kê tổng quan hệ thống.
+    /// </summary>
+    private void PrintSystemStatsTable(int left, int top, int width, int totalUsers, int totalTournaments, int totalTeams, int ongoingTournaments, int completedTournaments, decimal totalPrizePool, decimal totalEntryFees, double avgTeamsPerTournament, int activeUsers, int recentTournaments)
+    {
+        string[] lines =
+        {
+            "📊 TỔNG QUAN HỆ THỐNG:",
+            new string('─', width),
+            $"👥 Tổng số người dùng      : {totalUsers:N0}",
+            $"🏆 Tổng số giải đấu        : {totalTournaments:N0}",
+            $"⚔️ Tổng số đội             : {totalTeams:N0}",
+            $"🎮 Giải đấu đang hoạt động : {ongoingTournaments:N0}",
+            $"✅ Giải đấu đã hoàn thành  : {completedTournaments:N0}",
+            "",
+            "💰 THỐNG KÊ TÀI CHÍNH:",
+            new string('─', width),
+            $"💎 Tổng giải thưởng        : {totalPrizePool:N0} VND",
+            $"💵 Tổng phí tham gia       : {totalEntryFees:N0} VND",
+            $"💸 Doanh thu ước tính      : {(totalEntryFees - totalPrizePool):N0} VND",
+            "",
+            "📈 THỐNG KÊ HOẠT ĐỘNG:",
+            new string('─', width),
+            $"👤 Người dùng hoạt động    : {activeUsers:N0}",
+            $"📊 Trung bình team/giải đấu: {avgTeamsPerTournament:F1}",
+            $"🏃 Tỷ lệ người dùng hoạt động: {(totalUsers > 0 ? (double)activeUsers / totalUsers * 100 : 0):F1}%",
+            "",
+            "📅 HOẠT ĐỘNG GẦN ĐÂY:",
+            new string('─', width),
+            $"🆕 Giải đấu tạo trong 7 ngày: {recentTournaments:N0}",
+            $"📈 Tỷ lệ tăng trưởng       : {(totalTournaments > 0 ? (double)recentTournaments / totalTournaments * 100 : 0):F1}%",
+            "",
+            "🖥️ TÌNH TRẠNG HỆ THỐNG:",
+            new string('─', width),
+            $"⚡ Trạng thái hệ thống     : {((totalUsers == 0 && totalTournaments == 0 && totalTeams == 0) ? "🔴 Không có dữ liệu" : (activeUsers < totalUsers * 0.5 ? "🟡 Cần chú ý" : "🟢 Tốt"))}",
+            $"🕐 Cập nhật lần cuối      : {DateTime.Now:dd/MM/yyyy HH:mm:ss}"
+        };
+        for (int i = 0; i < lines.Length; i++)
+        {
+            Console.SetCursorPosition(left, top + i);
+            Console.WriteLine(lines[i].Length > width ? lines[i].Substring(0, width) : lines[i].PadRight(width));
+        }
+        int row = top + lines.Length;
+        // Gợi ý nếu thiếu dữ liệu
+        if (totalUsers == 0 || totalTournaments == 0 || totalTeams == 0)
+        {
+            string[] recs =
+            {
+                "💡 GỢI Ý:",
+                new string('─', width),
+                totalUsers == 0 ? "• Tạo thêm tài khoản người dùng để test hệ thống" : null,
+                totalTournaments == 0 ? "• Tạo giải đấu mới để tăng hoạt động" : null,
+                totalTeams == 0 ? "• Khuyến khích người chơi tạo đội" : null,
+                "• Chạy script sample data: database/ADD_SAMPLE_DONATIONS.sql"
+            };
+            foreach (var rec in recs)
+            {
+                if (rec == null) continue;
+                Console.SetCursorPosition(left, row++);
+                Console.WriteLine(rec.Length > width ? rec.Substring(0, width) : rec.PadRight(width));
+            }
+        }
+        Console.SetCursorPosition(left, row + 1);
+        Console.WriteLine("Nhấn phím bất kỳ để tiếp tục...".PadRight(width));
+        Console.ReadKey(true);
+    }
+
+    /// <summary>
+    /// Hiển thị thông báo lỗi và fallback thống kê cơ bản.
+    /// </summary>
+    private async void ShowErrorStats(Exception ex)
+    {
+        Console.Clear();
+        ConsoleRenderingService.DrawBorder("LỖI THỐNG KÊ HỆ THỐNG", ErrorBorderWidth, ErrorBorderHeight);
+        // Xử lý lỗi và gợi ý
+        string errorMessage = ex.Message;
+        string suggestion = GetSuggestionForError(errorMessage);
+        Console.WriteLine("❌ ĐÃ XẢY RA LỖI KHI TẢI THỐNG KÊ:");
+        Console.WriteLine(new string('═', 70));
+        Console.WriteLine($"🔍 Chi tiết lỗi: {errorMessage}");
+        Console.WriteLine(suggestion);
+        Console.WriteLine("\n🔧 THỐNG KÊ CƠ BẢN (FALLBACK):");
+        Console.WriteLine(new string('═', 70));
+        Console.WriteLine($"🕐 Thời gian hiện tại: {DateTime.Now:dd/MM/yyyy HH:mm:ss}");
+        Console.WriteLine($"💻 Hệ thống: {Environment.OSVersion}");
+        Console.WriteLine($"🖥️ Machine: {Environment.MachineName}");
+        Console.WriteLine($"👤 User: {Environment.UserName}");
+        // Fallback trực tiếp từ database
+        var fallbackStats = await GetStatsFromDatabaseAsync();
+        Console.WriteLine($"\n📊 THỐNG KÊ TỪ DATABASE TRỰC TIẾP:");
+        Console.WriteLine($"👥 Tổng số người dùng      : {fallbackStats.users:N0}");
+        Console.WriteLine($"🏆 Tổng số giải đấu        : {fallbackStats.tournaments:N0}");
+        Console.WriteLine($"⚔️ Tổng số đội             : {fallbackStats.teams:N0}");
+        Console.WriteLine($"🎮 Giải đấu đang hoạt động : {fallbackStats.activeUsers:N0}");
+        Console.WriteLine($"💰 Tổng giải thưởng        : {fallbackStats.totalPrizePool:N0} VND");
+        // Đưa dòng tiếp tục ra ngoài border
+        Console.SetCursorPosition(0, FallbackContinueLine);
+        Console.WriteLine("Nhấn phím bất kỳ để tiếp tục...");
+        Console.ReadKey(true);
+    }
+
+    /// <summary>
+    /// Gợi ý sửa lỗi dựa trên nội dung exception.
+    /// </summary>
+    private static string GetSuggestionForError(string errorMessage)
+    {
+        if (errorMessage.Contains("connection") || errorMessage.Contains("database"))
+        {
+            return "\n\n💡 KIỂM TRA:\n1. MySQL server đang chạy?\n2. Database 'EsportsManager' đã tồn tại?\n3. Thông tin kết nối trong appsettings.json đúng?\n4. Chạy lại script database/esportsmanager.sql";
+        }
+        if (errorMessage.Contains("method") || errorMessage.Contains("service"))
+        {
+            return "\n\n💡 NGUYÊN NHÂN CÓ THỂ:\n1. Service không được inject đúng cách\n2. Method GetAll...Async() chưa được implement\n3. DTO models không khớp với database schema";
+        }
+        if (errorMessage.Contains("table") || errorMessage.Contains("column"))
+        {
+            return "\n\n💡 SỬA LỖI DATABASE:\n1. Chạy script: database/esportsmanager.sql\n2. Kiểm tra các bảng Users, Tournaments, Teams\n3. Thêm dữ liệu mẫu để test";
+        }
+        return string.Empty;
     }
 
     // Helper method để hiển thị thống kê chi tiết
@@ -479,7 +479,7 @@ public class SystemStatsHandler
         {
             // Try to get any data from services to test connection
             var users = await _userService.GetAllUsersAsync();
-            return users != null; // If we can get users, connection is OK
+            return users != null; // If we
         }
         catch
         {

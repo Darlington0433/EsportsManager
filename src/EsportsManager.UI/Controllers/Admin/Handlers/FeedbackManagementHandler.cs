@@ -1,7 +1,7 @@
 using EsportsManager.BL.Interfaces;
 using System.Threading.Tasks;
 
-namespace EsportsManager.UI.Controllers.MenuHandlers.Admin
+namespace EsportsManager.UI.Controllers.Admin.Handlers
 {
     public class FeedbackManagementHandler
     {

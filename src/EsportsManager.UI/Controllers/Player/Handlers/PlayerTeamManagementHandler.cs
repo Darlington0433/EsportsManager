@@ -201,11 +201,7 @@ namespace EsportsManager.UI.Controllers.Player.Handlers
                 {
                     var selectedTeam = teams.ElementAt(choice - 1);
                     var result = await _teamService.RequestToJoinTeamAsync(selectedTeam.Id, _currentUser.Id);
-<<<<<<< HEAD
                     Console.SetCursorPosition(borderLeft + 2, cursorY++);
-=======
-
->>>>>>> origin/Quan
                     if (result)
                     {
                         ConsoleRenderingService.ShowMessageBox($"Đã gửi yêu cầu tham gia team '{selectedTeam.Name}' thành công!", false, 3000);
@@ -250,7 +246,7 @@ namespace EsportsManager.UI.Controllers.Player.Handlers
                 Console.ForegroundColor = ConsoleColor.White;
                 Console.WriteLine($"{"ID",-5} {"Tên Team",-25} {"Mô tả",-30} {"Thành viên",-12} {"Trạng thái",-10}");
                 Console.SetCursorPosition(borderLeft2 + 2, cursorY++);
-                Console.WriteLine(new string('─', 85));
+                Console.WriteLine(new string('═', 85));
 
                 foreach (var team in teams)
                 {
@@ -327,7 +323,6 @@ namespace EsportsManager.UI.Controllers.Player.Handlers
             try
             {
                 Console.Clear();
-<<<<<<< HEAD
                 ConsoleRenderingService.DrawBorder("RỜI KHỎI TEAM", 80, 12);
                 int borderLeft = (Console.WindowWidth - 80) / 2;
                 int borderTop = (Console.WindowHeight - 12) / 4;
@@ -343,14 +338,6 @@ namespace EsportsManager.UI.Controllers.Player.Handlers
                 var confirmation = Console.ReadLine()?.Trim();
                 Console.SetCursorPosition(borderLeft + 2, cursorY++);
                 if (confirmation?.ToUpper() == "YES")
-=======
-                ConsoleRenderingService.DrawBorder("RỜI KHỎI TEAM", 80, 15);
-
-                // Kiểm tra xem người dùng hiện tại có phải là leader không
-                bool isLeader = await _teamService.IsTeamLeaderAsync(_currentUser.Id, team.Id);
-
-                if (isLeader)
->>>>>>> origin/Quan
                 {
                     // Lấy danh sách thành viên khác để chuyển giao leader
                     var members = await _teamService.GetTeamMembersAsync(team.Id);
@@ -415,8 +402,8 @@ namespace EsportsManager.UI.Controllers.Player.Handlers
                         Console.WriteLine("Bạn có thể giải tán team hoặc hủy thao tác.");
                         Console.Write("\nNhập 'DISBAND' để giải tán team hoặc Enter để hủy: ");
 
-                        var confirmation = Console.ReadLine()?.Trim();
-                        if (confirmation?.ToUpper() == "DISBAND")
+                        var disbandConfirmation = Console.ReadLine()?.Trim();
+                        if (disbandConfirmation?.ToUpper() == "DISBAND")
                         {
                             var disbandResult = await _teamService.DisbandTeamAsync(team.Id, _currentUser.Id);
                             if (disbandResult)
@@ -441,8 +428,8 @@ namespace EsportsManager.UI.Controllers.Player.Handlers
                     Console.WriteLine("Hành động này không thể hoàn tác.");
                     Console.Write("\nXác nhận rời team (YES để xác nhận): ");
 
-                    var confirmation = Console.ReadLine()?.Trim();
-                    if (confirmation?.ToUpper() == "YES")
+                    var leaveConfirmation = Console.ReadLine()?.Trim();
+                    if (leaveConfirmation?.ToUpper() == "YES")
                     {
                         var result = await _teamService.RemoveMemberAsync(team.Id, _currentUser.Id, _currentUser.Id);
                         if (result)
@@ -462,14 +449,10 @@ namespace EsportsManager.UI.Controllers.Player.Handlers
             }
             catch (Exception ex)
             {
-<<<<<<< HEAD
                 int borderLeft = (Console.WindowWidth - 80) / 2;
                 int borderTop = (Console.WindowHeight - 12) / 4;
                 Console.SetCursorPosition(borderLeft + 2, borderTop + 10);
                 ConsoleRenderingService.ShowMessageBox($"Lỗi: {ex.Message}", true, 3000);
-=======
-                ConsoleRenderingService.ShowMessageBox($"Có lỗi xảy ra: {ex.Message}", true, 3000);
->>>>>>> origin/Quan
             }
         }
 
@@ -498,7 +481,7 @@ namespace EsportsManager.UI.Controllers.Player.Handlers
                 Console.ForegroundColor = ConsoleColor.White;
                 Console.WriteLine($"{"Username",-20} {"Vai trò",-15} {"Ngày tham gia",-15} {"Trạng thái",-10}");
                 Console.SetCursorPosition(borderLeft2 + 2, cursorY++);
-                Console.WriteLine(new string('─', 65));
+                Console.WriteLine(new string('═', 65));
 
                 foreach (var member in members.Take(8))
                 {

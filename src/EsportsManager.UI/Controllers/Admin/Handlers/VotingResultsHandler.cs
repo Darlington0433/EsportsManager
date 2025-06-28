@@ -75,12 +75,14 @@ public class VotingResultsHandler : IVotingResultsHandler
             var playerResults = await _votingService.GetPlayerVotingResultsAsync();
             if (playerResults == null || !playerResults.Any())
             {
-                Console.SetCursorPosition(left, top);
+                Console.SetCursorPosition(left, top + 1);
                 Console.ForegroundColor = ConsoleColor.Yellow;
                 Console.WriteLine("Không có dữ liệu voting cho players.".PadRight(width));
                 Console.ResetColor();
-                Console.SetCursorPosition(left, top + 1);
-                Console.WriteLine("Nhấn phím bất kỳ để tiếp tục...".PadRight(width));
+                Console.SetCursorPosition(left, top + 2);
+                Console.WriteLine("".PadRight(width)); // clear line in border
+                Console.SetCursorPosition(0, top + borderHeight + 2);
+                Console.WriteLine("Nhấn phím bất kỳ để tiếp tục...");
                 Console.ReadKey(true);
                 return;
             }
@@ -91,7 +93,7 @@ public class VotingResultsHandler : IVotingResultsHandler
             Console.ForegroundColor = ConsoleColor.White;
             Console.WriteLine(header.Length > width ? header.Substring(0, width) : header.PadRight(width));
             Console.SetCursorPosition(left, top + 1);
-            Console.WriteLine(new string('-', Math.Min(70, width)));
+            Console.WriteLine(new string('─', header.Length));
             // Data rows
             int displayCount = Math.Min(playerResults.Count, maxRows);
             foreach (var (result, i) in playerResults.OrderByDescending(r => r.AverageRating).Select((r, i) => (r, i)))
@@ -138,12 +140,14 @@ public class VotingResultsHandler : IVotingResultsHandler
             var tournamentResults = await _votingService.GetTournamentVotingResultsAsync();
             if (tournamentResults == null || !tournamentResults.Any())
             {
-                Console.SetCursorPosition(left, top);
+                Console.SetCursorPosition(left, top + 1);
                 Console.ForegroundColor = ConsoleColor.Yellow;
                 Console.WriteLine("Không có dữ liệu voting cho tournaments.".PadRight(width));
                 Console.ResetColor();
-                Console.SetCursorPosition(left, top + 1);
-                Console.WriteLine("Nhấn phím bất kỳ để tiếp tục...".PadRight(width));
+                Console.SetCursorPosition(left, top + 2);
+                Console.WriteLine("".PadRight(width)); // clear line in border
+                Console.SetCursorPosition(0, top + borderHeight + 2);
+                Console.WriteLine("Nhấn phím bất kỳ để tiếp tục...");
                 Console.ReadKey(true);
                 return;
             }
@@ -154,7 +158,7 @@ public class VotingResultsHandler : IVotingResultsHandler
             Console.ForegroundColor = ConsoleColor.White;
             Console.WriteLine(header.Length > width ? header.Substring(0, width) : header.PadRight(width));
             Console.SetCursorPosition(left, top + 1);
-            Console.WriteLine(new string('-', Math.Min(80, width)));
+            Console.WriteLine(new string('─', header.Length));
             // Data rows
             int displayCount = Math.Min(tournamentResults.Count, maxRows);
             foreach (var (result, i) in tournamentResults.OrderByDescending(r => r.AverageRating).Select((r, i) => (r, i)))
