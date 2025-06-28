@@ -75,7 +75,8 @@ public class TeamManagementHandler
             Console.WriteLine(new string('─', 70));
 
             int currentRow = borderTop + 4;
-            foreach (var team in result.Take(10))
+            int displayCount = Math.Min(result.Count(), 10); // Giới hạn hiển thị tối đa 10 đội
+            foreach (var team in result.Take(displayCount))
             {
                 Console.SetCursorPosition(borderLeft + 2, currentRow);
                 var statusColor = team.Status == "Active" ? ConsoleColor.Green :
@@ -94,7 +95,7 @@ public class TeamManagementHandler
 
             Console.ResetColor();
             Console.SetCursorPosition(borderLeft + 2, borderTop + 16);
-            Console.WriteLine($"Tổng cộng: {result.Count()} đội");
+            Console.WriteLine($"Tổng cộng: {result.Count()} đội{(result.Count() > displayCount ? $" (hiển thị {displayCount})" : "")}");
             Console.SetCursorPosition(borderLeft + 2, borderTop + 17);
             Console.WriteLine("Nhấn phím bất kỳ để tiếp tục...");
             Console.ReadKey(true);
@@ -181,18 +182,26 @@ public class TeamManagementHandler
             int borderLeft = (Console.WindowWidth - 80) / 2;
             int borderTop = (Console.WindowHeight - 20) / 4;
 
+            // TODO: Cần bổ sung phương thức GetPendingTeamsAsync() vào ITeamService
+            // Tạm thời sử dụng GetAllTeamsAsync và lọc các đội có Status = "Pending"
+            var allTeams = await _teamService.GetAllTeamsAsync();
+            var pendingTeams = allTeams?.Where(t => t.Status == "Pending").ToList() ?? new List<TeamInfoDto>();
+
+            if (pendingTeams.Count == 0)
+            {
+                Console.SetCursorPosition(borderLeft + 2, borderTop + 4);
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine("Không có đội nào đang chờ phê duyệt");
+                Console.ResetColor();
+                Console.SetCursorPosition(borderLeft + 2, borderTop + 6);
+                Console.WriteLine("Nhấn phím bất kỳ để tiếp tục...");
+                Console.ReadKey(true);
+                return;
+            }
+
             Console.SetCursorPosition(borderLeft + 2, borderTop + 2);
             Console.WriteLine("📋 Duyệt các đội đang chờ phê duyệt");
             Console.WriteLine();
-
-            // Sample pending teams data
-            var samplePendingTeams = new[]
-            {
-                new { Id = 1, Name = "Shadow Legends", Leader = "ProPlayer1", Members = 5, Game = "LoL", Status = "Pending" },
-                new { Id = 2, Name = "Fire Dragons", Leader = "GameMaster", Members = 4, Game = "CS:GO", Status = "Pending" },
-                new { Id = 3, Name = "Storm Raiders", Leader = "TacticalLead", Members = 6, Game = "Valorant", Status = "Pending" },
-                new { Id = 4, Name = "Ice Wolves", Leader = "ColdStrike", Members = 5, Game = "Dota 2", Status = "Pending" }
-            };
 
             Console.SetCursorPosition(borderLeft + 2, borderTop + 4);
             Console.WriteLine("Danh sách đội chờ duyệt:");
@@ -200,30 +209,47 @@ public class TeamManagementHandler
             Console.WriteLine(new string('─', 70));
 
             int currentRow = borderTop + 6;
-            for (int i = 0; i < samplePendingTeams.Length; i++)
+            int displayCount = Math.Min(pendingTeams.Count, 5);  // Giới hạn hiển thị tối đa 5 đội
+
+            for (int i = 0; i < displayCount; i++)
             {
-                var team = samplePendingTeams[i];
+                var team = pendingTeams[i];
                 Console.SetCursorPosition(borderLeft + 2, currentRow + i * 2);
-                Console.WriteLine($"{i + 1}. {team.Name} ({team.Game})");
+                Console.WriteLine($"{i + 1}. {team.Name}");
                 Console.SetCursorPosition(borderLeft + 4, currentRow + i * 2 + 1);
-                Console.WriteLine($"   👤 Leader: {team.Leader} | 👥 Members: {team.Members}");
+                Console.WriteLine($"   👤 Leader: {team.LeaderName ?? "N/A"} | 👥 Members: {team.MemberCount}");
             }
 
-            Console.SetCursorPosition(borderLeft + 2, currentRow + samplePendingTeams.Length * 2 + 2);
-            Console.Write("Chọn đội để duyệt (1-4, 0 để thoát): ");
+            Console.SetCursorPosition(borderLeft + 2, currentRow + displayCount * 2 + 2);
+            Console.Write($"Chọn đội để duyệt (1-{displayCount}, 0 để thoát): ");
 
-            if (int.TryParse(Console.ReadLine(), out int choice) && choice > 0 && choice <= samplePendingTeams.Length)
+            if (int.TryParse(Console.ReadLine(), out int choice) && choice > 0 && choice <= displayCount)
             {
-                var selectedTeam = samplePendingTeams[choice - 1];
+                var selectedTeam = pendingTeams[choice - 1];
 
-                Console.SetCursorPosition(borderLeft + 2, currentRow + samplePendingTeams.Length * 2 + 4);
+                Console.SetCursorPosition(borderLeft + 2, currentRow + displayCount * 2 + 4);
                 Console.WriteLine($"Duyệt đội: {selectedTeam.Name}");
                 Console.Write("Xác nhận duyệt đội này? (y/n): ");
 
                 var confirmation = Console.ReadLine()?.ToLower();
                 if (confirmation == "y" || confirmation == "yes")
                 {
+                    // TODO: Cần bổ sung phương thức ApproveTeamAsync(int teamId) vào ITeamService
+                    // Tạm thời hiển thị thông báo thành công
                     ConsoleRenderingService.ShowMessageBox($"✅ Đã duyệt đội '{selectedTeam.Name}' thành công!", false, 2500);
+
+                    /* 
+                    // Đoạn code này sẽ được uncomment khi phương thức được bổ sung
+                    var success = await _teamService.ApproveTeamAsync(selectedTeam.Id);
+                    if (success)
+                    {
+                        ConsoleRenderingService.ShowMessageBox($"✅ Đã duyệt đội '{selectedTeam.Name}' thành công!", false, 2500);
+                    }
+                    else
+                    {
+                        ConsoleRenderingService.ShowMessageBox("❌ Duyệt đội thất bại!", true, 2000);
+                    }
+                    */
                 }
                 else
                 {
@@ -234,8 +260,6 @@ public class TeamManagementHandler
             {
                 ConsoleRenderingService.ShowMessageBox("❌ Lựa chọn không hợp lệ!", true, 2000);
             }
-
-            await Task.CompletedTask;
         }
         catch (Exception ex)
         {
@@ -256,18 +280,48 @@ public class TeamManagementHandler
             int borderLeft = (Console.WindowWidth - 80) / 2;
             int borderTop = (Console.WindowHeight - 20) / 4;
 
+            // TODO: Cần bổ sung TeamMemberRequestDto và phương thức GetPendingTeamMemberRequestsAsync() vào ITeamService
+            Console.SetCursorPosition(borderLeft + 2, borderTop + 2);
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine("⚠️ Tính năng chưa được triển khai đầy đủ");
+            Console.WriteLine();
+
+            Console.SetCursorPosition(borderLeft + 2, borderTop + 4);
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.WriteLine("Cần bổ sung các phương thức và DTO sau vào ITeamService:");
+            Console.SetCursorPosition(borderLeft + 2, borderTop + 5);
+            Console.WriteLine("- TeamMemberRequestDto");
+            Console.SetCursorPosition(borderLeft + 2, borderTop + 6);
+            Console.WriteLine("- GetPendingTeamMemberRequestsAsync()");
+            Console.SetCursorPosition(borderLeft + 2, borderTop + 7);
+            Console.WriteLine("- ApproveTeamMemberRequestAsync(int requestId)");
+
+            Console.SetCursorPosition(borderLeft + 2, borderTop + 9);
+            Console.WriteLine("Vui lòng liên hệ với team phát triển để hoàn thiện tính năng này.");
+
+            Console.ResetColor();
+            Console.SetCursorPosition(borderLeft + 2, borderTop + 11);
+            Console.WriteLine("Nhấn phím bất kỳ để quay lại...");
+            Console.ReadKey(true);
+
+            /* TODO: Triển khai khi có các phương thức và DTO tương ứng
+            var pendingRequests = await _teamService.GetPendingTeamMemberRequestsAsync();
+            
+            if (pendingRequests == null || !pendingRequests.Any())
+            {
+                Console.SetCursorPosition(borderLeft + 2, borderTop + 4);
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine("Không có yêu cầu gia nhập đội nào đang chờ duyệt");
+                Console.ResetColor();
+                Console.SetCursorPosition(borderLeft + 2, borderTop + 6);
+                Console.WriteLine("Nhấn phím bất kỳ để tiếp tục...");
+                Console.ReadKey(true);
+                return;
+            }
+
             Console.SetCursorPosition(borderLeft + 2, borderTop + 2);
             Console.WriteLine("👥 Duyệt thành viên mới gia nhập đội");
             Console.WriteLine();
-
-            // Sample pending member requests
-            var sampleMemberRequests = new[]
-            {
-                new { Id = 1, PlayerName = "NewPlayer123", TeamName = "Shadow Legends", Role = "Support", Experience = "2 years", Status = "Pending" },
-                new { Id = 2, PlayerName = "ProShooter", TeamName = "Fire Dragons", Role = "Sniper", Experience = "3 years", Status = "Pending" },
-                new { Id = 3, PlayerName = "StrategicMind", TeamName = "Storm Raiders", Role = "IGL", Experience = "4 years", Status = "Pending" },
-                new { Id = 4, PlayerName = "FastFingers", TeamName = "Ice Wolves", Role = "Entry Fragger", Experience = "1.5 years", Status = "Pending" }
-            };
 
             Console.SetCursorPosition(borderLeft + 2, borderTop + 4);
             Console.WriteLine("Yêu cầu gia nhập đội:");
@@ -275,9 +329,11 @@ public class TeamManagementHandler
             Console.WriteLine(new string('─', 70));
 
             int currentRow = borderTop + 6;
-            for (int i = 0; i < sampleMemberRequests.Length; i++)
+            int displayCount = Math.Min(pendingRequests.Count, 5); // Giới hạn hiển thị tối đa 5 yêu cầu
+            
+            for (int i = 0; i < displayCount; i++)
             {
-                var request = sampleMemberRequests[i];
+                var request = pendingRequests[i];
                 Console.SetCursorPosition(borderLeft + 2, currentRow + i * 3);
                 Console.WriteLine($"{i + 1}. {request.PlayerName} → {request.TeamName}");
                 Console.SetCursorPosition(borderLeft + 4, currentRow + i * 3 + 1);
@@ -286,21 +342,29 @@ public class TeamManagementHandler
                 Console.WriteLine($"   📊 Status: {request.Status}");
             }
 
-            Console.SetCursorPosition(borderLeft + 2, currentRow + sampleMemberRequests.Length * 3 + 2);
-            Console.Write("Chọn yêu cầu để duyệt (1-4, 0 để thoát): ");
+            Console.SetCursorPosition(borderLeft + 2, currentRow + displayCount * 3 + 2);
+            Console.Write($"Chọn yêu cầu để duyệt (1-{displayCount}, 0 để thoát): ");
 
-            if (int.TryParse(Console.ReadLine(), out int choice) && choice > 0 && choice <= sampleMemberRequests.Length)
+            if (int.TryParse(Console.ReadLine(), out int choice) && choice > 0 && choice <= displayCount)
             {
-                var selectedRequest = sampleMemberRequests[choice - 1];
+                var selectedRequest = pendingRequests[choice - 1];
 
-                Console.SetCursorPosition(borderLeft + 2, currentRow + sampleMemberRequests.Length * 3 + 4);
+                Console.SetCursorPosition(borderLeft + 2, currentRow + displayCount * 3 + 4);
                 Console.WriteLine($"Duyệt: {selectedRequest.PlayerName} gia nhập {selectedRequest.TeamName}");
                 Console.Write("Xác nhận duyệt? (y/n): ");
 
                 var confirmation = Console.ReadLine()?.ToLower();
                 if (confirmation == "y" || confirmation == "yes")
                 {
-                    ConsoleRenderingService.ShowMessageBox($"✅ Đã duyệt {selectedRequest.PlayerName} gia nhập đội {selectedRequest.TeamName}!", false, 3000);
+                    var success = await _teamService.ApproveTeamMemberRequestAsync(selectedRequest.Id);
+                    if (success)
+                    {
+                        ConsoleRenderingService.ShowMessageBox($"✅ Đã duyệt {selectedRequest.PlayerName} gia nhập đội {selectedRequest.TeamName}!", false, 3000);
+                    }
+                    else
+                    {
+                        ConsoleRenderingService.ShowMessageBox("❌ Duyệt thành viên thất bại!", true, 2000);
+                    }
                 }
                 else
                 {
@@ -311,6 +375,7 @@ public class TeamManagementHandler
             {
                 ConsoleRenderingService.ShowMessageBox("❌ Lựa chọn không hợp lệ!", true, 2000);
             }
+            */
 
             await Task.CompletedTask;
         }

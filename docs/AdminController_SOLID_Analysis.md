@@ -1,14 +1,19 @@
 # Phân tích AdminController.cs theo nguyên tắc SOLID và Clean Code
 
+**Repository**: [https://github.com/Darlington0433/EsportsManager](https://github.com/Darlington0433/EsportsManager)  
+**Authors**: Phan Nhật Quân và mọi người - VTC Academy Team  
+**Contact**: quannnd2004@gmail.com
+
 ## 🔍 **Đánh giá hiện tại**
 
 ### ❌ **Các vấn đề vi phạm SOLID:**
 
 #### 1. **Single Responsibility Principle (SRP) - VI PHẠM NGHIÊM TRỌNG**
+
 - `AdminUIController` đang xử lý quá nhiều trách nhiệm:
   - Quản lý menu và navigation
   - Xử lý user management
-  - Xử lý tournament management  
+  - Xử lý tournament management
   - Xử lý system statistics
   - Xử lý donation reports
   - Xử lý voting results
@@ -17,41 +22,50 @@
   - UI rendering và console interactions
 
 #### 2. **Open/Closed Principle (OCP) - VI PHẠM**
+
 - Không thể mở rộng chức năng mới mà không sửa đổi code hiện tại
 - Khi thêm menu item mới phải sửa switch-case trong ShowAdminMenu()
 
 #### 3. **Liskov Substitution Principle (LSP) - CHƯA ÁP DỤNG**
+
 - Không có inheritance hierarchy để đánh giá
 
 #### 4. **Interface Segregation Principle (ISP) - VI PHẠM**
+
 - Không có interfaces riêng biệt cho các chức năng khác nhau
 - Tất cả logic đều trong 1 class
 
 #### 5. **Dependency Inversion Principle (DIP) - VI PHẠM NHẸ**
+
 - Phụ thuộc vào concrete classes như ConsoleRenderingService
 - Không inject interfaces cho UI services
 
 ### ❌ **Các vấn đề Clean Code:**
 
 #### 1. **Phương thức quá dài**
+
 - Nhiều phương thức > 50 lines
 - Logic phức tạp không được tách nhỏ
 - Ví dụ: `ShowDonationOverviewAsync()`, `ShowAllFeedbackAsync()`
 
 #### 2. **Code lặp lại (DRY Violation)**
+
 - Pattern hiển thị bảng dữ liệu lặp lại nhiều lần
 - Logic xử lý exception giống nhau
 - Pattern menu handling giống nhau
 
 #### 3. **Magic Numbers và Hard-coded Values**
+
 - Console dimensions: `DrawBorder("TITLE", 80, 20)`
 - Color codes không được định nghĩa constants
 
 #### 4. **Nested Conditions và Long Parameter Lists**
+
 - Nhiều if-else lồng nhau
 - Switch-case statements quá dài
 
 #### 5. **Tên biến và method không rõ ràng**
+
 - Một số biến như `d`, `mt`, `ef` trong CreateTournamentAsync
 - Method names có thể rõ ràng hơn
 
@@ -62,7 +76,7 @@
 ```csharp
 // Interfaces cho từng responsibility
 public interface IUserManagementHandler
-public interface ITournamentManagementHandler  
+public interface ITournamentManagementHandler
 public interface ISystemStatsHandler
 public interface IDonationReportHandler
 public interface IVotingResultsHandler
@@ -91,7 +105,7 @@ public interface IDisplayable
 
 public interface ISearchable<T>
 {
-    Task<IEnumerable<T>> SearchAsync(string searchTerm);
+    Task<IEnumerable<T>> SearchAsync(String searchTerm);
 }
 ```
 
@@ -103,7 +117,7 @@ public class AdminUIController : IAdminUIController
     private readonly IUserManagementHandler _userHandler;
     private readonly ITournamentManagementHandler _tournamentHandler;
     // ... other handlers
-    
+
     public AdminUIController(
         IUserManagementHandler userHandler,
         ITournamentManagementHandler tournamentHandler,
@@ -138,12 +152,14 @@ Services/
 ## 📊 **Metrics cải thiện:**
 
 ### Before:
+
 - **Lines of Code**: 2144 lines in 1 file
 - **Cyclomatic Complexity**: Very High
 - **Maintainability Index**: Low
 - **Code Duplication**: High
 
 ### After:
+
 - **Lines of Code**: ~300 lines per handler (8 files)
 - **Cyclomatic Complexity**: Low-Medium per handler
 - **Maintainability Index**: High

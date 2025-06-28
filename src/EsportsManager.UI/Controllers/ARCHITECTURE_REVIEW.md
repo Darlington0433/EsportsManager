@@ -1,5 +1,9 @@
 # 🏗️ Controllers Architecture - Senior Dev Review & Refactor
 
+**Repository**: [https://github.com/Darlington0433/EsportsManager](https://github.com/Darlington0433/EsportsManager)  
+**Authors**: Phan Nhật Quân và mọi người - VTC Academy Team  
+**Contact**: quannnd2004@gmail.com
+
 ## 🚨 CURRENT ISSUES (Senior Dev Perspective)
 
 ### ❌ **Anti-Patterns Detected:**
@@ -11,6 +15,7 @@
 5. **Team Onboarding Nightmare**: New devs sẽ confused
 
 ### ❌ **Impact on Codebase:**
+
 - **Maintainability**: Confusing structure
 - **Scalability**: Hard to extend
 - **Team Collaboration**: Multiple interpretations
@@ -19,6 +24,7 @@
 ## ✅ **ENTERPRISE REFACTOR PLAN**
 
 ### 🎯 **Option 1: Merge Pattern (RECOMMENDED)**
+
 ```
 Controllers/
 ├── Base/
@@ -50,6 +56,7 @@ Controllers/
 ```
 
 ### 🎯 **Option 2: Feature-Based (ALSO GOOD)**
+
 ```
 Features/
 ├── Admin/
@@ -72,21 +79,25 @@ Features/
 ## 🏆 **BEST PRACTICES (Senior Dev Standards)**
 
 ### ✅ **Naming Conventions:**
+
 - Controllers: `AdminController`, `PlayerController`
 - Handlers: `UserManagementHandler`, `ProfileHandler`
 - Interfaces: `IUserManagementHandler`, `IController`
 
 ### ✅ **Responsibility Separation:**
+
 - **Controllers**: Orchestration, routing, user interaction
 - **Handlers**: Specific business operations
 - **Services**: Business logic layer integration
 
 ### ✅ **Dependency Flow:**
+
 ```
 Controller → Handler → Service → Repository
 ```
 
 ### ✅ **Testing Strategy:**
+
 - Unit test handlers independently
 - Integration test controller + handler flow
 - Mock services for isolation
@@ -94,16 +105,19 @@ Controller → Handler → Service → Repository
 ## 🚀 **IMPLEMENTATION PLAN**
 
 ### Phase 1: Consolidate Structure
+
 1. Move MenuHandlers into respective Controller folders
 2. Rename for clarity
 3. Update namespaces
 
 ### Phase 2: Clean Architecture
+
 1. Establish clear boundaries
 2. Implement proper interfaces
 3. Add documentation
 
 ### Phase 3: Testing & Validation
+
 1. Unit tests for handlers
 2. Integration tests for flows
 3. Performance validation
@@ -111,6 +125,7 @@ Controller → Handler → Service → Repository
 ## 🎖️ **SENIOR DEV RECOMMENDATIONS**
 
 ### ✅ **DO:**
+
 - Keep structure flat where possible
 - Use clear, consistent naming
 - Separate concerns properly
@@ -118,6 +133,7 @@ Controller → Handler → Service → Repository
 - Think about team onboarding
 
 ### ❌ **DON'T:**
+
 - Over-engineer simple scenarios
 - Create redundant folder structures
 - Mix abstraction levels
@@ -125,4 +141,5 @@ Controller → Handler → Service → Repository
 - Sacrifice clarity for "patterns"
 
 ---
+
 **Conclusion**: Current structure has potential but needs consolidation to meet enterprise standards.

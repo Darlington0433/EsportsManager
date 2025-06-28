@@ -72,7 +72,7 @@ public class TournamentManagementHandler : BaseHandler
             Console.Clear();
             ConsoleRenderingService.DrawBorder("DANH SÁCH GIẢI ĐẤU", 120, 25);
 
-            if (!tournaments.Any())
+            if (tournaments == null || !tournaments.Any())
             {
                 ConsoleRenderingService.ShowNotification("Chưa có giải đấu nào trong hệ thống.", ConsoleColor.Yellow);
                 return;
@@ -227,7 +227,38 @@ public class TournamentManagementHandler : BaseHandler
             Console.Clear();
             ConsoleRenderingService.DrawBorder("DUYỆT ĐĂNG KÝ GIẢI ĐẤU", 120, 25);
 
+<<<<<<< HEAD
             // Get pending tournament registrations using the new service method
+=======
+            int borderLeft = (Console.WindowWidth - 80) / 2;
+            int borderTop = (Console.WindowHeight - 20) / 4;
+
+            // TODO: Cần bổ sung phương thức GetPendingRegistrationsAsync vào ITournamentService và triển khai trong TournamentService
+            Console.SetCursorPosition(borderLeft + 2, borderTop + 2);
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine("⚠️ Tính năng chưa được triển khai đầy đủ");
+            Console.WriteLine();
+
+            Console.SetCursorPosition(borderLeft + 2, borderTop + 4);
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.WriteLine("Cần bổ sung các phương thức sau vào ITournamentService:");
+            Console.SetCursorPosition(borderLeft + 2, borderTop + 5);
+            Console.WriteLine("- GetPendingRegistrationsAsync()");
+            Console.SetCursorPosition(borderLeft + 2, borderTop + 6);
+            Console.WriteLine("- ApproveRegistrationAsync(int registrationId)");
+
+            Console.SetCursorPosition(borderLeft + 2, borderTop + 8);
+            Console.WriteLine("Vui lòng liên hệ với team phát triển để hoàn thiện tính năng này.");
+
+            Console.ResetColor();
+            Console.SetCursorPosition(borderLeft + 2, borderTop + 10);
+            Console.WriteLine("Nhấn phím bất kỳ để quay lại...");
+            Console.ReadKey(true);
+
+            await Task.CompletedTask; // Để đảm bảo phương thức có await
+
+            /* TODO: Triển khai khi bổ sung các phương thức vào ITournamentService
+>>>>>>> remote/Quan
             var pendingRegistrations = await _tournamentService.GetPendingRegistrationsAsync();
             
             if (!pendingRegistrations.Any())
@@ -273,8 +304,13 @@ public class TournamentManagementHandler : BaseHandler
             
             if (int.TryParse(Console.ReadLine(), out int registrationId) && registrationId > 0)
             {
+<<<<<<< HEAD
                 var selectedRegistration = pendingRegistrations.FirstOrDefault(r => r.RegistrationId == registrationId);
                 if (selectedRegistration == null)
+=======
+                var result = await _tournamentService.ApproveRegistrationAsync(registrationId);
+                if (result)
+>>>>>>> remote/Quan
                 {
                     ConsoleRenderingService.ShowMessageBox("❌ Không tìm thấy đăng ký với ID này!", true, 2000);
                     return;

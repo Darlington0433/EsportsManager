@@ -1,5 +1,9 @@
 # 🏗️ OPTIMIZED FOLDER STRUCTURE
 
+**Repository**: [https://github.com/Darlington0433/EsportsManager](https://github.com/Darlington0433/EsportsManager)  
+**Authors**: Phan Nhật Quân và mọi người - VTC Academy Team  
+**Contact**: quannnd2004@gmail.com
+
 ## 📁 Cấu trúc thư mục tối ưu cho EsportsManager
 
 ```
@@ -224,26 +228,32 @@ EsportsManager/                           # Root project
 ## 🎯 Key Benefits của cấu trúc này:
 
 ### ✅ **Separation of Concerns**
+
 - Mỗi layer có trách nhiệm rõ ràng
 - Business logic tách biệt khỏi UI và Data Access
 
 ### ✅ **Scalability**
+
 - Dễ dàng thêm features mới
 - Có thể mở rộng sang Web/Mobile UI
 
 ### ✅ **Maintainability**
+
 - Code được tổ chức logic
 - Dễ debug và maintain
 
 ### ✅ **Testability**
+
 - Có thể test từng layer riêng biệt
 - Mock dependencies dễ dàng
 
 ### ✅ **Documentation**
+
 - Tài liệu đầy đủ cho developers
 - Hướng dẫn setup và troubleshooting
 
 ### ✅ **Professional Standards**
+
 - Tuân thủ best practices
 - Sẵn sàng cho production
 

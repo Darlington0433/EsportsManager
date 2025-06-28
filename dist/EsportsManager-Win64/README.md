@@ -1,5 +1,9 @@
 # 🎮 ESPORTS MANAGER - Console Application
 
+**Repository**: [https://github.com/Darlington0433/EsportsManager](https://github.com/Darlington0433/EsportsManager)  
+**Authors**: Phan Nhật Quân và mọi người - VTC Academy Team  
+**Contact**: quannnd2004@gmail.com
+
 ## 📦 **DISTRIBUTION PACKAGE**
 
 Đây là phiên bản đóng gói sẵn sàng để chạy của **Esports Manager Console Application**.
@@ -7,16 +11,19 @@
 ## 🚀 **CÁCH CHẠY ỨNG DỤNG**
 
 ### **Cách 1: Chạy trực tiếp (Khuyến nghị)**
+
 ```bash
 EsportsManager.exe
 ```
 
 ### **Cách 2: Sử dụng Batch Script**
+
 ```bash
 LaunchEsportsManager.bat
 ```
 
 ### **Cách 3: Sử dụng PowerShell Script**
+
 ```powershell
 .\LaunchEsportsManager.ps1
 ```
@@ -64,15 +71,18 @@ LaunchEsportsManager.bat
 ## 🛠️ **TROUBLESHOOTING**
 
 ### **Lỗi không chạy được EXE:**
+
 1. Click chuột phải → Properties → Unblock
 2. Chạy với quyền Administrator
 3. Tắt Windows Defender tạm thời
 
 ### **Console hiển thị lỗi font:**
+
 1. Cài đặt font Cascadia Code hoặc Consolas
 2. Thay đổi font trong Properties của console
 
 ### **Lỗi database:**
+
 1. Đảm bảo SQLite.Interop.dll nằm cùng folder
 2. Kiểm tra quyền write vào folder
 
