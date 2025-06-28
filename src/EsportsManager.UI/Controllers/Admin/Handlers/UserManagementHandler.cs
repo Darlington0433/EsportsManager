@@ -454,113 +454,118 @@ public class UserManagementHandler
             Console.Clear();
             ConsoleRenderingService.DrawBorder("GÁN THÀNH TÍCH", 80, 20);
 
-            // Get all players
-            var playersResult = await _userService.GetUsersByRoleAsync("Player");
-            if (!playersResult.IsSuccess || playersResult.Data == null || !playersResult.Data.Any())
-            {
-                int centerX = (Console.WindowWidth - 30) / 2;
-                int centerY = Console.WindowHeight / 2;
-                Console.SetCursorPosition(centerX, centerY);
-                Console.ForegroundColor = ConsoleColor.Yellow;
-                Console.WriteLine("Không có Player nào trong hệ thống.");
-                Console.ResetColor();
-                Console.SetCursorPosition(centerX - 10, centerY + 2);
-                Console.WriteLine("Nhấn phím bất kỳ để tiếp tục...");
-                Console.ReadKey(true);
-                return;
-            }
-
-            // Display players list
             int borderLeft = (Console.WindowWidth - 80) / 2;
             int borderTop = (Console.WindowHeight - 20) / 4;
 
             Console.SetCursorPosition(borderLeft + 2, borderTop + 2);
-            Console.WriteLine("👤 Danh sách Players:");
+            Console.WriteLine("🏆 GÁN THÀNH TÍCH CHO PLAYER");
             Console.SetCursorPosition(borderLeft + 2, borderTop + 3);
             Console.WriteLine(new string('─', 70));
 
-            int currentRow = borderTop + 4;
-            var players = playersResult.Data.ToList();
+            Console.SetCursorPosition(borderLeft + 2, borderTop + 5);
+            Console.WriteLine("📝 Lưu ý: Chỉ có thể gán thành tích cho tài khoản có role 'Player'");
+            Console.WriteLine();
 
-            for (int i = 0; i < players.Count && i < 8; i++)
+            Console.SetCursorPosition(borderLeft + 2, borderTop + 7);
+            Console.Write("👤 Nhập username của Player (0 để thoát): ");
+            var username = Console.ReadLine()?.Trim();
+
+            if (string.IsNullOrEmpty(username) || username == "0")
             {
-                var player = players[i];
-                Console.SetCursorPosition(borderLeft + 2, currentRow + i);
-                Console.WriteLine($"{i + 1}. ID: {player.Id} | {player.Username} | {player.FullName ?? "N/A"}");
+                return;
             }
 
-            Console.SetCursorPosition(borderLeft + 2, currentRow + Math.Min(players.Count, 8) + 1);
-            Console.Write("Chọn Player (nhập số thứ tự, 0 để thoát): ");
-
-            if (int.TryParse(Console.ReadLine(), out int selection) && selection > 0 && selection <= players.Count)
+            // Kiểm tra user tồn tại và là Player
+            var userResult = await _userService.GetUserByUsernameAsync(username);
+            if (!userResult.IsSuccess || userResult.Data == null)
             {
-                var selectedPlayer = players[selection - 1];
+                ConsoleRenderingService.ShowMessageBox($"❌ Không tìm thấy user với username: {username}", true, 3000);
+                return;
+            }
 
-                Console.SetCursorPosition(borderLeft + 2, currentRow + Math.Min(players.Count, 8) + 3);
-                Console.WriteLine($"Đã chọn Player: {selectedPlayer.Username}");
+            var selectedUser = userResult.Data;
 
                 // Get available achievements from service
                 var availableAchievements = await _achievementService.GetAvailableAchievementsAsync();
 
-                Console.SetCursorPosition(borderLeft + 2, currentRow + Math.Min(players.Count, 8) + 5);
-                Console.WriteLine("🏆 Chọn loại thành tích:");
+                ConsoleRenderingService.ShowMessageBox($"{roleMessage}\n💡 Chỉ có thể gán thành tích cho tài khoản Player.", true, 3000);
+                return;
+            }
 
-                for (int i = 0; i < availableAchievements.Count && i < 10; i++)
+            // Hiển thị thông tin Player đã chọn
+            Console.SetCursorPosition(borderLeft + 2, borderTop + 9);
+            Console.WriteLine($"✅ Đã tìm thấy Player: {selectedUser.Username}");
+            Console.SetCursorPosition(borderLeft + 2, borderTop + 10);
+            Console.WriteLine($"📄 Họ tên: {selectedUser.FullName ?? "N/A"}");
+            Console.SetCursorPosition(borderLeft + 2, borderTop + 11);
+            Console.WriteLine($"📧 Email: {selectedUser.Email}");
+
+            // Achievement types
+            var achievementTypes = new string[]
+            {
+                "Tournament Winner",
+                "Top 3 Finisher",
+                "Most Valuable Player",
+                "Best Team Player",
+                "Rising Star",
+                "Veteran Player",
+                "Fair Play Award",
+                "Community Champion"
+            };
+
+            Console.SetCursorPosition(borderLeft + 2, borderTop + 13);
+            Console.WriteLine("🏆 Chọn loại thành tích:");
+
+            for (int i = 0; i < achievementTypes.Length; i++)
+            {
+                Console.SetCursorPosition(borderLeft + 4, borderTop + 14 + i);
+                Console.WriteLine($"{i + 1}. {achievementTypes[i]}");
+            }
+
+            Console.SetCursorPosition(borderLeft + 2, borderTop + 14 + achievementTypes.Length + 1);
+            Console.Write("Chọn thành tích (1-8): ");
+
+            if (int.TryParse(Console.ReadLine(), out int achievementChoice) && achievementChoice > 0 && achievementChoice <= achievementTypes.Length)
+            {
+                var selectedAchievement = achievementTypes[achievementChoice - 1];
+
+                Console.SetCursorPosition(borderLeft + 2, borderTop + 14 + achievementTypes.Length + 2);
+                Console.Write("Nhập mô tả thành tích: ");
+                var description = Console.ReadLine() ?? "";
+
+                Console.SetCursorPosition(borderLeft + 2, borderTop + 14 + achievementTypes.Length + 3);
+                Console.Write($"Xác nhận gán thành tích '{selectedAchievement}' cho {selectedUser.Username}? (y/n): ");
+
+                var confirmation = Console.ReadLine()?.ToLower();
+                if (confirmation == "y" || confirmation == "yes")
                 {
-                    Console.SetCursorPosition(borderLeft + 4, currentRow + Math.Min(players.Count, 8) + 6 + i);
-                    Console.WriteLine($"{i + 1}. {availableAchievements[i]}");
-                }
+                    // Gán thành tích thực sự vào database
+                    var currentUser = EsportsManager.UI.Services.UserSessionManager.CurrentUser;
+                    int adminId = currentUser?.Id ?? 1; // Fallback to admin ID 1
 
-                Console.SetCursorPosition(borderLeft + 2, currentRow + Math.Min(players.Count, 8) + 17);
-                Console.Write($"Chọn thành tích (1-{availableAchievements.Count}): ");
+                    var success = await _achievementService.AssignAchievementAsync(
+                        selectedUser.Id,
+                        selectedAchievement,
+                        description,
+                        adminId);
 
-                if (int.TryParse(Console.ReadLine(), out int achievementChoice) && achievementChoice > 0 && achievementChoice <= availableAchievements.Count)
-                {
-                    var selectedAchievement = availableAchievements[achievementChoice - 1];
-
-                    Console.SetCursorPosition(borderLeft + 2, currentRow + Math.Min(players.Count, 8) + 16);
-                    Console.Write("Nhập mô tả thành tích: ");
-                    var description = Console.ReadLine() ?? "";
-
-                    Console.SetCursorPosition(borderLeft + 2, currentRow + Math.Min(players.Count, 8) + 17);
-                    Console.Write($"Xác nhận gán thành tích '{selectedAchievement}' cho {selectedPlayer.Username}? (y/n): ");
-
-                    var confirmation = Console.ReadLine()?.ToLower();
-                    if (confirmation == "y" || confirmation == "yes")
+                    if (success)
                     {
-                        // Use IAchievementService to assign achievement
-                        var success = await _achievementService.AssignAchievementToPlayerAsync(selectedPlayer.Id, selectedAchievement, description);
-                        
-                        if (success)
-                        {
-                            ConsoleRenderingService.ShowMessageBox($"✅ Đã gán thành tích '{selectedAchievement}' cho {selectedPlayer.Username}!\n📝 Mô tả: {description}", false, 3000);
-
-                            // Log the action
-                            Console.WriteLine($"\n📊 Achievement Assignment:");
-                            Console.WriteLine($"   Player ID: {selectedPlayer.Id}");
-                            Console.WriteLine($"   Achievement: {selectedAchievement}");
-                            Console.WriteLine($"   Description: {description}");
-                            Console.WriteLine($"   Assigned by: Admin");
-                            Console.WriteLine($"   Date: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
-                        }
-                        else
-                        {
-                            ConsoleRenderingService.ShowMessageBox("❌ Lỗi khi gán thành tích! Vui lòng thử lại.", true, 2000);
-                        }
+                        ConsoleRenderingService.ShowMessageBox($"✅ Đã gán thành tích '{selectedAchievement}' cho Player {selectedUser.Username}!\n📝 Mô tả: {description}\n💾 Dữ liệu đã được lưu vào database", false, 3000);
                     }
                     else
                     {
-                        ConsoleRenderingService.ShowMessageBox("❌ Đã hủy thao tác", false, 1000);
+                        ConsoleRenderingService.ShowMessageBox($"❌ Không thể gán thành tích cho {selectedUser.Username}. Vui lòng thử lại.", true, 3000);
                     }
                 }
                 else
                 {
-                    ConsoleRenderingService.ShowMessageBox("❌ Lựa chọn thành tích không hợp lệ!", true, 2000);
+                    ConsoleRenderingService.ShowMessageBox("❌ Đã hủy thao tác", false, 1000);
                 }
             }
-            else if (selection != 0)
+            else
             {
-                ConsoleRenderingService.ShowMessageBox("❌ Lựa chọn Player không hợp lệ!", true, 2000);
+                ConsoleRenderingService.ShowMessageBox("❌ Lựa chọn thành tích không hợp lệ!", true, 2000);
             }
         }
         catch (Exception ex)

@@ -52,7 +52,11 @@ public class ServiceManager
     {
         // Create handlers
         var userManagementHandler = new UserManagementHandler(_userService, _achievementService);
+<<<<<<< HEAD
         var tournamentManagementHandler = new TournamentManagementHandler(adminUser, _tournamentService, _teamService);
+=======
+        var tournamentManagementHandler = new AdminTournamentManagementHandler(_tournamentService);
+>>>>>>> origin/Quan
         var systemStatsHandler = new SystemStatsHandler(_userService, _tournamentService, _teamService);
         var donationReportHandler = new DonationReportHandler(_walletService, _userService);
         var votingResultsHandler = new VotingResultsHandler(_userService, _tournamentService, _votingService);
@@ -74,7 +78,7 @@ public class ServiceManager
     public PlayerController CreatePlayerController(UserProfileDto playerUser)
     {
         // Tạo các handler instances với đúng thứ tự tham số
-        var tournamentRegistrationHandler = new TournamentRegistrationHandler(playerUser, _tournamentService, _teamService);
+        var tournamentManagementHandler = new TournamentManagementHandler(playerUser, _tournamentService, _teamService);
         var teamManagementHandler = new PlayerTeamManagementHandler(playerUser, _teamService);
         var profileHandler = new PlayerProfileHandler(playerUser, _userService);
         var tournamentViewHandler = new TournamentViewHandler(_tournamentService);
@@ -82,7 +86,7 @@ public class ServiceManager
         var walletHandler = new PlayerWalletHandler(playerUser, _walletService);
         var achievementHandler = new PlayerAchievementHandler(playerUser, _tournamentService, _userService, _achievementService);
 
-        return new PlayerController(playerUser, tournamentRegistrationHandler, teamManagementHandler, profileHandler, tournamentViewHandler, feedbackHandler, walletHandler, achievementHandler);
+        return new PlayerController(playerUser, tournamentManagementHandler, teamManagementHandler, profileHandler, tournamentViewHandler, feedbackHandler, walletHandler, achievementHandler);
     }
 
     /// <summary>

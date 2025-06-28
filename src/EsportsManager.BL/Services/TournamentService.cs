@@ -225,16 +225,34 @@ namespace EsportsManager.BL.Services
         {
             try
             {
-                // TODO: Triển khai stored procedure sp_RegisterTeamForTournament
+                _logger.LogInformation("Attempting to register team {TeamId} for tournament {TournamentId}", teamId, tournamentId);
+
+                // Gọi stored procedure sp_RegisterTeamForTournament
                 _dataContext.ExecuteNonQueryStoredProcedure("sp_RegisterTeamForTournament",
                     _dataContext.CreateParameter("p_TournamentID", tournamentId),
                     _dataContext.CreateParameter("p_TeamID", teamId));
 
+                _logger.LogInformation("Successfully registered team {TeamId} for tournament {TournamentId}", teamId, tournamentId);
                 return await Task.FromResult(true);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error registering team {TeamId} for tournament {TournamentId}", teamId, tournamentId);
+                _logger.LogError(ex, "Error registering team {TeamId} for tournament {TournamentId}: {Message}", teamId, tournamentId, ex.Message);
+
+                // Log chi tiết về loại lỗi
+                if (ex.Message.Contains("already registered"))
+                {
+                    _logger.LogWarning("Team {TeamId} is already registered for tournament {TournamentId}", teamId, tournamentId);
+                }
+                else if (ex.Message.Contains("Registration is closed"))
+                {
+                    _logger.LogWarning("Registration is closed for tournament {TournamentId}", tournamentId);
+                }
+                else if (ex.Message.Contains("maximum number of teams"))
+                {
+                    _logger.LogWarning("Tournament {TournamentId} has reached maximum number of teams", tournamentId);
+                }
+
                 return await Task.FromResult(false);
             }
         }

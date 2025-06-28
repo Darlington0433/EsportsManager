@@ -8,11 +8,13 @@ using EsportsManager.UI.Controllers.MenuHandlers.Shared;
 
 namespace EsportsManager.UI.Controllers.Admin.Handlers;
 
+public class AdminTournamentManagementHandler
 public class TournamentManagementHandler : BaseHandler
 {
     private readonly ITournamentService _tournamentService;
     private readonly ITeamService _teamService;
 
+    public AdminTournamentManagementHandler(ITournamentService tournamentService)
     public TournamentManagementHandler(UserProfileDto currentUser, ITournamentService tournamentService, ITeamService teamService) : base(currentUser)
     {
         _tournamentService = tournamentService;

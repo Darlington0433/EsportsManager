@@ -5,23 +5,27 @@ using System.Threading.Tasks;
 using EsportsManager.BL.DTOs;
 using EsportsManager.BL.Interfaces;
 using EsportsManager.DAL.Interfaces;
+using EsportsManager.DAL.Models;
 using Microsoft.Extensions.Logging;
 
 namespace EsportsManager.BL.Services
 {
     /// <summary>
-    /// Service xử lý thành tích và thống kê của người chơi - Simplified version without tournament dependency
+    /// Service xử lý thành tích và thống kê của người chơi
     /// </summary>
     public class AchievementService : IAchievementService
     {
         private readonly IUsersRepository _userRepository;
+        private readonly IAchievementRepository _achievementRepository;
         private readonly ILogger<AchievementService> _logger;
 
         public AchievementService(
             IUsersRepository userRepository,
+            IAchievementRepository achievementRepository,
             ILogger<AchievementService> logger)
         {
             _userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
+            _achievementRepository = achievementRepository ?? throw new ArgumentNullException(nameof(achievementRepository));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
@@ -86,7 +90,7 @@ namespace EsportsManager.BL.Services
         }
 
         /// <summary>
-        /// Lấy danh hiệu và thành tích của người chơi - Simplified version
+        /// Lấy danh hiệu và thành tích của người chơi - từ database thật
         /// </summary>
         public async Task<List<PlayerAchievementDto>> GetPlayerAchievementsAsync(int userId)
         {
@@ -99,25 +103,89 @@ namespace EsportsManager.BL.Services
                     return new List<PlayerAchievementDto>();
                 }
 
-                // Return basic achievements since we don't have tournament data
-                var achievements = new List<PlayerAchievementDto>
-                {
-                    new PlayerAchievementDto
-                    {
-                        AchievementId = 1,
-                        Title = "First Login",
-                        Description = "Completed first login to the system",
-                        DateAchieved = player.CreatedAt,
-                        AchievementType = "System"
-                    }
-                };
+                // Lấy thành tích từ database
+                var achievements = await _achievementRepository.GetByUserIdAsync(userId);
 
-                return await Task.FromResult(achievements);
+                var result = achievements.Select(a => new PlayerAchievementDto
+                {
+                    AchievementId = a.AchievementID,
+                    Title = a.Title,
+                    Description = a.Description ?? "",
+                    DateAchieved = a.DateAchieved,
+                    AchievementType = a.AchievementType
+                }).ToList();
+
+                return result;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Error getting achievements for user {userId}");
                 return new List<PlayerAchievementDto>();
+            }
+        }
+
+        /// <summary>
+        /// Gán thành tích cho người chơi
+        /// </summary>
+        public async Task<bool> AssignAchievementAsync(int userId, string achievementType, string description, int assignedBy, int? tournamentId = null, int? teamId = null)
+        {
+            try
+            {
+                var player = await _userRepository.GetByIdAsync(userId);
+                if (player == null)
+                {
+                    _logger.LogWarning($"Không tìm thấy người chơi với ID: {userId}");
+                    return false;
+                }
+
+                var achievement = new Achievement
+                {
+                    UserID = userId,
+                    Title = achievementType,
+                    Description = description,
+                    AchievementType = achievementType,
+                    DateAchieved = DateTime.Now,
+                    AssignedBy = assignedBy,
+                    TournamentID = tournamentId,
+                    TeamID = teamId
+                };
+
+                await _achievementRepository.CreateAsync(achievement);
+
+                _logger.LogInformation($"Đã gán thành tích '{achievementType}' cho user ID {userId} bởi admin ID {assignedBy}");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error assigning achievement to user {userId}");
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Xóa thành tích của người chơi
+        /// </summary>
+        public async Task<bool> RemoveAchievementAsync(int achievementId)
+        {
+            try
+            {
+                var success = await _achievementRepository.DeleteAsync(achievementId);
+
+                if (success)
+                {
+                    _logger.LogInformation($"Đã xóa thành tích ID {achievementId}");
+                }
+                else
+                {
+                    _logger.LogWarning($"Không thể xóa thành tích ID {achievementId}");
+                }
+
+                return success;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error removing achievement {achievementId}");
+                return false;
             }
         }
 

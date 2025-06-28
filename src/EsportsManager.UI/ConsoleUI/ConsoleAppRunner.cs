@@ -275,7 +275,7 @@ namespace EsportsManager.UI.ConsoleUI
             try
             {
                 var playerController = serviceManager.CreatePlayerController(playerUser);
-                playerController.ShowPlayerMenu();
+                playerController.ShowPlayerMenuAsync().GetAwaiter().GetResult();
             }
             catch (Exception ex)
             {

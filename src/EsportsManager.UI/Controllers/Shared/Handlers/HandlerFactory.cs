@@ -51,7 +51,7 @@ namespace EsportsManager.UI.Controllers.Shared.Handlers
         #region Admin Handlers
         public IUserManagementHandler CreateUserManagementHandler()
         {
-            return new UserManagementHandler(_userService);
+            return new UserManagementHandler(_userService, _achievementService);
         }
 
         public ITournamentManagementHandler CreateTournamentManagementHandler()

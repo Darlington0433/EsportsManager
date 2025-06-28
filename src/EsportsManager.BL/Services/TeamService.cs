@@ -43,7 +43,7 @@ namespace EsportsManager.BL.Services
                 };
 
                 var createdTeam = await _teamRepository.CreateAsync(team);
-                
+
                 // Add creator as team leader
                 await _teamRepository.AddMemberAsync(createdTeam.TeamID, creatorUserId, true);
 
@@ -141,13 +141,13 @@ namespace EsportsManager.BL.Services
                 // Update fields if provided
                 if (!string.IsNullOrEmpty(updateDto.Name))
                     team.TeamName = updateDto.Name;
-                
+
                 if (updateDto.Description != null)
                     team.Description = updateDto.Description;
-                
+
                 if (updateDto.Logo != null)
                     team.LogoURL = updateDto.Logo;
-                
+
                 if (!string.IsNullOrEmpty(updateDto.Status))
                     team.Status = updateDto.Status;
 
@@ -331,6 +331,34 @@ namespace EsportsManager.BL.Services
             }
         }
 
+        /// <summary>
+        /// Chuyển giao quyền leader cho thành viên khác
+        /// </summary>
+        public async Task<bool> TransferLeadershipAsync(int teamId, int currentLeaderId, int newLeaderId)
+        {
+            try
+            {
+                // Check if current user is team leader
+                if (!await _teamRepository.IsTeamLeaderAsync(currentLeaderId, teamId))
+                {
+                    throw new UnauthorizedAccessException("Only team leader can transfer leadership");
+                }
+
+                // Check if new leader is in the team
+                if (!await _teamRepository.IsPlayerInTeamAsync(newLeaderId, teamId))
+                {
+                    throw new InvalidOperationException("New leader must be a member of the team");
+                }
+
+                // Update leadership
+                return await _teamRepository.TransferLeadershipAsync(teamId, currentLeaderId, newLeaderId);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Error transferring leadership: {ex.Message}", ex);
+            }
+        }
+
         #region Private Helper Methods
 
         /// <summary>
@@ -348,6 +376,7 @@ namespace EsportsManager.BL.Services
                 DateCreated = team.CreatedAt,
                 Status = team.Status,
                 MaxMembers = team.MaxMembers,
+                MemberCount = team.MemberCount, // Sử dụng MemberCount từ JOIN query
                 LeaderId = team.CreatedBy,
                 Logo = team.LogoURL
             };
@@ -361,7 +390,7 @@ namespace EsportsManager.BL.Services
             return new TeamMemberDto
             {
                 UserId = member.UserID,
-                Username = "Unknown", // TODO: Get actual username from User entity
+                Username = member.Username ?? "Unknown", // Sử dụng username từ JOIN query
                 Role = member.IsLeader ? "Leader" : "Member",
                 JoinDate = member.JoinDate,
                 Status = member.Status ?? "Active"

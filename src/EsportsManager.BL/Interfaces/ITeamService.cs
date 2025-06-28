@@ -70,9 +70,16 @@ namespace EsportsManager.BL.Interfaces
         /// <summary>
         /// Yêu cầu tham gia team
         /// </summary>
-        Task<bool> RequestToJoinTeamAsync(int teamId, int playerId, string? message = null);    /// <summary>
-                                                                                                /// Tìm kiếm team theo tên
-                                                                                                /// </summary>
+        Task<bool> RequestToJoinTeamAsync(int teamId, int playerId, string? message = null);
+
+        /// <summary>
+        /// Chuyển giao quyền leader cho thành viên khác
+        /// </summary>
+        Task<bool> TransferLeadershipAsync(int teamId, int currentLeaderId, int newLeaderId);
+
+        /// <summary>
+        /// Tìm kiếm team theo tên
+        /// </summary>
         Task<List<TeamInfoDto>> SearchTeamsAsync(string searchTerm);
 
         /// <summary>
