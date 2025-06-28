@@ -10,7 +10,7 @@ namespace EsportsManager.UI.Controllers.Admin;
 public class AdminUIController : BaseController, IAdminUIController
 {
     private readonly UserManagementHandler _userManagementHandler;
-    private readonly TournamentManagementHandler _tournamentManagementHandler;
+    private readonly AdminTournamentManagementHandler _tournamentManagementHandler;
     private readonly SystemStatsHandler _systemStatsHandler;
     private readonly DonationReportHandler _donationReportHandler;
     private readonly VotingResultsHandler _votingResultsHandler;
@@ -19,7 +19,7 @@ public class AdminUIController : BaseController, IAdminUIController
     public AdminUIController(
         UserProfileDto currentUser,
         UserManagementHandler userManagementHandler,
-        TournamentManagementHandler tournamentManagementHandler,
+        AdminTournamentManagementHandler tournamentManagementHandler,
         SystemStatsHandler systemStatsHandler,
         DonationReportHandler donationReportHandler,
         VotingResultsHandler votingResultsHandler,

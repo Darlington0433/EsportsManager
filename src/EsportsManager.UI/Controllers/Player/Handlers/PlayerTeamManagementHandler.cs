@@ -51,8 +51,9 @@ namespace EsportsManager.UI.Controllers.Player.Handlers
                         menuOptions = new[]
                         {
                             "Xem thông tin team hiện tại",
-                            "Rời khỏi team",
                             "Xem danh sách thành viên",
+                            "Rời khỏi team",
+                            "Xem danh sách các team khác",
                             "⬅️ Quay lại"
                         };
                     }
@@ -85,13 +86,16 @@ namespace EsportsManager.UI.Controllers.Player.Handlers
                                 await ShowDetailedTeamInfoAsync(myTeam);
                                 break;
                             case 1:
-                                await LeaveTeamInteractiveAsync(myTeam);
-                                break;
-                            case 2:
                                 await ShowTeamMembersAsync(myTeam.Id);
                                 break;
-                            case -1:
+                            case 2:
+                                await LeaveTeamInteractiveAsync(myTeam);
+                                break;
                             case 3:
+                                await ViewAllTeamsAsync();
+                                break;
+                            case -1:
+                            case 4:
                                 return;
                         }
                     }
@@ -182,7 +186,7 @@ namespace EsportsManager.UI.Controllers.Player.Handlers
                 {
                     var selectedTeam = teams.ElementAt(choice - 1);
                     var result = await _teamService.RequestToJoinTeamAsync(selectedTeam.Id, _currentUser.Id);
-                    
+
                     if (result)
                     {
                         ConsoleRenderingService.ShowMessageBox($"Đã gửi yêu cầu tham gia team '{selectedTeam.Name}' thành công!", false, 3000);
@@ -298,33 +302,124 @@ namespace EsportsManager.UI.Controllers.Player.Handlers
             try
             {
                 Console.Clear();
-                ConsoleRenderingService.DrawBorder("RỜI KHỎI TEAM", 80, 12);
+                ConsoleRenderingService.DrawBorder("RỜI KHỎI TEAM", 80, 15);
 
-                Console.WriteLine($"⚠️  Bạn có chắc chắn muốn rời khỏi team '{team.Name}' không?");
-                Console.WriteLine("Hành động này không thể hoàn tác.");
-                Console.Write("\nXác nhận rời team (YES để xác nhận): ");
+                // Kiểm tra xem người dùng hiện tại có phải là leader không
+                bool isLeader = await _teamService.IsTeamLeaderAsync(_currentUser.Id, team.Id);
 
-                var confirmation = Console.ReadLine()?.Trim();
-                if (confirmation?.ToUpper() == "YES")
+                if (isLeader)
                 {
-                    var result = await _teamService.RemoveMemberAsync(team.Id, _currentUser.Id, _currentUser.Id);
-                    if (result)
+                    // Lấy danh sách thành viên khác để chuyển giao leader
+                    var members = await _teamService.GetTeamMembersAsync(team.Id);
+                    var otherMembers = members.Where(m => m.UserId != _currentUser.Id && m.Status == "Active").ToList();
+
+                    if (otherMembers.Any())
                     {
-                        ConsoleRenderingService.ShowMessageBox($"Đã rời khỏi team '{team.Name}' thành công!", false, 3000);
+                        Console.WriteLine($"⚠️  Bạn là leader của team '{team.Name}'.");
+                        Console.WriteLine("Để rời team, bạn cần chuyển giao quyền leader cho thành viên khác.");
+                        Console.WriteLine("\nDanh sách thành viên có thể làm leader mới:");
+
+                        for (int i = 0; i < otherMembers.Count; i++)
+                        {
+                            Console.WriteLine($"{i + 1}. {otherMembers[i].Username}");
+                        }
+
+                        Console.Write($"\nChọn thành viên mới làm leader (1-{otherMembers.Count}) hoặc 0 để hủy: ");
+                        if (int.TryParse(Console.ReadLine(), out int choice))
+                        {
+                            if (choice == 0)
+                            {
+                                ConsoleRenderingService.ShowMessageBox("Đã hủy thao tác rời team", false, 1000);
+                                return;
+                            }
+                            else if (choice >= 1 && choice <= otherMembers.Count)
+                            {
+                                var newLeader = otherMembers[choice - 1];
+
+                                // Chuyển giao leader
+                                var transferResult = await _teamService.TransferLeadershipAsync(team.Id, _currentUser.Id, newLeader.UserId);
+                                if (transferResult)
+                                {
+                                    // Sau khi chuyển giao thành công, rời team
+                                    var leaveResult = await _teamService.RemoveMemberAsync(team.Id, _currentUser.Id, _currentUser.Id);
+                                    if (leaveResult)
+                                    {
+                                        ConsoleRenderingService.ShowMessageBox($"Đã chuyển giao leader cho {newLeader.Username} và rời khỏi team '{team.Name}' thành công!", false, 3000);
+                                    }
+                                    else
+                                    {
+                                        ConsoleRenderingService.ShowMessageBox("Chuyển giao leader thành công nhưng rời team thất bại!", true, 3000);
+                                    }
+                                }
+                                else
+                                {
+                                    ConsoleRenderingService.ShowMessageBox("Chuyển giao leader thất bại!", true, 2000);
+                                }
+                            }
+                            else
+                            {
+                                ConsoleRenderingService.ShowMessageBox("Lựa chọn không hợp lệ!", true, 2000);
+                            }
+                        }
+                        else
+                        {
+                            ConsoleRenderingService.ShowMessageBox("Lựa chọn không hợp lệ!", true, 2000);
+                        }
                     }
                     else
                     {
-                        ConsoleRenderingService.ShowMessageBox("Rời team thất bại!", true, 2000);
+                        Console.WriteLine($"⚠️  Bạn là leader duy nhất của team '{team.Name}'.");
+                        Console.WriteLine("Bạn có thể giải tán team hoặc hủy thao tác.");
+                        Console.Write("\nNhập 'DISBAND' để giải tán team hoặc Enter để hủy: ");
+
+                        var confirmation = Console.ReadLine()?.Trim();
+                        if (confirmation?.ToUpper() == "DISBAND")
+                        {
+                            var disbandResult = await _teamService.DisbandTeamAsync(team.Id, _currentUser.Id);
+                            if (disbandResult)
+                            {
+                                ConsoleRenderingService.ShowMessageBox($"Đã giải tán team '{team.Name}' thành công!", false, 3000);
+                            }
+                            else
+                            {
+                                ConsoleRenderingService.ShowMessageBox("Giải tán team thất bại!", true, 2000);
+                            }
+                        }
+                        else
+                        {
+                            ConsoleRenderingService.ShowMessageBox("Đã hủy thao tác", false, 1000);
+                        }
                     }
                 }
                 else
                 {
-                    ConsoleRenderingService.ShowMessageBox("Đã hủy thao tác rời team", false, 1000);
+                    // Thành viên thường rời team
+                    Console.WriteLine($"⚠️  Bạn có chắc chắn muốn rời khỏi team '{team.Name}' không?");
+                    Console.WriteLine("Hành động này không thể hoàn tác.");
+                    Console.Write("\nXác nhận rời team (YES để xác nhận): ");
+
+                    var confirmation = Console.ReadLine()?.Trim();
+                    if (confirmation?.ToUpper() == "YES")
+                    {
+                        var result = await _teamService.RemoveMemberAsync(team.Id, _currentUser.Id, _currentUser.Id);
+                        if (result)
+                        {
+                            ConsoleRenderingService.ShowMessageBox($"Đã rời khỏi team '{team.Name}' thành công!", false, 3000);
+                        }
+                        else
+                        {
+                            ConsoleRenderingService.ShowMessageBox("Rời team thất bại!", true, 2000);
+                        }
+                    }
+                    else
+                    {
+                        ConsoleRenderingService.ShowMessageBox("Đã hủy thao tác rời team", false, 1000);
+                    }
                 }
             }
             catch (Exception ex)
             {
-                ConsoleRenderingService.ShowMessageBox($"Lỗi: {ex.Message}", true, 3000);
+                ConsoleRenderingService.ShowMessageBox($"Có lỗi xảy ra: {ex.Message}", true, 3000);
             }
         }
 

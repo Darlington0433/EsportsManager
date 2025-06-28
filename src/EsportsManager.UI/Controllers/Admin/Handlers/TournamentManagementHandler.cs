@@ -7,11 +7,11 @@ using EsportsManager.UI.Controllers.Admin.Interfaces;
 
 namespace EsportsManager.UI.Controllers.Admin.Handlers;
 
-public class TournamentManagementHandler
+public class AdminTournamentManagementHandler
 {
     private readonly ITournamentService _tournamentService;
 
-    public TournamentManagementHandler(ITournamentService tournamentService)
+    public AdminTournamentManagementHandler(ITournamentService tournamentService)
     {
         _tournamentService = tournamentService;
     }

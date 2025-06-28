@@ -67,7 +67,14 @@ namespace EsportsManager.DAL.Repositories
             try
             {
                 using var connection = _context.CreateConnection();
-                const string sql = "SELECT * FROM Teams WHERE TeamID = @TeamID AND IsActive = 1";
+                const string sql = @"
+                    SELECT t.*, COALESCE(COUNT(tm.UserID), 0) as MemberCount 
+                    FROM Teams t
+                    LEFT JOIN TeamMembers tm ON t.TeamID = tm.TeamID AND tm.Status = 'Active'
+                    WHERE t.TeamID = @TeamID AND t.IsActive = 1
+                    GROUP BY t.TeamID, t.TeamName, t.Description, t.GameID, t.CreatedBy, 
+                             t.LogoURL, t.MaxMembers, t.CreatedAt, t.IsActive, t.Status";
+
                 return await connection.QuerySingleOrDefaultAsync<Team>(sql, new { TeamID = teamId });
             }
             catch (Exception ex)
@@ -97,7 +104,14 @@ namespace EsportsManager.DAL.Repositories
             try
             {
                 using var connection = _context.CreateConnection();
-                const string sql = "SELECT * FROM Teams WHERE IsActive = 1 ORDER BY TeamName";
+                const string sql = @"
+                    SELECT t.*, COALESCE(COUNT(tm.UserID), 0) as MemberCount 
+                    FROM Teams t
+                    LEFT JOIN TeamMembers tm ON t.TeamID = tm.TeamID AND tm.Status = 'Active'
+                    WHERE t.IsActive = 1
+                    GROUP BY t.TeamID, t.TeamName, t.Description, t.GameID, t.CreatedBy, 
+                             t.LogoURL, t.MaxMembers, t.CreatedAt, t.IsActive, t.Status
+                    ORDER BY t.TeamName";
                 var result = await connection.QueryAsync<Team>(sql);
                 return result.ToList();
             }
@@ -197,9 +211,13 @@ namespace EsportsManager.DAL.Repositories
             {
                 using var connection = _context.CreateConnection();
                 const string sql = @"
-                    SELECT * FROM Teams 
-                    WHERE TeamName LIKE @SearchTerm AND IsActive = 1 
-                    ORDER BY TeamName";
+                    SELECT t.*, COALESCE(COUNT(tm.UserID), 0) as MemberCount 
+                    FROM Teams t
+                    LEFT JOIN TeamMembers tm ON t.TeamID = tm.TeamID AND tm.Status = 'Active'
+                    WHERE t.TeamName LIKE @SearchTerm AND t.IsActive = 1 
+                    GROUP BY t.TeamID, t.TeamName, t.Description, t.GameID, t.CreatedBy, 
+                             t.LogoURL, t.MaxMembers, t.CreatedAt, t.IsActive, t.Status
+                    ORDER BY t.TeamName";
 
                 var result = await connection.QueryAsync<Team>(sql, new { SearchTerm = $"%{searchTerm}%" });
                 return result.ToList();
@@ -340,7 +358,12 @@ namespace EsportsManager.DAL.Repositories
             try
             {
                 using var connection = _context.CreateConnection();
-                const string sql = "SELECT * FROM TeamMembers WHERE TeamID = @TeamID AND Status = 'Active'";
+                const string sql = @"
+                    SELECT tm.*, u.Username 
+                    FROM TeamMembers tm
+                    INNER JOIN Users u ON tm.UserID = u.UserID
+                    WHERE tm.TeamID = @TeamID AND tm.Status = 'Active'
+                    ORDER BY tm.IsLeader DESC, tm.JoinDate ASC";
                 var result = await connection.QueryAsync<TeamMember>(sql, new { TeamID = teamId });
                 return result.ToList();
             }
@@ -372,9 +395,13 @@ namespace EsportsManager.DAL.Repositories
             {
                 using var connection = _context.CreateConnection();
                 const string sql = @"
-                    SELECT t.* FROM Teams t
+                    SELECT t.*, COALESCE(COUNT(tm2.UserID), 0) as MemberCount 
+                    FROM Teams t
                     INNER JOIN TeamMembers tm ON t.TeamID = tm.TeamID
-                    WHERE tm.UserID = @UserID AND tm.Status = 'Active' AND t.IsActive = 1";
+                    LEFT JOIN TeamMembers tm2 ON t.TeamID = tm2.TeamID AND tm2.Status = 'Active'
+                    WHERE tm.UserID = @UserID AND tm.Status = 'Active' AND t.IsActive = 1
+                    GROUP BY t.TeamID, t.TeamName, t.Description, t.GameID, t.CreatedBy, 
+                             t.LogoURL, t.MaxMembers, t.CreatedAt, t.IsActive, t.Status";
 
                 return await connection.QuerySingleOrDefaultAsync<Team>(sql, new { UserID = playerId });
             }
@@ -511,7 +538,7 @@ namespace EsportsManager.DAL.Repositories
                         UPDATE TeamMembers SET IsLeader = 0 
                         WHERE TeamID = @TeamID AND UserID = @CurrentLeaderID";
 
-                    await connection.ExecuteAsync(removeLeaderSql, 
+                    await connection.ExecuteAsync(removeLeaderSql,
                         new { TeamID = teamId, CurrentLeaderID = currentLeaderId }, transaction);
 
                     // Give leadership to new leader
@@ -519,7 +546,7 @@ namespace EsportsManager.DAL.Repositories
                         UPDATE TeamMembers SET IsLeader = 1 
                         WHERE TeamID = @TeamID AND UserID = @NewLeaderID";
 
-                    var result = await connection.ExecuteAsync(setLeaderSql, 
+                    var result = await connection.ExecuteAsync(setLeaderSql,
                         new { TeamID = teamId, NewLeaderID = newLeaderId }, transaction);
 
                     transaction.Commit();
@@ -533,7 +560,7 @@ namespace EsportsManager.DAL.Repositories
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error transferring leadership: {TeamId}, {CurrentLeaderId}, {NewLeaderId}", 
+                _logger.LogError(ex, "Error transferring leadership: {TeamId}, {CurrentLeaderId}, {NewLeaderId}",
                     teamId, currentLeaderId, newLeaderId);
                 throw;
             }

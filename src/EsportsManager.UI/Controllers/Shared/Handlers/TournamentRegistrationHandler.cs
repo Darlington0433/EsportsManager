@@ -46,7 +46,7 @@ namespace EsportsManager.UI.Controllers.Shared.Handlers
                 Console.WriteLine("🏆 Danh sách giải đấu có sẵn:");
                 for (int i = 0; i < tournaments.Count; i++)
                 {
-                    Console.WriteLine($"{i + 1}. {tournaments[i].Name} - Phí: {tournaments[i].EntryFee:N0} VND");
+                    Console.WriteLine($"{i + 1}. {tournaments[i].Name} - Phí: {tournaments[i].EntryFee:N0} VND - Status: {tournaments[i].Status}");
                 }
 
                 Console.Write($"\nNhập số thứ tự giải đấu muốn tham gia (1-{tournaments.Count}): ");
@@ -61,7 +61,7 @@ namespace EsportsManager.UI.Controllers.Shared.Handlers
                     }
                     else
                     {
-                        ConsoleRenderingService.ShowMessageBox("Đăng ký thất bại! Bạn cần tham gia team trước.", true, 3000);
+                        ConsoleRenderingService.ShowMessageBox("Đăng ký thất bại! Có thể team đã đăng ký tournament này rồi hoặc tournament đã đầy.", true, 3000);
                     }
                 }
                 else
@@ -77,14 +77,22 @@ namespace EsportsManager.UI.Controllers.Shared.Handlers
 
         private async Task<bool> RegisterForTournamentAsync(int tournamentId)
         {
-            // Get player's team first
-            var team = await _teamService.GetPlayerTeamAsync(_currentUser.Id);
-            if (team == null)
+            try
             {
-                return false; // Player needs to be in a team to register
-            }
+                // Get player's team first
+                var team = await _teamService.GetPlayerTeamAsync(_currentUser.Id);
+                if (team == null)
+                {
+                    return false; // Player needs to be in a team to register
+                }
 
-            return await _tournamentService.RegisterTeamForTournamentAsync(tournamentId, team.Id);
+                var registrationResult = await _tournamentService.RegisterTeamForTournamentAsync(tournamentId, team.Id);
+                return registrationResult;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
         }
     }
 }
