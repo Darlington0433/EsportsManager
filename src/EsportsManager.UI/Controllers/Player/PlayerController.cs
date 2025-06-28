@@ -70,6 +70,7 @@ public class PlayerController : BaseController
                 "Gửi feedback giải đấu",
                 "Xem thành tích cá nhân",
                 "Cập nhật thông tin cá nhân",
+                "Đổi mật khẩu",
                 "Đăng xuất"
             };
 
@@ -99,6 +100,9 @@ public class PlayerController : BaseController
                     await _profileHandler.HandleUpdatePersonalInfoAsync();
                     break;
                 case 7:
+                    await _profileHandler.HandleChangePasswordAsync();
+                    break;
+                case 8:
                 case -1:
                     return; // Đăng xuất
                 default:

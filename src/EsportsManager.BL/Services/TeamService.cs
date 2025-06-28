@@ -37,8 +37,8 @@ namespace EsportsManager.BL.Services
                     MaxMembers = createDto.MaxMembers,
                     CreatedBy = creatorUserId,
                     CreatedAt = DateTime.UtcNow,
-                    IsActive = true,
-                    Status = "Active",
+                    IsActive = false, // Team cần được admin duyệt trước
+                    Status = "Pending", // Đặt status là Pending để admin duyệt
                     GameID = 1 // Default game ID, should be passed in createDto in future
                 };
 
@@ -395,6 +395,87 @@ namespace EsportsManager.BL.Services
                 JoinedAt = member.JoinDate,
                 Status = member.Status ?? "Active"
             };
+        }
+
+        #endregion
+
+        #region Approval Methods
+
+        /// <summary>
+        /// Phê duyệt team (admin only)
+        /// </summary>
+        public async Task<bool> ApproveTeamAsync(int teamId)
+        {
+            try
+            {
+                // TODO: Implement approve team logic
+                // This would update team status from "Pending" to "Active"
+                var team = await _teamRepository.GetByIdAsync(teamId);
+                if (team == null) return false;
+
+                team.Status = "Active";
+                team.IsActive = true;
+                await _teamRepository.UpdateAsync(team);
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Phê duyệt yêu cầu tham gia team (admin/team leader)
+        /// </summary>
+        public async Task<bool> ApproveTeamMemberRequestAsync(int requestId)
+        {
+            try
+            {
+                // TODO: Implement approve team member request logic
+                // This would update join request status and add member to team
+                await Task.Delay(1); // Placeholder for actual implementation
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Lấy danh sách team đang chờ phê duyệt (admin only)
+        /// </summary>
+        public async Task<List<TeamInfoDto>> GetPendingTeamsAsync()
+        {
+            try
+            {
+                // Lấy tất cả team (bao gồm cả pending) và lọc theo status
+                var teams = await _teamRepository.GetAllAsync();
+                return teams.Where(t => t.Status == "Pending")
+                           .Select(MapToTeamInfoDto)
+                           .ToList();
+            }
+            catch (Exception)
+            {
+                return new List<TeamInfoDto>();
+            }
+        }
+
+        /// <summary>
+        /// Lấy danh sách yêu cầu tham gia team đang chờ phê duyệt
+        /// </summary>
+        public async Task<List<JoinRequestDto>> GetPendingTeamMemberRequestsAsync()
+        {
+            try
+            {
+                // TODO: Implement get pending team member requests logic
+                await Task.Delay(1); // Placeholder for actual implementation
+                return new List<JoinRequestDto>();
+            }
+            catch (Exception)
+            {
+                return new List<JoinRequestDto>();
+            }
         }
 
         #endregion

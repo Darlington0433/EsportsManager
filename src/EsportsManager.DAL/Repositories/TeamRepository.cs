@@ -122,6 +122,28 @@ namespace EsportsManager.DAL.Repositories
             }
         }
 
+        public new async Task<List<Team>> GetAllAsync()
+        {
+            try
+            {
+                using var connection = _context.CreateConnection();
+                const string sql = @"
+                    SELECT t.*, COALESCE(COUNT(tm.UserID), 0) as MemberCount 
+                    FROM Teams t
+                    LEFT JOIN TeamMembers tm ON t.TeamID = tm.TeamID AND tm.Status = 'Active'
+                    GROUP BY t.TeamID, t.TeamName, t.Description, t.GameID, t.CreatedBy, 
+                             t.LogoURL, t.MaxMembers, t.CreatedAt, t.IsActive, t.Status
+                    ORDER BY t.TeamName";
+                var result = await connection.QueryAsync<Team>(sql);
+                return result.ToList();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting all teams");
+                throw;
+            }
+        }
+
         public new async Task<bool> UpdateAsync(Team team)
         {
             try
@@ -394,16 +416,35 @@ namespace EsportsManager.DAL.Repositories
             try
             {
                 using var connection = _context.CreateConnection();
-                const string sql = @"
-                    SELECT t.*, COALESCE(COUNT(tm2.UserID), 0) as MemberCount 
-                    FROM Teams t
-                    INNER JOIN TeamMembers tm ON t.TeamID = tm.TeamID
-                    LEFT JOIN TeamMembers tm2 ON t.TeamID = tm2.TeamID AND tm2.Status = 'Active'
-                    WHERE tm.UserID = @UserID AND tm.Status = 'Active' AND t.IsActive = 1
-                    GROUP BY t.TeamID, t.TeamName, t.Description, t.GameID, t.CreatedBy, 
-                             t.LogoURL, t.MaxMembers, t.CreatedAt, t.IsActive, t.Status";
 
-                return await connection.QuerySingleOrDefaultAsync<Team>(sql, new { UserID = playerId });
+                // Use stored procedure to get only one team for player
+                var parameters = new IDbDataParameter[]
+                {
+                    _context.CreateParameter("@PlayerID", playerId)
+                };
+
+                var dataTable = _context.ExecuteStoredProcedure("sp_GetPlayerTeam", parameters);
+
+                if (dataTable.Rows.Count > 0)
+                {
+                    var row = dataTable.Rows[0];
+                    var team = new Team
+                    {
+                        TeamID = Convert.ToInt32(row["TeamID"]),
+                        TeamName = row["TeamName"].ToString() ?? string.Empty,
+                        Description = row["Description"]?.ToString(),
+                        GameID = Convert.ToInt32(row["GameID"]),
+                        CreatedBy = Convert.ToInt32(row["CreatedBy"]),
+                        LogoURL = row["LogoURL"]?.ToString(),
+                        MaxMembers = Convert.ToInt32(row["MaxMembers"]),
+                        CreatedAt = Convert.ToDateTime(row["CreatedAt"]),
+                        IsActive = Convert.ToBoolean(row["IsActive"]),
+                        Status = row["Status"]?.ToString() ?? "Active"
+                    };
+                    return await Task.FromResult(team);
+                }
+
+                return await Task.FromResult<Team?>(null);
             }
             catch (Exception ex)
             {

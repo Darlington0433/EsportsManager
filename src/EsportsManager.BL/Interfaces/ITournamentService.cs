@@ -89,5 +89,20 @@ namespace EsportsManager.BL.Interfaces
                                                                                                                               /// Lấy bảng xếp hạng đầy đủ của tournament
                                                                                                                               /// </summary>
         Task<List<TournamentLeaderboardDto>> GetTournamentLeaderboardAsync(int tournamentId);
+
+        /// <summary>
+        /// Kiểm tra việc tham gia giải đấu của player
+        /// </summary>
+        Task<(int TournamentCount, int TopThreeFinishes, int BestPosition)> CheckPlayerTournamentParticipationAsync(int playerId);
+
+        /// <summary>
+        /// Phê duyệt đăng ký tham gia giải đấu (admin only)
+        /// </summary>
+        Task<bool> ApproveRegistrationAsync(int registrationId);
+
+        /// <summary>
+        /// Lấy danh sách đăng ký đang chờ phê duyệt (admin only)
+        /// </summary>
+        Task<List<TournamentRegistrationDto>> GetPendingRegistrationsAsync();
     }
 }

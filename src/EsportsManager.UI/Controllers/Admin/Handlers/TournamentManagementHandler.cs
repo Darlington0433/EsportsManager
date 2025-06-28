@@ -385,7 +385,16 @@ public class AdminTournamentManagementHandler
             Console.Write("Mô tả: ");
             var description = Console.ReadLine()?.Trim();
 
-            Console.Write($"Game ID ({string.Join(", ", TournamentConstants.GAME_TYPES.Select(g => $"{g.Key}={g.Value}"))}): ");
+            // Hiển thị danh sách game có sẵn
+            Console.WriteLine("\n📋 Danh sách game có sẵn:");
+            Console.WriteLine("─".PadRight(50, '─'));
+            foreach (var game in TournamentConstants.GAME_TYPES)
+            {
+                Console.WriteLine($"  {game.Key}. {game.Value}");
+            }
+            Console.WriteLine("─".PadRight(50, '─'));
+
+            Console.Write($"Chọn Game ID: ");
             if (!int.TryParse(Console.ReadLine(), out int gameId))
             {
                 ConsoleRenderingService.ShowNotification("Game ID phải là số!", ConsoleColor.Red);

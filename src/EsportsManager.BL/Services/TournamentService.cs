@@ -400,7 +400,7 @@ namespace EsportsManager.BL.Services
                     {
                         Id = SafeGetInt32(row["TeamID"]),
                         Name = row["TeamName"]?.ToString() ?? string.Empty,
-                        Description = row["Description"]?.ToString(),
+                        Description = row["Description"]?.ToString() ?? string.Empty,
                         Logo = row["LogoURL"]?.ToString(),
                         LeaderId = SafeGetInt32(row["TeamLeaderID"]),
                         LeaderName = row["TeamLeaderName"]?.ToString() ?? string.Empty,
@@ -619,6 +619,94 @@ namespace EsportsManager.BL.Services
             {
                 _logger.LogError(ex, "Error getting leaderboard for tournament {TournamentId}", tournamentId);
                 throw;
+            }
+        }
+
+        /// <summary>
+        /// Kiểm tra việc tham gia giải đấu của player
+        /// </summary>
+        public async Task<(int TournamentCount, int TopThreeFinishes, int BestPosition)> CheckPlayerTournamentParticipationAsync(int playerId)
+        {
+            try
+            {
+                // Sử dụng stored procedure sp_CheckPlayerTournamentParticipation
+                var dataTable = _dataContext.ExecuteStoredProcedure("sp_CheckPlayerTournamentParticipation",
+                    _dataContext.CreateParameter("p_PlayerID", playerId));
+
+                if (dataTable.Rows.Count == 0)
+                {
+                    return await Task.FromResult((0, 0, 0));
+                }
+
+                DataRow row = dataTable.Rows[0];
+                return await Task.FromResult((
+                    SafeGetInt32(row["TournamentCount"]),
+                    SafeGetInt32(row["TopThreeFinishes"]),
+                    SafeGetInt32(row["BestPosition"])
+                ));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error checking tournament participation for player {PlayerId}", playerId);
+                return await Task.FromResult((0, 0, 0));
+            }
+        }
+
+        /// <summary>
+        /// Phê duyệt đăng ký tham gia giải đấu (admin only)
+        /// </summary>
+        public async Task<bool> ApproveRegistrationAsync(int registrationId)
+        {
+            try
+            {
+                // Sử dụng stored procedure sp_ApproveRegistration
+                var dataTable = _dataContext.ExecuteStoredProcedure("sp_ApproveRegistration",
+                    _dataContext.CreateParameter("p_RegistrationID", registrationId));
+
+                return await Task.FromResult(dataTable.Rows.Count > 0);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error approving registration {RegistrationId}", registrationId);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Lấy danh sách đăng ký đang chờ phê duyệt (admin only)
+        /// </summary>
+        public async Task<List<TournamentRegistrationDto>> GetPendingRegistrationsAsync()
+        {
+            try
+            {
+                var result = new List<TournamentRegistrationDto>();
+
+                // Sử dụng stored procedure sp_GetPendingRegistrations
+                var dataTable = _dataContext.ExecuteStoredProcedure("sp_GetPendingRegistrations");
+
+                foreach (DataRow row in dataTable.Rows)
+                {
+                    var registration = new TournamentRegistrationDto
+                    {
+                        Id = SafeGetInt32(row["RegistrationID"]),
+                        TournamentId = SafeGetInt32(row["TournamentID"]),
+                        TournamentName = row["TournamentName"]?.ToString() ?? string.Empty,
+                        TeamId = SafeGetInt32(row["TeamID"]),
+                        TeamName = row["TeamName"]?.ToString() ?? string.Empty,
+                        RegisteredAt = SafeGetDateTime(row["RegisteredAt"]),
+                        Status = row["Status"]?.ToString() ?? "Pending",
+                        Notes = row["Notes"]?.ToString()
+                    };
+
+                    result.Add(registration);
+                }
+
+                return await Task.FromResult(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting pending registrations");
+                return new List<TournamentRegistrationDto>();
             }
         }
     }
