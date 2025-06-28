@@ -46,6 +46,10 @@ namespace EsportsManager.DAL.Models
         [StringLength(20)]
         public string Status { get; set; } = "Active";
 
+        // Thuộc tính không map với database, chỉ để chứa member count khi join với TeamMembers
+        [NotMapped]
+        public int MemberCount { get; set; } = 0;
+
         // Navigation properties (nếu sử dụng Entity Framework)
         [ForeignKey("GameID")]
         public virtual Game? Game { get; set; }
@@ -87,6 +91,10 @@ namespace EsportsManager.DAL.Models
         [Column("Status")]
         [StringLength(20)]
         public string Status { get; set; } = "Active";
+
+        // Thuộc tính không map với database, chỉ để chứa username khi join với Users
+        [NotMapped]
+        public string Username { get; set; } = string.Empty;
 
         // Navigation properties
         [ForeignKey("TeamID")]

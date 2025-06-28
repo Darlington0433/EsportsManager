@@ -2,6 +2,12 @@
 -- COMPLETE DATABASE SETUP - THIẾT LẬP CSDL HOÀN CHỈNH
 -- Bao gồm: Tạo DB, Tables, Indexes, Views, Triggers, Procedures, Sample Data
 -- Hợp nhất từ: esportsmanager.sql + ALL_IN_ONE_FIX.sql
+--
+-- IMPORTANT: WITHDRAWAL POLICY UPDATE
+-- - Withdrawals are processed IMMEDIATELY without admin approval
+-- - Status is automatically set to 'Completed' upon creation
+-- - No 'Pending' status or admin intervention required
+-- - Wallet balance is updated automatically via triggers
 -- =====================================================
 
 -- Create database
@@ -215,7 +221,7 @@ CREATE TABLE IF NOT EXISTS Donations (
     FOREIGN KEY (UserID) REFERENCES Users(UserID) ON DELETE RESTRICT
 ) ENGINE=InnoDB COMMENT='Donations table';
 
--- Table: Withdrawals (Money withdrawal by Players)
+-- Table: Withdrawals (Money withdrawal by Players - NO ADMIN APPROVAL REQUIRED)
 CREATE TABLE IF NOT EXISTS Withdrawals (
     WithdrawalID INT AUTO_INCREMENT PRIMARY KEY,
     UserID INT NOT NULL,
@@ -223,15 +229,14 @@ CREATE TABLE IF NOT EXISTS Withdrawals (
     BankAccountNumber VARCHAR(50) NOT NULL,
     BankName VARCHAR(100) NOT NULL,
     AccountHolderName VARCHAR(100) NOT NULL,
-    Status ENUM('Pending', 'Approved', 'Processing', 'Completed', 'Rejected') DEFAULT 'Pending',
+    Status ENUM('Completed', 'Failed') DEFAULT 'Completed',
     RequestDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    ProcessedDate DATETIME,
-    ProcessedBy INT, -- Admin processes
+    CompletedDate DATETIME DEFAULT CURRENT_TIMESTAMP,
     Notes TEXT,
+    ReferenceCode VARCHAR(50),
     
-    FOREIGN KEY (UserID) REFERENCES Users(UserID) ON DELETE RESTRICT,
-    FOREIGN KEY (ProcessedBy) REFERENCES Users(UserID) ON DELETE SET NULL
-) ENGINE=InnoDB COMMENT='Withdrawals table';
+    FOREIGN KEY (UserID) REFERENCES Users(UserID) ON DELETE RESTRICT
+) ENGINE=InnoDB COMMENT='Withdrawals table - Processed immediately without admin approval';
 
 -- =====================================================
 -- VOTING/FEEDBACK FUNCTIONS
@@ -288,6 +293,31 @@ CREATE TABLE IF NOT EXISTS UserProfiles (
     
     FOREIGN KEY (UserID) REFERENCES Users(UserID) ON DELETE CASCADE
 ) ENGINE=InnoDB COMMENT='User profiles table';
+
+-- Table: Achievements (Player achievements and awards)
+CREATE TABLE IF NOT EXISTS Achievements (
+    AchievementID INT AUTO_INCREMENT PRIMARY KEY,
+    UserID INT NOT NULL,
+    Title VARCHAR(100) NOT NULL,
+    Description TEXT,
+    AchievementType ENUM('Tournament Winner', 'Top 3 Finisher', 'Most Valuable Player', 'Best Team Player', 'Rising Star', 'Veteran Player', 'Fair Play Award', 'Community Champion', 'Custom') NOT NULL,
+    DateAchieved DATETIME DEFAULT CURRENT_TIMESTAMP,
+    AssignedBy INT NOT NULL,
+    TournamentID INT NULL,
+    TeamID INT NULL,
+    IsActive BOOLEAN DEFAULT TRUE,
+    CreatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (UserID) REFERENCES Users(UserID) ON DELETE CASCADE,
+    FOREIGN KEY (AssignedBy) REFERENCES Users(UserID) ON DELETE RESTRICT,
+    FOREIGN KEY (TournamentID) REFERENCES Tournaments(TournamentID) ON DELETE SET NULL,
+    FOREIGN KEY (TeamID) REFERENCES Teams(TeamID) ON DELETE SET NULL,
+    
+    INDEX idx_achievements_user (UserID),
+    INDEX idx_achievements_type (AchievementType),
+    INDEX idx_achievements_date (DateAchieved)
+) ENGINE=InnoDB COMMENT='Player achievements and awards table';
 
 -- =====================================================
 -- ADDITIONAL TABLES
@@ -441,6 +471,30 @@ LEFT JOIN Wallets w ON u.UserID = w.UserID
 WHERE u.Role = 'Player'
 GROUP BY u.UserID;
 
+-- View: User wallet summary for detailed wallet operations
+DROP VIEW IF EXISTS v_user_wallet_summary;
+
+CREATE VIEW v_user_wallet_summary AS
+SELECT 
+    u.UserID,
+    u.Username,
+    u.DisplayName,
+    w.WalletID,
+    COALESCE(w.Balance, 0.00) as Balance,
+    COALESCE(w.TotalReceived, 0.00) as TotalReceived,
+    COALESCE(w.TotalWithdrawn, 0.00) as TotalWithdrawn,
+    COUNT(DISTINCT wt_in.TransactionID) as TotalIncomingTransactions,
+    COUNT(DISTINCT wt_out.TransactionID) as TotalOutgoingTransactions,
+    w.LastUpdated
+FROM Users u
+LEFT JOIN Wallets w ON u.UserID = w.UserID
+LEFT JOIN WalletTransactions wt_in ON w.WalletID = wt_in.WalletID 
+    AND wt_in.TransactionType IN ('Donation_Received', 'Prize_Money', 'Deposit')
+LEFT JOIN WalletTransactions wt_out ON w.WalletID = wt_out.WalletID 
+    AND wt_out.TransactionType IN ('Withdrawal')
+WHERE u.Role = 'Player'
+GROUP BY u.UserID, w.WalletID;
+
 SELECT 'Database views created successfully!' as Message;
 
 -- =====================================================
@@ -484,19 +538,18 @@ BEGIN
     END IF;
 END//
 
--- Trigger: Update wallet when withdrawal is completed
+-- Trigger: Update wallet when withdrawal is completed (immediate processing)
 DROP TRIGGER IF EXISTS tr_update_wallet_on_withdrawal//
 CREATE TRIGGER tr_update_wallet_on_withdrawal
-AFTER UPDATE ON Withdrawals
+AFTER INSERT ON Withdrawals
 FOR EACH ROW
 BEGIN
-    IF NEW.Status = 'Completed' AND OLD.Status != 'Completed' THEN
-        UPDATE Wallets 
-        SET Balance = Balance - NEW.Amount,
-            TotalWithdrawn = TotalWithdrawn + NEW.Amount,
-            LastUpdated = CURRENT_TIMESTAMP
-        WHERE UserID = NEW.UserID;
-    END IF;
+    -- Update wallet balance immediately when withdrawal is created
+    UPDATE Wallets 
+    SET Balance = Balance - NEW.Amount,
+        TotalWithdrawn = TotalWithdrawn + NEW.Amount,
+        LastUpdated = CURRENT_TIMESTAMP
+    WHERE UserID = NEW.UserID;
 END//
 
 -- Trigger: Log wallet transaction on donation
@@ -530,35 +583,36 @@ BEGIN
     END IF;
 END//
 
--- Trigger: Log wallet transaction on withdrawal
+-- Trigger: Log wallet transaction on withdrawal (immediate processing)
 DROP TRIGGER IF EXISTS tr_log_wallet_transaction_withdrawal//
 CREATE TRIGGER tr_log_wallet_transaction_withdrawal
-AFTER UPDATE ON Withdrawals
+AFTER INSERT ON Withdrawals
 FOR EACH ROW
 BEGIN
-    IF NEW.Status = 'Completed' AND OLD.Status != 'Completed' THEN
-        INSERT INTO WalletTransactions (
-            WalletID, 
-            UserID,
-            TransactionType, 
-            Amount, 
-            BalanceAfter,
-            Note, 
-            RelatedEntityType,
-            RelatedEntityID
-        )
-        SELECT 
-            w.WalletID,
-            w.UserID,
-            'Withdrawal',
-            -NEW.Amount,
-            w.Balance - NEW.Amount,
-            CONCAT('Withdrawal to ', NEW.BankName, ' - ', NEW.BankAccountNumber),
-            'Withdrawal',
-            NEW.WithdrawalID
-        FROM Wallets w 
-        WHERE w.UserID = NEW.UserID;
-    END IF;
+    -- Log transaction immediately when withdrawal is created
+    INSERT INTO WalletTransactions (
+        WalletID, 
+        UserID,
+        TransactionType, 
+        Amount, 
+        BalanceAfter,
+        Note, 
+        RelatedEntityType,
+        RelatedEntityID,
+        ReferenceCode
+    )
+    SELECT 
+        w.WalletID,
+        w.UserID,
+        'Withdrawal',
+        -NEW.Amount,
+        w.Balance - NEW.Amount,
+        CONCAT('Withdrawal to ', NEW.BankName, ' - ', NEW.BankAccountNumber),
+        'Withdrawal',
+        NEW.WithdrawalID,
+        NEW.ReferenceCode
+    FROM Wallets w 
+    WHERE w.UserID = NEW.UserID;
 END//
 
 DELIMITER ;
@@ -734,8 +788,15 @@ BEGIN
     
     START TRANSACTION;
     
-    INSERT INTO TournamentRegistrations (TournamentID, TeamID, RegistrationDate, Status)
-    VALUES (p_TournamentID, p_TeamID, NOW(), 'Approved');
+    -- Lấy team leader làm RegisteredBy
+    SET @teamLeader = (
+        SELECT CreatedBy 
+        FROM Teams 
+        WHERE TeamID = p_TeamID
+    );
+    
+    INSERT INTO TournamentRegistrations (TournamentID, TeamID, RegisteredBy, RegistrationDate, Status)
+    VALUES (p_TournamentID, p_TeamID, @teamLeader, NOW(), 'Approved');
     
     COMMIT;
 END$$
@@ -1377,25 +1438,7 @@ BEGIN
 END$$
 
 -- Procedure: Get detailed wallet transaction history
-DROP PROCEDURE IF EXISTS sp_GetWalletTransactionHistory$$
-CREATE PROCEDURE sp_GetWalletTransactionHistory(
-    IN p_UserID INT,
-    IN p_Limit INT
-)
-BEGIN
-    SELECT 
-        wt.TransactionID,
-        wt.TransactionType,
-        wt.Amount,
-        wt.Note,
-        wt.CreatedAt,
-        w.Balance as CurrentBalance
-    FROM WalletTransactions wt
-    JOIN Wallets w ON wt.WalletID = w.WalletID
-    WHERE w.UserID = p_UserID
-    ORDER BY wt.CreatedAt DESC
-    LIMIT p_Limit;
-END$$
+
 
 -- Procedure: Get team performance statistics
 DROP PROCEDURE IF EXISTS sp_GetTeamPerformanceStats$$
@@ -1435,6 +1478,296 @@ BEGIN
     WHERE tres.TournamentID = p_TournamentID
     GROUP BY tres.ResultID, team.TeamName, tres.Position, tres.PrizeMoney
     ORDER BY tres.Position ASC;
+END$$
+
+-- Procedure: Create withdrawal (immediate processing - no admin approval)
+DROP PROCEDURE IF EXISTS sp_CreateWithdrawal$$
+CREATE PROCEDURE sp_CreateWithdrawal(
+    IN p_UserID INT,
+    IN p_Amount DECIMAL(10,2),
+    IN p_ReferenceCode VARCHAR(50),
+    IN p_Note TEXT,
+    IN p_BankName VARCHAR(100),
+    IN p_AccountName VARCHAR(100),
+    IN p_BankAccount VARCHAR(50)
+)
+BEGIN
+    DECLARE v_WithdrawalID INT;
+    DECLARE v_WalletBalance DECIMAL(10,2);
+    DECLARE v_WalletID INT;
+    
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        RESIGNAL;
+    END;
+    
+    START TRANSACTION;
+    
+    -- Get wallet information
+    SELECT WalletID, Balance INTO v_WalletID, v_WalletBalance
+    FROM Wallets 
+    WHERE UserID = p_UserID;
+    
+    -- Check if wallet exists and has sufficient balance
+    IF v_WalletID IS NULL THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Wallet not found for user';
+    END IF;
+    
+    IF v_WalletBalance < p_Amount THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Insufficient balance';
+    END IF;
+    
+    -- Create withdrawal record (triggers will handle wallet update automatically)
+    INSERT INTO Withdrawals (
+        UserID,
+        Amount,
+        BankAccountNumber,
+        BankName,
+        AccountHolderName,
+        Status,
+        RequestDate,
+        CompletedDate,
+        Notes,
+        ReferenceCode
+    ) VALUES (
+        p_UserID,
+        p_Amount,
+        p_BankAccount,
+        p_BankName,
+        p_AccountName,
+        'Completed',
+        NOW(),
+        NOW(),
+        p_Note,
+        p_ReferenceCode
+    );
+    
+    SET v_WithdrawalID = LAST_INSERT_ID();
+    
+    COMMIT;
+    
+    -- Return withdrawal details
+    SELECT 
+        v_WithdrawalID as TransactionID,
+        p_UserID as UserID,
+        p_Amount as Amount,
+        'Withdrawal' as TransactionType,
+        'Completed' as Status,
+        p_Note as Note,
+        p_ReferenceCode as ReferenceCode,
+        NOW() as CreatedAt;
+END$$
+
+-- Procedure: Create deposit transaction
+DROP PROCEDURE IF EXISTS sp_CreateDeposit$$
+CREATE PROCEDURE sp_CreateDeposit(
+    IN p_UserID INT,
+    IN p_Amount DECIMAL(10,2),
+    IN p_ReferenceCode VARCHAR(50),
+    IN p_Note TEXT
+)
+BEGIN
+    DECLARE v_TransactionID INT;
+    DECLARE v_WalletID INT;
+    
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        RESIGNAL;
+    END;
+    
+    START TRANSACTION;
+    
+    -- Get wallet ID
+    SELECT WalletID INTO v_WalletID
+    FROM Wallets 
+    WHERE UserID = p_UserID;
+    
+    IF v_WalletID IS NULL THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Wallet not found for user';
+    END IF;
+    
+    -- Update wallet balance directly (since we don't have a Deposits table)
+    UPDATE Wallets 
+    SET Balance = Balance + p_Amount,
+        TotalReceived = TotalReceived + p_Amount,
+        LastUpdated = NOW()
+    WHERE UserID = p_UserID;
+    
+    -- Create transaction record
+    INSERT INTO WalletTransactions (
+        WalletID,
+        UserID,
+        TransactionType,
+        Amount,
+        BalanceAfter,
+        Status,
+        ReferenceCode,
+        Note,
+        RelatedEntityType,
+        CreatedAt
+    ) SELECT 
+        w.WalletID,
+        p_UserID,
+        'Deposit',
+        p_Amount,
+        w.Balance,
+        'Completed',
+        p_ReferenceCode,
+        p_Note,
+        'Deposit',
+        NOW()
+    FROM Wallets w
+    WHERE w.UserID = p_UserID;
+    
+    SET v_TransactionID = LAST_INSERT_ID();
+    
+    COMMIT;
+    
+    -- Return transaction details
+    SELECT 
+        v_TransactionID as TransactionID,
+        p_UserID as UserID,
+        p_Amount as Amount,
+        'Deposit' as TransactionType,
+        'Completed' as Status,
+        p_Note as Note,
+        p_ReferenceCode as ReferenceCode,
+        NOW() as CreatedAt;
+END$$
+
+-- Procedure: Get wallet transaction history
+DROP PROCEDURE IF EXISTS sp_GetWalletTransactionHistory$$
+CREATE PROCEDURE sp_GetWalletTransactionHistory(
+    IN p_UserID INT,
+    IN p_Limit INT
+)
+BEGIN
+    SELECT 
+        wt.TransactionID,
+        wt.UserID,
+        wt.TransactionType,
+        wt.Amount,
+        wt.BalanceAfter,
+        wt.Status,
+        wt.ReferenceCode,
+        wt.Note,
+        wt.CreatedAt
+    FROM WalletTransactions wt
+    JOIN Wallets w ON wt.WalletID = w.WalletID
+    WHERE w.UserID = p_UserID
+    ORDER BY wt.CreatedAt DESC
+    LIMIT p_Limit;
+END$$
+
+-- Procedure: Assign achievement to player
+DROP PROCEDURE IF EXISTS sp_AssignAchievement$$
+CREATE PROCEDURE sp_AssignAchievement(
+    IN p_UserID INT,
+    IN p_Title VARCHAR(100),
+    IN p_Description TEXT,
+    IN p_AchievementType VARCHAR(50),
+    IN p_AssignedBy INT,
+    IN p_TournamentID INT,
+    IN p_TeamID INT
+)
+BEGIN
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        RESIGNAL;
+    END;
+    
+    START TRANSACTION;
+    
+    -- Insert achievement
+    INSERT INTO Achievements (
+        UserID, Title, Description, AchievementType, 
+        AssignedBy, TournamentID, TeamID, DateAchieved
+    ) VALUES (
+        p_UserID, p_Title, p_Description, p_AchievementType,
+        p_AssignedBy, p_TournamentID, p_TeamID, NOW()
+    );
+    
+    COMMIT;
+    
+    SELECT 'Achievement assigned successfully!' as Result;
+END$$
+
+-- Procedure: Get player achievements
+DROP PROCEDURE IF EXISTS sp_GetPlayerAchievements$$
+CREATE PROCEDURE sp_GetPlayerAchievements(IN p_UserID INT)
+BEGIN
+    SELECT 
+        a.AchievementID,
+        a.Title,
+        a.Description,
+        a.AchievementType,
+        a.DateAchieved,
+        u_admin.Username as AssignedByUsername,
+        t.TournamentName,
+        tm.TeamName
+    FROM Achievements a
+    LEFT JOIN Users u_admin ON a.AssignedBy = u_admin.UserID
+    LEFT JOIN Tournaments t ON a.TournamentID = t.TournamentID
+    LEFT JOIN Teams tm ON a.TeamID = tm.TeamID
+    WHERE a.UserID = p_UserID AND a.IsActive = TRUE
+    ORDER BY a.DateAchieved DESC;
+END$$
+
+-- Procedure: Get player statistics
+DROP PROCEDURE IF EXISTS sp_GetPlayerStats$$
+CREATE PROCEDURE sp_GetPlayerStats(IN p_UserID INT)
+BEGIN
+    SELECT 
+        u.UserID,
+        u.Username,
+        u.FullName,
+        COUNT(DISTINCT tr.TournamentID) as TotalTournaments,
+        COUNT(DISTINCT CASE WHEN tres.Position = 1 THEN tres.TournamentID END) as TournamentsWon,
+        COUNT(DISTINCT CASE WHEN tres.Position <= 2 THEN tres.TournamentID END) as FinalsAppearances,
+        COUNT(DISTINCT CASE WHEN tres.Position <= 4 THEN tres.TournamentID END) as SemiFinalsAppearances,
+        COALESCE(SUM(tres.PrizeMoney), 0) as TotalPrizeMoney,
+        COALESCE(AVG(f.Rating), 0) as AverageRating,
+        COUNT(DISTINCT a.AchievementID) as TotalAchievements
+    FROM Users u
+    LEFT JOIN TeamMembers tm ON u.UserID = tm.UserID AND tm.Status = 'Active'
+    LEFT JOIN TournamentRegistrations tr ON tm.TeamID = tr.TeamID AND tr.Status = 'Approved'
+    LEFT JOIN TournamentResults tres ON tr.TeamID = tres.TeamID
+    LEFT JOIN Feedback f ON u.UserID = f.UserID
+    LEFT JOIN Achievements a ON u.UserID = a.UserID AND a.IsActive = TRUE
+    WHERE u.UserID = p_UserID
+    GROUP BY u.UserID, u.Username, u.FullName;
+END$$
+
+-- Procedure: Get player tournament history
+DROP PROCEDURE IF EXISTS sp_GetPlayerTournamentHistory$$
+CREATE PROCEDURE sp_GetPlayerTournamentHistory(IN p_UserID INT)
+BEGIN
+    SELECT 
+        t.TournamentID,
+        t.TournamentName,
+        t.StartDate,
+        t.EndDate,
+        tres.Position,
+        CASE 
+            WHEN tres.Position = 1 THEN 'Champion'
+            WHEN tres.Position = 2 THEN 'Runner-up'
+            WHEN tres.Position <= 4 THEN 'Semi-Final'
+            WHEN tres.Position <= 8 THEN 'Quarter-Final'
+            ELSE 'Participant'
+        END as Result,
+        COALESCE(tres.PrizeMoney, 0) as PrizeMoney
+    FROM Users u
+    JOIN TeamMembers tm ON u.UserID = tm.UserID
+    JOIN TournamentRegistrations tr ON tm.TeamID = tr.TeamID
+    JOIN Tournaments t ON tr.TournamentID = t.TournamentID
+    LEFT JOIN TournamentResults tres ON tr.TeamID = tres.TeamID AND tr.TournamentID = tres.TournamentID
+    WHERE u.UserID = p_UserID 
+    AND tm.Status = 'Active'
+    AND tr.Status = 'Approved'
+    ORDER BY t.StartDate DESC;
 END$$
 
 DELIMITER ;
@@ -1588,6 +1921,11 @@ ALTER TABLE TournamentResults ADD CONSTRAINT chk_position_positive CHECK (Positi
 ALTER TABLE Donations ADD CONSTRAINT chk_donation_amount CHECK (Amount > 0);
 ALTER TABLE Withdrawals ADD CONSTRAINT chk_withdrawal_amount CHECK (Amount > 0);
 
+-- Add indexes for better withdrawal performance (ignore errors if they already exist)
+CREATE INDEX idx_withdrawals_user_date ON Withdrawals(UserID, RequestDate);
+CREATE INDEX idx_withdrawals_status ON Withdrawals(Status);
+CREATE INDEX idx_withdrawals_reference ON Withdrawals(ReferenceCode);
+
 SELECT 'Database constraints added successfully!' as Message;
 
 -- =====================================================
@@ -1628,28 +1966,28 @@ INSERT INTO Users (Username, PasswordHash, Email, FullName, DisplayName, Role, I
 
 -- Update wallets for players (they're already created by the trigger)
 UPDATE Wallets SET 
-    Balance = 1000.00, 
-    TotalReceived = 1500.00 
+    Balance = 150000.00, 
+    TotalReceived = 200000.00 
 WHERE UserID = 3;
 
 UPDATE Wallets SET 
-    Balance = 750.00, 
-    TotalReceived = 1000.00 
+    Balance = 120000.00, 
+    TotalReceived = 150000.00 
 WHERE UserID = 4;
 
 UPDATE Wallets SET 
-    Balance = 500.00, 
-    TotalReceived = 750.00 
+    Balance = 80000.00, 
+    TotalReceived = 100000.00 
 WHERE UserID = 5;
 
 UPDATE Wallets SET 
-    Balance = 250.00, 
-    TotalReceived = 500.00 
+    Balance = 60000.00, 
+    TotalReceived = 75000.00 
 WHERE UserID = 6;
 
 UPDATE Wallets SET 
-    Balance = 100.00, 
-    TotalReceived = 200.00 
+    Balance = 50000.00, 
+    TotalReceived = 65000.00 
 WHERE UserID = 7;
 
 -- Create teams (from esportsmanager.sql)
@@ -1677,26 +2015,26 @@ INSERT INTO TeamMembers (TeamID, UserID, IsLeader, Position, Status) VALUES
 (4, 6, TRUE, 'Forward', 'Active'),
 (5, 7, TRUE, 'Striker', 'Active');
 
--- Create tournaments (from esportsmanager.sql)
+-- Create tournaments (from esportsmanager.sql) - CẬP NHẬT ĐỂ TEST ĐĂNG KÝ
 INSERT INTO Tournaments (TournamentName, Description, GameID, StartDate, EndDate, RegistrationDeadline, MaxTeams, EntryFee, PrizePool, Status, CreatedBy) VALUES
-('Vietnam LoL Championship 2025', 'Official League of Legends championship for Vietnam', 1, '2025-07-10', '2025-07-15', '2025-07-01', 16, 50.00, 5000.00, 'Registration', 1),
-('Valorant Masters Hanoi', 'Professional Valorant tournament in Hanoi', 3, '2025-08-05', '2025-08-10', '2025-07-25', 8, 30.00, 3000.00, 'Registration', 2),
-('Dota 2 Vietnam Cup', 'Premier Dota 2 event in Southeast Asia', 4, '2025-09-15', '2025-09-20', '2025-09-01', 12, 40.00, 4000.00, 'Draft', 1),
+('Vietnam LoL Championship 2025', 'Official League of Legends championship for Vietnam', 1, '2025-08-10', '2025-08-15', '2025-08-08', 16, 50.00, 5000.00, 'Registration', 1),
+('Valorant Masters Hanoi', 'Professional Valorant tournament in Hanoi', 3, '2025-09-05', '2025-09-10', '2025-09-03', 8, 30.00, 3000.00, 'Registration', 2),
+('Dota 2 Vietnam Cup', 'Premier Dota 2 event in Southeast Asia', 4, '2025-10-15', '2025-10-20', '2025-10-13', 12, 40.00, 4000.00, 'Registration', 1),
 ('FIFA National Tournament', 'Annual FIFA competition', 5, '2025-06-30', '2025-07-02', '2025-06-15', 32, 20.00, 2000.00, 'Ongoing', 2),
-('Rocket League Showdown', 'Fast-paced Rocket League tournament', 6, '2025-07-25', '2025-07-27', '2025-07-10', 16, 25.00, 1500.00, 'Registration', 1);
+('Rocket League Showdown', 'Fast-paced Rocket League tournament', 6, '2025-07-25', '2025-07-27', '2025-07-23', 16, 25.00, 1500.00, 'Registration', 1);
 
 -- Additional tournaments from ADD_SAMPLE_DONATION.sql
 INSERT IGNORE INTO Tournaments (TournamentName, Description, GameID, StartDate, EndDate, CreatedBy, Status) VALUES
 ('Summer Championship 2024', 'Annual summer tournament', 1, '2024-07-01 10:00:00', '2024-07-15 18:00:00', 1, 'Completed'),
 ('Winter Cup 2024', 'Winter season tournament', 2, '2024-12-01 10:00:00', '2024-12-15 18:00:00', 1, 'Ongoing');
 
--- Register teams for tournaments
-INSERT INTO TournamentRegistrations (TournamentID, TeamID, RegisteredBy, Status) VALUES
-(1, 1, 3, 'Approved'),
-(2, 2, 4, 'Approved'),
-(3, 3, 5, 'Registered'),
-(4, 4, 6, 'Approved'),
-(5, 5, 7, 'Registered');
+-- Register teams for tournaments (XÓA TẤT CẢ ĐỂ TEST ĐĂNG KÝ THỰC TẾ)
+-- INSERT INTO TournamentRegistrations (TournamentID, TeamID, RegisteredBy, Status) VALUES
+-- (3, 3, 5, 'Registered'),
+-- (4, 4, 6, 'Approved'),
+-- (5, 5, 7, 'Registered');
+
+-- Để trống tất cả tournaments để test đăng ký từ đầu
 
 -- Add some completed tournament results
 INSERT INTO TournamentResults (TournamentID, TeamID, Position, PrizeMoney, Notes) VALUES
@@ -1764,6 +2102,33 @@ INSERT INTO PlayerRankings (UserID, GameID, CurrentRank, TotalPoints, TotalWins,
 (5, 4, 1, 2700, 52, 8, 4),
 (6, 5, 3, 1800, 30, 20, 1),
 (7, 6, 2, 2100, 40, 18, 2);
+
+-- Add sample wallet transactions for testing
+INSERT INTO WalletTransactions (WalletID, UserID, TransactionType, Amount, BalanceAfter, Status, Note, RelatedEntityType, RelatedEntityID, CreatedAt) VALUES
+-- Player 3 transactions
+(1, 3, 'Donation_Received', 50000.00, 50000.00, 'Completed', 'Quyên góp từ viewer', 'Donation', 1, '2025-06-01 10:00:00'),
+(1, 3, 'Donation_Received', 100000.00, 150000.00, 'Completed', 'Donation từ fan', 'Donation', 2, '2025-06-15 14:30:00'),
+-- Player 4 transactions  
+(2, 4, 'Donation_Received', 30000.00, 30000.00, 'Completed', 'Support từ viewer', 'Donation', 3, '2025-06-10 09:15:00'),
+(2, 4, 'Donation_Received', 90000.00, 120000.00, 'Completed', 'Thưởng tournament', 'Prize', 1, '2025-06-20 16:45:00'),
+-- Player 5 transactions
+(3, 5, 'Donation_Received', 25000.00, 25000.00, 'Completed', 'Chúc mừng chiến thắng', 'Donation', 4, '2025-06-05 11:20:00'),
+(3, 5, 'Donation_Received', 55000.00, 80000.00, 'Completed', 'Keep up the good work!', 'Donation', 5, '2025-06-18 13:10:00'),
+-- Player 6 transactions
+(4, 6, 'Donation_Received', 15000.00, 15000.00, 'Completed', 'Amazing skills!', 'Donation', 6, '2025-06-08 15:30:00'),
+(4, 6, 'Donation_Received', 45000.00, 60000.00, 'Completed', 'Tournament support', 'Donation', 7, '2025-06-22 17:20:00'),
+-- Player 7 transactions
+(5, 7, 'Donation_Received', 20000.00, 20000.00, 'Completed', 'Good game!', 'Donation', 8, '2025-06-12 12:40:00'),
+(5, 7, 'Donation_Received', 30000.00, 50000.00, 'Completed', 'Looking forward to next match', 'Donation', 9, '2025-06-25 19:15:00');
+
+-- Insert sample achievements for players
+INSERT INTO Achievements (UserID, Title, Description, AchievementType, AssignedBy, TournamentID, DateAchieved) VALUES
+(3, 'First Tournament Win', 'Won your first tournament', 'Tournament Winner', 1, 4, '2025-06-01 10:00:00'),
+(3, 'Team Leader', 'Excellent leadership in Dragons Gaming', 'Best Team Player', 1, NULL, '2025-06-05 14:30:00'),
+(4, 'Rising Star', 'Outstanding performance as a new player', 'Rising Star', 2, NULL, '2025-06-10 11:15:00'),
+(5, 'MVP Award', 'Most Valuable Player in Dota 2 tournament', 'Most Valuable Player', 1, 3, '2025-06-15 16:20:00'),
+(6, 'Fair Play Award', 'Exemplary sportsmanship and fair play', 'Fair Play Award', 2, NULL, '2025-06-20 09:45:00'),
+(7, 'Community Champion', 'Active contributor to esports community', 'Community Champion', 1, NULL, '2025-06-25 13:30:00');
 
 SELECT 'Sample data inserted successfully!' as Message;
 
@@ -1894,6 +2259,176 @@ SELECT 'Testing sp_FixSystemData...' as Test;
 CALL sp_FixSystemData();
 
 SELECT 'All tests completed!' as Status;
+
+-- =====================================================
+-- DEBUG QUERIES - Kiểm tra dữ liệu sau khi setup
+-- =====================================================
+
+SELECT 'DEBUG: Checking tournament registration data...' as Message;
+
+-- Kiểm tra available tournaments
+SELECT 'Available Tournaments:' as Section;
+SELECT 
+    TournamentID,
+    TournamentName,
+    Status,
+    RegistrationDeadline,
+    MaxTeams,
+    (SELECT COUNT(*) FROM TournamentRegistrations WHERE TournamentID = t.TournamentID AND Status = 'Approved') as CurrentRegistrations
+FROM Tournaments t
+WHERE Status = 'Registration' AND RegistrationDeadline >= CURDATE();
+
+-- Kiểm tra team Dragons Gaming và player1
+SELECT 'Player1 Team Info:' as Section;
+SELECT 
+    u.UserID,
+    u.Username,
+    t.TeamID,
+    t.TeamName,
+    tm.IsLeader,
+    tm.Position
+FROM Users u
+JOIN TeamMembers tm ON u.UserID = tm.UserID
+JOIN Teams t ON tm.TeamID = t.TeamID
+WHERE u.Username = 'player1' AND tm.Status = 'Active';
+
+-- Kiểm tra current registrations
+SELECT 'Current Tournament Registrations:' as Section;
+SELECT 
+    tr.TournamentID,
+    t.TournamentName,
+    tr.TeamID,
+    team.TeamName,
+    tr.Status
+FROM TournamentRegistrations tr
+JOIN Tournaments t ON tr.TournamentID = t.TournamentID
+JOIN Teams team ON tr.TeamID = team.TeamID;
+
+-- =====================================================
+-- DEBUG: KIỂM TRA DỮ LIỆU SAU KHI SETUP
+-- =====================================================
+
+-- Kiểm tra tournaments có thể đăng ký
+SELECT '=== TOURNAMENTS CÓ THỂ ĐĂNG KÝ ===' as Debug;
+SELECT 
+    TournamentID,
+    TournamentName,
+    Status,
+    RegistrationDeadline,
+    MaxTeams,
+    (SELECT COUNT(*) FROM TournamentRegistrations WHERE TournamentID = t.TournamentID AND Status = 'Approved') as CurrentRegistrations
+FROM Tournaments t
+WHERE Status = 'Registration' 
+AND RegistrationDeadline >= CURDATE()
+ORDER BY TournamentID;
+
+-- Kiểm tra team Dragons Gaming
+SELECT '=== TEAM DRAGONS GAMING ===' as Debug;
+SELECT 
+    t.TeamID,
+    t.TeamName,
+    t.CreatedBy,
+    COUNT(tm.UserID) as MemberCount
+FROM Teams t
+LEFT JOIN TeamMembers tm ON t.TeamID = tm.TeamID AND tm.Status = 'Active'
+WHERE t.TeamName = 'Dragons Gaming'
+GROUP BY t.TeamID, t.TeamName, t.CreatedBy;
+
+-- Kiểm tra user player1
+SELECT '=== USER PLAYER1 TEAM ===' as Debug;
+SELECT 
+    u.UserID,
+    u.Username,
+    t.TeamID,
+    t.TeamName,
+    tm.IsLeader
+FROM Users u
+JOIN TeamMembers tm ON u.UserID = tm.UserID
+JOIN Teams t ON tm.TeamID = t.TeamID
+WHERE u.Username = 'player1' AND tm.Status = 'Active';
+
+-- Kiểm tra registrations hiện tại (nên trống)
+SELECT '=== TOURNAMENT REGISTRATIONS (NÊN TRỐNG) ===' as Debug;
+SELECT COUNT(*) as TotalRegistrations FROM TournamentRegistrations;
+
+-- =====================================================
+-- TEST FEEDBACK SYSTEM
+-- =====================================================
+
+-- Kiểm tra bảng Feedback có tồn tại không
+SELECT '=== KIỂM TRA BẢNG FEEDBACK ===' as Debug;
+SELECT COUNT(*) FROM information_schema.tables 
+WHERE table_schema = 'EsportsManager' AND table_name = 'Feedback';
+
+-- Kiểm tra stored procedure sp_SubmitFeedback
+SELECT '=== KIỂM TRA STORED PROCEDURE ===' as Debug;
+SELECT COUNT(*) FROM information_schema.routines 
+WHERE routine_schema = 'EsportsManager' AND routine_name = 'sp_SubmitFeedback';
+
+-- Test insert feedback thử nghiệm (sẽ được xóa sau)
+SELECT '=== TEST FEEDBACK SUBMISSION ===' as Debug;
+-- Thử gọi stored procedure với dữ liệu test
+SET @test_tournament = (SELECT MIN(TournamentID) FROM Tournaments WHERE Status = 'Registration');
+SET @test_player = (SELECT MIN(UserID) FROM Users WHERE Role = 'Player');
+
+-- Hiển thị thông tin test
+SELECT @test_tournament as TestTournamentID, @test_player as TestPlayerID;
+
+-- Test stored procedure nếu có dữ liệu
+-- Xóa feedback test cũ nếu có
+DELETE FROM Feedback WHERE TournamentID = IFNULL(@test_tournament, 0) AND UserID = IFNULL(@test_player, 0) AND Content = 'Test feedback from database setup';
+
+-- Test stored procedure (chỉ chạy nếu có tournament và player)
+-- Sử dụng tournament ID = 1 và player ID = 3 để test
+CALL sp_SubmitFeedback(1, 3, 'Test feedback from database setup', 4);
+
+-- Kiểm tra kết quả
+SELECT COUNT(*) as TestFeedbackCount FROM Feedback 
+WHERE TournamentID = 1 AND UserID = 3 AND Content = 'Test feedback from database setup';
+
+-- Xóa feedback test để giữ database sạch
+DELETE FROM Feedback WHERE TournamentID = 1 AND UserID = 3 AND Content = 'Test feedback from database setup';
+
+SELECT 'Feedback system test completed successfully!' as TestResult;
+
+-- =====================================================
+-- TEST ACHIEVEMENT SYSTEM
+-- =====================================================
+
+SELECT '=== TEST ACHIEVEMENT SYSTEM ===' as Debug;
+
+-- Kiểm tra bảng Achievements có tồn tại không
+SELECT COUNT(*) as AchievementTableExists FROM information_schema.tables 
+WHERE table_schema = 'EsportsManager' AND table_name = 'Achievements';
+
+-- Kiểm tra stored procedures
+SELECT COUNT(*) as SP_AssignAchievement FROM information_schema.routines 
+WHERE routine_schema = 'EsportsManager' AND routine_name = 'sp_AssignAchievement';
+
+SELECT COUNT(*) as SP_GetPlayerAchievements FROM information_schema.routines 
+WHERE routine_schema = 'EsportsManager' AND routine_name = 'sp_GetPlayerAchievements';
+
+-- Test assign achievement
+SET @test_player = (SELECT MIN(UserID) FROM Users WHERE Role = 'Player');
+SET @test_admin = (SELECT MIN(UserID) FROM Users WHERE Role = 'Admin');
+
+-- Test stored procedure để gán achievement
+CALL sp_AssignAchievement(@test_player, 'Test Achievement', 'This is a test achievement', 'Custom', @test_admin, NULL, NULL);
+
+-- Kiểm tra achievement đã được gán
+SELECT COUNT(*) as TestAchievementCount FROM Achievements 
+WHERE UserID = @test_player AND Title = 'Test Achievement';
+
+-- Test lấy achievements của player
+CALL sp_GetPlayerAchievements(@test_player);
+
+-- Test player stats
+CALL sp_GetPlayerStats(@test_player);
+
+-- Xóa test achievement để giữ database sạch
+DELETE FROM Achievements WHERE UserID = @test_player AND Title = 'Test Achievement';
+
+SELECT 'Achievement system test completed successfully!' as TestResult;
 
 -- Re-enable safe update mode
 SET SQL_SAFE_UPDATES = 1;

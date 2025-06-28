@@ -102,11 +102,19 @@ public class PlayerWalletHandler
         }
         catch (Exception ex)
         {
-            // Log lỗi nếu có logger, không cần thiết nếu không có
-            // _logger?.LogError(ex, "Error in ViewWalletBalanceAsync for user {UserId}", _currentUser?.Id);
+            // Show detailed error for debugging
+            Console.WriteLine($"Chi tiết lỗi: {ex.Message}");
+            if (ex.InnerException != null)
+            {
+                Console.WriteLine($"Inner Exception: {ex.InnerException.Message}");
+            }
+            Console.WriteLine($"Stack Trace: {ex.StackTrace}");
+
+            // Log the current user ID for debugging
+            Console.WriteLine($"Current User ID: {_currentUser.Id}");
 
             ConsoleRenderingService.ShowMessageBox(
-                $"Không thể tải thông tin ví. Vui lòng thử lại sau.", true, 3000);
+                $"Không thể tải thông tin ví. Lỗi: {ex.Message}", true, 5000);
         }
     }
 
@@ -137,8 +145,9 @@ public class PlayerWalletHandler
         }
         catch (Exception ex)
         {
+            Console.WriteLine($"Chi tiết lỗi transaction history: {ex.Message}");
             ConsoleRenderingService.ShowMessageBox(
-                $"Không thể tải lịch sử giao dịch. Vui lòng thử lại sau.", true, 3000);
+                $"Không thể tải lịch sử giao dịch. Lỗi: {ex.Message}", true, 3000);
         }
     }
 
@@ -214,13 +223,19 @@ public class PlayerWalletHandler
 
                 if (result.Success)
                 {
+                    // Show success message with updated balance
+                    var updatedWallet = await _walletService.GetWalletByUserIdAsync(_currentUser.Id);
+                    var balanceMessage = updatedWallet != null
+                        ? $"\n💰 Số dư mới: {updatedWallet.Balance:N0} VND"
+                        : "";
+
                     ConsoleRenderingService.ShowNotification(
-                        WalletConstants.WITHDRAWAL_REQUEST_SUCCESS_MESSAGE, ConsoleColor.Green);
+                        WalletConstants.WITHDRAWAL_SUCCESS_MESSAGE + balanceMessage, ConsoleColor.Green);
                 }
                 else
                 {
                     ConsoleRenderingService.ShowNotification(
-                        result.Message ?? WalletConstants.WITHDRAWAL_REQUEST_FAILED_MESSAGE,
+                        result.Message ?? WalletConstants.WITHDRAWAL_FAILED_MESSAGE,
                         ConsoleColor.Red);
                 }
             }
@@ -234,8 +249,9 @@ public class PlayerWalletHandler
         }
         catch (Exception ex)
         {
+            Console.WriteLine($"Chi tiết lỗi withdrawal: {ex.Message}");
             ConsoleRenderingService.ShowMessageBox(
-                $"Không thể thực hiện rút tiền. Vui lòng thử lại sau.", true, 3000);
+                $"Không thể thực hiện rút tiền. Lỗi: {ex.Message}", true, 3000);
         }
     }
 

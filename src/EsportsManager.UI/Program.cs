@@ -117,6 +117,8 @@ class Program
     services.AddScoped<IVotesRepository, VotesRepository>();
     services.AddScoped<IFeedbackRepository, FeedbackRepository>();
     services.AddScoped<ISystemSettingsRepository, SystemSettingsRepository>();
+    services.AddScoped<IAchievementRepository, AchievementRepository>();
+    services.AddScoped<IUserProfileRepository, UserProfileRepository>();
 
     // ═══════════════════════════════════════════════════════════════
     // ADDITIONAL CONFIGURATION

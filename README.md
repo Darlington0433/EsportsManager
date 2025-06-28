@@ -278,6 +278,7 @@ Chúng tôi hoan nghênh mọi đóng góp! Vui lòng đọc [CONTRIBUTING.md](C
 ## 📄 Giấy phép
 
 Dự án này được cấp phép theo giấy phép Custom (Non-commercial) - xem file [LICENSE](LICENSE) để biết chi tiết.
+
 ## 👥 Tác giả
 
 - **Phan Nhật Quân và mọi người** - _Sinh viên VTC Academy_ - [GitHub Profile](https://github.com/Darlington0433)

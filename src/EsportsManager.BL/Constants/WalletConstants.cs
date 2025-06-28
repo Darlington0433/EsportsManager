@@ -34,8 +34,8 @@ public static class WalletConstants
     public const string INVALID_OPTION_MESSAGE = "Lựa chọn không hợp lệ!";
     public const string WALLET_NOT_FOUND_MESSAGE = "Không tìm thấy ví!";
     public const string PRESS_ANY_KEY_MESSAGE = "\nNhấn phím bất kỳ để tiếp tục...";
-    public const string WITHDRAWAL_REQUEST_SUCCESS_MESSAGE = "Yêu cầu rút tiền đã được gửi thành công!";
-    public const string WITHDRAWAL_REQUEST_FAILED_MESSAGE = "Yêu cầu rút tiền thất bại!";
+    public const string WITHDRAWAL_SUCCESS_MESSAGE = "Rút tiền thành công! Số dư đã được cập nhật.";
+    public const string WITHDRAWAL_FAILED_MESSAGE = "Rút tiền thất bại!";
     public const string OPERATION_CANCELLED_MESSAGE = "Thao tác đã bị hủy!";
 
     // Withdrawal methods

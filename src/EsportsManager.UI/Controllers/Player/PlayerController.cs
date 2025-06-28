@@ -2,6 +2,7 @@
 // Áp dụng SOLID principles và Handler Pattern
 
 using System;
+using System.Threading.Tasks;
 using EsportsManager.BL.DTOs;
 using EsportsManager.UI.ConsoleUI.Utilities;
 using EsportsManager.UI.Controllers.Base;
@@ -17,7 +18,7 @@ namespace EsportsManager.UI.Controllers.Player;
 /// </summary>
 public class PlayerController : BaseController
 {
-    private readonly TournamentRegistrationHandler _tournamentRegistrationHandler;
+    private readonly TournamentManagementHandler _tournamentManagementHandler;
     private readonly PlayerTeamManagementHandler _teamManagementHandler;
     private readonly PlayerProfileHandler _profileHandler;
     private readonly TournamentViewHandler _tournamentViewHandler;
@@ -27,7 +28,7 @@ public class PlayerController : BaseController
 
     public PlayerController(
         UserProfileDto currentUser,
-        TournamentRegistrationHandler tournamentRegistrationHandler,
+        TournamentManagementHandler tournamentManagementHandler,
         PlayerTeamManagementHandler teamManagementHandler,
         PlayerProfileHandler profileHandler,
         TournamentViewHandler tournamentViewHandler,
@@ -35,7 +36,7 @@ public class PlayerController : BaseController
         PlayerWalletHandler walletHandler,
         PlayerAchievementHandler achievementHandler) : base(currentUser)
     {
-        _tournamentRegistrationHandler = tournamentRegistrationHandler;
+        _tournamentManagementHandler = tournamentManagementHandler;
         _teamManagementHandler = teamManagementHandler;
         _profileHandler = profileHandler;
         _tournamentViewHandler = tournamentViewHandler;
@@ -49,21 +50,21 @@ public class PlayerController : BaseController
     /// </summary>
     protected override void DisplayMenu()
     {
-        ShowPlayerMenu();
+        ShowPlayerMenuAsync().GetAwaiter().GetResult();
     }
 
     /// <summary>
     /// Main menu for Player role
     /// Delegates all functionality to specialized handlers
     /// </summary>
-    public void ShowPlayerMenu()
+    public async Task ShowPlayerMenuAsync()
     {
         while (true)
         {
             var menuOptions = new[]
             {
                 "Quản lý team (Tạo/Tham gia/Rời)",
-                "Đăng ký tham gia giải đấu", 
+                "Quản lý giải đấu",
                 "Xem danh sách giải đấu",
                 "Quản lý ví điện tử (Rút tiền)",
                 "Gửi feedback giải đấu",
@@ -73,29 +74,29 @@ public class PlayerController : BaseController
             };
 
             int selection = InteractiveMenuService.DisplayInteractiveMenu($"MENU PLAYER - {_currentUser.Username}", menuOptions);
-            
+
             switch (selection)
             {
                 case 0:
-                    _teamManagementHandler.HandleTeamManagementAsync().GetAwaiter().GetResult();
+                    await _teamManagementHandler.HandleTeamManagementAsync();
                     break;
                 case 1:
-                    _tournamentRegistrationHandler.HandleTournamentRegistrationAsync().GetAwaiter().GetResult();
+                    await _tournamentManagementHandler.HandleTournamentManagementAsync();
                     break;
                 case 2:
-                    _tournamentViewHandler.HandleViewTournamentListAsync().GetAwaiter().GetResult();
+                    await _tournamentViewHandler.HandleViewTournamentListAsync();
                     break;
                 case 3:
-                    _walletHandler.HandleWalletManagementAsync().GetAwaiter().GetResult();
+                    await _walletHandler.HandleWalletManagementAsync();
                     break;
                 case 4:
-                    _feedbackHandler.HandleSubmitFeedbackAsync().GetAwaiter().GetResult();
+                    await _feedbackHandler.HandleSubmitFeedbackAsync();
                     break;
                 case 5:
-                    _achievementHandler.HandleViewAchievementsAsync().GetAwaiter().GetResult();
+                    await _achievementHandler.HandleViewAchievementsAsync();
                     break;
                 case 6:
-                    _profileHandler.HandleUpdatePersonalInfoAsync().GetAwaiter().GetResult();
+                    await _profileHandler.HandleUpdatePersonalInfoAsync();
                     break;
                 case 7:
                 case -1:
