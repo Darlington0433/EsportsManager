@@ -13,13 +13,13 @@ USE EsportsManager;
 
 DELIMITER //
 
--- Trigger: Auto create wallet when creating player
-DROP TRIGGER IF EXISTS tr_create_player_wallet//
-CREATE TRIGGER tr_create_player_wallet 
+-- Trigger: Auto create wallet when creating player or viewer
+DROP TRIGGER IF EXISTS tr_create_user_wallet//
+CREATE TRIGGER tr_create_user_wallet 
 AFTER INSERT ON Users
 FOR EACH ROW
 BEGIN
-    IF NEW.Role = 'Player' THEN
+    IF NEW.Role = 'Player' OR NEW.Role = 'Viewer' THEN
         INSERT INTO Wallets (UserID, Balance) VALUES (NEW.UserID, 0.00);
     END IF;
 END//

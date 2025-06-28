@@ -337,23 +337,38 @@ namespace EsportsManager.UI.Controllers.Player.Handlers
                                 var newLeader = otherMembers[choice - 1];
 
                                 // Chuyển giao leader
-                                var transferResult = await _teamService.TransferLeadershipAsync(team.Id, _currentUser.Id, newLeader.UserId);
-                                if (transferResult)
+                                try
                                 {
-                                    // Sau khi chuyển giao thành công, rời team
-                                    var leaveResult = await _teamService.RemoveMemberAsync(team.Id, _currentUser.Id, _currentUser.Id);
-                                    if (leaveResult)
+                                    var transferResult = await _teamService.TransferLeadershipAsync(team.Id, _currentUser.Id, newLeader.UserId);
+                                    if (transferResult)
                                     {
-                                        ConsoleRenderingService.ShowMessageBox($"Đã chuyển giao leader cho {newLeader.Username} và rời khỏi team '{team.Name}' thành công!", false, 3000);
+                                        // Sau khi chuyển giao thành công, rời team
+                                        var leaveResult = await _teamService.RemoveMemberAsync(team.Id, _currentUser.Id, _currentUser.Id);
+                                        if (leaveResult)
+                                        {
+                                            ConsoleRenderingService.ShowMessageBox($"Đã chuyển giao leader cho {newLeader.Username} và rời khỏi team '{team.Name}' thành công!", false, 3000);
+                                        }
+                                        else
+                                        {
+                                            ConsoleRenderingService.ShowMessageBox("Chuyển giao leader thành công nhưng rời team thất bại!", true, 3000);
+                                        }
                                     }
                                     else
                                     {
-                                        ConsoleRenderingService.ShowMessageBox("Chuyển giao leader thành công nhưng rời team thất bại!", true, 3000);
+                                        ConsoleRenderingService.ShowMessageBox("Chuyển giao leader thất bại!", true, 2000);
                                     }
                                 }
-                                else
+                                catch (UnauthorizedAccessException ex)
                                 {
-                                    ConsoleRenderingService.ShowMessageBox("Chuyển giao leader thất bại!", true, 2000);
+                                    ConsoleRenderingService.ShowMessageBox($"Không có quyền: {ex.Message}", true, 3000);
+                                }
+                                catch (InvalidOperationException ex)
+                                {
+                                    ConsoleRenderingService.ShowMessageBox($"Thao tác không hợp lệ: {ex.Message}", true, 3000);
+                                }
+                                catch (Exception ex)
+                                {
+                                    ConsoleRenderingService.ShowMessageBox($"Lỗi chuyển giao leader: {ex.Message}", true, 3000);
                                 }
                             }
                             else
@@ -375,14 +390,25 @@ namespace EsportsManager.UI.Controllers.Player.Handlers
                         var confirmation = Console.ReadLine()?.Trim();
                         if (confirmation?.ToUpper() == "DISBAND")
                         {
-                            var disbandResult = await _teamService.DisbandTeamAsync(team.Id, _currentUser.Id);
-                            if (disbandResult)
+                            try
                             {
-                                ConsoleRenderingService.ShowMessageBox($"Đã giải tán team '{team.Name}' thành công!", false, 3000);
+                                var disbandResult = await _teamService.DisbandTeamAsync(team.Id, _currentUser.Id);
+                                if (disbandResult)
+                                {
+                                    ConsoleRenderingService.ShowMessageBox($"Đã giải tán team '{team.Name}' thành công!", false, 3000);
+                                }
+                                else
+                                {
+                                    ConsoleRenderingService.ShowMessageBox("Giải tán team thất bại!", true, 2000);
+                                }
                             }
-                            else
+                            catch (UnauthorizedAccessException ex)
                             {
-                                ConsoleRenderingService.ShowMessageBox("Giải tán team thất bại!", true, 2000);
+                                ConsoleRenderingService.ShowMessageBox($"Không có quyền giải tán team: {ex.Message}", true, 3000);
+                            }
+                            catch (Exception ex)
+                            {
+                                ConsoleRenderingService.ShowMessageBox($"Lỗi giải tán team: {ex.Message}", true, 3000);
                             }
                         }
                         else
@@ -401,14 +427,25 @@ namespace EsportsManager.UI.Controllers.Player.Handlers
                     var confirmation = Console.ReadLine()?.Trim();
                     if (confirmation?.ToUpper() == "YES")
                     {
-                        var result = await _teamService.RemoveMemberAsync(team.Id, _currentUser.Id, _currentUser.Id);
-                        if (result)
+                        try
                         {
-                            ConsoleRenderingService.ShowMessageBox($"Đã rời khỏi team '{team.Name}' thành công!", false, 3000);
+                            var result = await _teamService.RemoveMemberAsync(team.Id, _currentUser.Id, _currentUser.Id);
+                            if (result)
+                            {
+                                ConsoleRenderingService.ShowMessageBox($"Đã rời khỏi team '{team.Name}' thành công!", false, 3000);
+                            }
+                            else
+                            {
+                                ConsoleRenderingService.ShowMessageBox("Rời team thất bại!", true, 2000);
+                            }
                         }
-                        else
+                        catch (UnauthorizedAccessException ex)
                         {
-                            ConsoleRenderingService.ShowMessageBox("Rời team thất bại!", true, 2000);
+                            ConsoleRenderingService.ShowMessageBox($"Không có quyền rời team: {ex.Message}", true, 3000);
+                        }
+                        catch (Exception ex)
+                        {
+                            ConsoleRenderingService.ShowMessageBox($"Lỗi rời team: {ex.Message}", true, 3000);
                         }
                     }
                     else
