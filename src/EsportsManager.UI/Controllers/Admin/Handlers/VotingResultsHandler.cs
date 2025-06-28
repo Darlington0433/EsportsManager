@@ -81,9 +81,7 @@ public class VotingResultsHandler : IVotingResultsHandler
                 Console.ResetColor();
                 Console.SetCursorPosition(left, top + 2);
                 Console.WriteLine("".PadRight(width)); // clear line in border
-                Console.SetCursorPosition(0, top + borderHeight + 2);
-                Console.WriteLine("Nhấn phím bất kỳ để tiếp tục...");
-                Console.ReadKey(true);
+                ShowContinuePromptOutsideBorder();
                 return;
             }
             // Header
@@ -117,8 +115,7 @@ public class VotingResultsHandler : IVotingResultsHandler
             Console.SetCursorPosition(left, footerY);
             Console.WriteLine(totalInfo.PadRight(width));
             Console.SetCursorPosition(left, footerY + 1);
-            Console.WriteLine("Nhấn phím bất kỳ để tiếp tục...".PadRight(width));
-            Console.ReadKey(true);
+            ShowContinuePromptOutsideBorder();
         }
         catch (Exception ex)
         {
@@ -146,9 +143,7 @@ public class VotingResultsHandler : IVotingResultsHandler
                 Console.ResetColor();
                 Console.SetCursorPosition(left, top + 2);
                 Console.WriteLine("".PadRight(width)); // clear line in border
-                Console.SetCursorPosition(0, top + borderHeight + 2);
-                Console.WriteLine("Nhấn phím bất kỳ để tiếp tục...");
-                Console.ReadKey(true);
+                ShowContinuePromptOutsideBorder();
                 return;
             }
             // Header
@@ -182,8 +177,7 @@ public class VotingResultsHandler : IVotingResultsHandler
             Console.SetCursorPosition(left, footerY);
             Console.WriteLine(totalInfo.PadRight(width));
             Console.SetCursorPosition(left, footerY + 1);
-            Console.WriteLine("Nhấn phím bất kỳ để tiếp tục...".PadRight(width));
-            Console.ReadKey(true);
+            ShowContinuePromptOutsideBorder();
         }
         catch (Exception ex)
         {
@@ -358,13 +352,23 @@ public class VotingResultsHandler : IVotingResultsHandler
                 Console.WriteLine("Không có dữ liệu");
             }
 
-            Console.WriteLine("\nNhấn phím bất kỳ để tiếp tục...");
-            Console.ReadKey(true);
+            ShowContinuePromptOutsideBorder();
         }
         catch (Exception ex)
         {
             ConsoleRenderingService.ShowMessageBox($"Lỗi khi tải thống kê voting: {ex.Message}", true, 3000);
         }
+    }
+
+    /// <summary>
+    /// Hiển thị prompt "Nhấn phím bất kỳ để tiếp tục..." ở dòng cuối cùng ngoài border, an toàn cho mọi kích thước console.
+    /// </summary>
+    private static void ShowContinuePromptOutsideBorder()
+    {
+        int lastLine = Math.Max(Console.WindowTop + Console.WindowHeight - 2, 0);
+        Console.SetCursorPosition(0, lastLine);
+        Console.WriteLine("Nhấn phím bất kỳ để tiếp tục...");
+        Console.ReadKey(true);
     }
 
     #region Interface Implementation

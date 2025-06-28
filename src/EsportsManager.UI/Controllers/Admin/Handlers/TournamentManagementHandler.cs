@@ -892,4 +892,15 @@ public class AdminTournamentManagementHandler : BaseHandler
         Console.SetCursorPosition(left, top);
         Console.WriteLine(new string('─', width));
     }
+
+    /// <summary>
+    /// Hiển thị prompt "Nhấn phím bất kỳ để tiếp tục..." ở dòng cuối cùng ngoài border, an toàn cho mọi kích thước console.
+    /// </summary>
+    private static void ShowContinuePromptOutsideBorder()
+    {
+        int lastLine = Math.Max(Console.WindowTop + Console.WindowHeight - 2, 0);
+        Console.SetCursorPosition(0, lastLine);
+        Console.WriteLine("Nhấn phím bất kỳ để tiếp tục...");
+        Console.ReadKey(true);
+    }
 }

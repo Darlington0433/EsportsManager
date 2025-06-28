@@ -201,8 +201,18 @@ public class SystemStatsHandler
         Console.WriteLine($"⚔️ Tổng số đội             : {fallbackStats.teams:N0}");
         Console.WriteLine($"🎮 Giải đấu đang hoạt động : {fallbackStats.activeUsers:N0}");
         Console.WriteLine($"💰 Tổng giải thưởng        : {fallbackStats.totalPrizePool:N0} VND");
-        // Đưa dòng tiếp tục ra ngoài border
-        Console.SetCursorPosition(0, FallbackContinueLine);
+
+        // Đưa dòng tiếp tục ra ngoài border, tối ưu cho mọi kích thước console
+        ShowContinuePromptOutsideBorder();
+    }
+
+    /// <summary>
+    /// Hiển thị prompt "Nhấn phím bất kỳ để tiếp tục..." ở dòng cuối cùng ngoài border, an toàn cho mọi kích thước console.
+    /// </summary>
+    private static void ShowContinuePromptOutsideBorder()
+    {
+        int lastLine = Math.Max(Console.WindowTop + Console.WindowHeight - 2, 0);
+        Console.SetCursorPosition(0, lastLine);
         Console.WriteLine("Nhấn phím bất kỳ để tiếp tục...");
         Console.ReadKey(true);
     }
