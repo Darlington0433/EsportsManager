@@ -145,7 +145,7 @@ namespace EsportsManager.UI.Controllers.Viewer.Handlers
                 }
                 else
                 {
-                    ConsoleRenderingService.ShowMessageBox($"❌ Cập nhật thất bại: {result.ErrorMessage}", false, 2000);
+                    ConsoleRenderingService.ShowMessageBox($"❌ Cập nhật thất bại: {result.Message}", false, 2000);
                 }
             }
             catch (Exception ex)
@@ -200,7 +200,7 @@ namespace EsportsManager.UI.Controllers.Viewer.Handlers
                     NewPassword = newPassword
                 };
 
-                var result = await _userService.UpdatePasswordAsync(passwordDto);
+                var result = await _userService.UpdatePasswordAsync(_currentUser.Id, passwordDto);
 
                 if (result.IsSuccess)
                 {
@@ -208,7 +208,7 @@ namespace EsportsManager.UI.Controllers.Viewer.Handlers
                 }
                 else
                 {
-                    ConsoleRenderingService.ShowMessageBox($"❌ Đổi mật khẩu thất bại: {result.ErrorMessage}", false, 2000);
+                    ConsoleRenderingService.ShowMessageBox($"❌ Đổi mật khẩu thất bại: {result.Message}", false, 2000);
                 }
             }
             catch (Exception ex)

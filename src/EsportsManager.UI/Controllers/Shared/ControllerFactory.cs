@@ -70,8 +70,8 @@ namespace EsportsManager.UI.Controllers.Shared
         /// </summary>
         public PlayerController CreatePlayerController(UserProfileDto user)
         {
-            // Create handlers with dependency injection
-            var tournamentManagementHandler = new TournamentManagementHandler(user, _tournamentService, _teamService);
+            // Use Shared handler for player
+            var tournamentManagementHandler = new EsportsManager.UI.Controllers.Shared.Handlers.TournamentManagementHandler(user, _tournamentService, _teamService);
             var teamManagementHandler = new PlayerTeamManagementHandler(user, _teamService);
             var profileHandler = new PlayerProfileHandler(user, _userService);
             var tournamentViewHandler = new TournamentViewHandler(_tournamentService);
@@ -116,7 +116,8 @@ namespace EsportsManager.UI.Controllers.Shared
         public AdminUIController CreateAdminController(UserProfileDto user)
         {
             var userManagementHandler = new UserManagementHandler(_userService, _achievementService);
-            var tournamentManagementHandler = new AdminTournamentManagementHandler(user, _tournamentService, _teamService);
+            // Use the Admin handler, not the Shared handler, for admin UI
+            var tournamentManagementHandler = new EsportsManager.UI.Controllers.Admin.Handlers.TournamentManagementHandler(user, _tournamentService, _teamService);
             var systemStatsHandler = new SystemStatsHandler(_userService, _tournamentService, _teamService);
             var donationReportHandler = new DonationReportHandler(_walletService, _userService);
             var votingResultsHandler = new VotingResultsHandler(_userService, _tournamentService, _votingService);

@@ -326,7 +326,7 @@ namespace EsportsManager.UI.Forms
                 }
                 else
                 {
-                    ShowMessage($"Đăng ký thất bại: {result.ErrorMessage}", true);
+                    ShowMessage($"Đăng ký thất bại: {result.Message}", true);
                 }
             }
             catch (Exception ex)

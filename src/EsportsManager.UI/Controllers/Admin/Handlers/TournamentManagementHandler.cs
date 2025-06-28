@@ -39,21 +39,28 @@ public class TournamentManagementHandler : BaseHandler
         {
             DrawTitledBorder("TẠO GIẢI ĐẤU MỚI", UIConstants.Border.LARGE_WIDTH, UIConstants.Border.LARGE_HEIGHT);
 
-            var tournamentData = await CollectTournamentDataAsync();
+            var tournamentData = CollectTournamentDataAsync(); // now sync
             if (tournamentData == null)
             {
                 ShowWarningMessage("Đã hủy tạo giải đấu");
                 return;
             }
 
-            var result = await _tournamentService.CreateTournamentAsync(tournamentData);
-            if (result.IsSuccess)
+            try
             {
-                ShowSuccessMessage("Tạo giải đấu thành công!");
+                var result = await _tournamentService.CreateTournamentAsync(tournamentData);
+                if (result != null && !string.IsNullOrEmpty(result.TournamentName))
+                {
+                    ShowSuccessMessage("Tạo giải đấu thành công!");
+                }
+                else
+                {
+                    ShowErrorMessage($"Tạo giải đấu thất bại: Không xác định");
+                }
             }
-            else
+            catch (Exception ex)
             {
-                ShowErrorMessage($"Tạo giải đấu thất bại: {result.Message}");
+                ShowErrorMessage($"Tạo giải đấu thất bại: {ex.Message}");
             }
         }, "tạo giải đấu");
     }
@@ -61,7 +68,7 @@ public class TournamentManagementHandler : BaseHandler
     /// <summary>
     /// Thu thập thông tin giải đấu từ người dùng
     /// </summary>
-    private async Task<TournamentCreateDto?> CollectTournamentDataAsync()
+    private TournamentCreateDto? CollectTournamentDataAsync()
     {
         var tournamentName = UIHelper.ReadString("Tên giải đấu: ", 3, 100, false);
         if (tournamentName == null) return null;
@@ -138,14 +145,21 @@ public class TournamentManagementHandler : BaseHandler
                 return;
             }
 
-            var success = await _tournamentService.DeleteTournamentAsync(tournamentId);
-            if (success)
+            try
             {
-                ShowSuccessMessage("Xóa giải đấu thành công!");
+                var result = await _tournamentService.DeleteTournamentAsync(tournamentId);
+                if (result)
+                {
+                    ShowSuccessMessage("Xóa giải đấu thành công!");
+                }
+                else
+                {
+                    ShowErrorMessage("Xóa giải đấu thất bại!");
+                }
             }
-            else
+            catch (Exception ex)
             {
-                ShowErrorMessage("Xóa giải đấu thất bại!");
+                ShowErrorMessage($"Xóa giải đấu thất bại: {ex.Message}");
             }
         }, "xóa giải đấu");
     }
@@ -169,21 +183,28 @@ public class TournamentManagementHandler : BaseHandler
                 return;
             }
 
-            var updateData = await CollectTournamentUpdateDataAsync(tournament);
+            var updateData = CollectTournamentUpdateDataAsync(tournament); // now sync
             if (updateData == null)
             {
                 ShowWarningMessage("Đã hủy cập nhật giải đấu");
                 return;
             }
 
-            var result = await _tournamentService.UpdateTournamentAsync(tournamentId, updateData);
-            if (result.IsSuccess)
+            try
             {
-                ShowSuccessMessage("Cập nhật giải đấu thành công!");
+                var result = await _tournamentService.UpdateTournamentAsync(tournamentId, updateData);
+                if (result)
+                {
+                    ShowSuccessMessage("Cập nhật giải đấu thành công!");
+                }
+                else
+                {
+                    ShowErrorMessage($"Cập nhật giải đấu thất bại: Không xác định");
+                }
             }
-            else
+            catch (Exception ex)
             {
-                ShowErrorMessage($"Cập nhật giải đấu thất bại: {result.Message}");
+                ShowErrorMessage($"Cập nhật giải đấu thất bại: {ex.Message}");
             }
         }, "cập nhật giải đấu");
     }
@@ -191,7 +212,7 @@ public class TournamentManagementHandler : BaseHandler
     /// <summary>
     /// Thu thập thông tin cập nhật giải đấu
     /// </summary>
-    private async Task<TournamentUpdateDto?> CollectTournamentUpdateDataAsync(TournamentInfoDto currentTournament)
+    private TournamentUpdateDto? CollectTournamentUpdateDataAsync(TournamentInfoDto currentTournament)
     {
         Console.WriteLine($"\nThông tin hiện tại của giải đấu: {currentTournament.TournamentName}");
         Console.WriteLine("Nhấn Enter để giữ nguyên giá trị hiện tại\n");
@@ -206,7 +227,7 @@ public class TournamentManagementHandler : BaseHandler
         {
             TournamentName = name,
             Description = description,
-            UpdatedBy = _currentUser.Id
+            Status = currentTournament.Status
         };
     }
 

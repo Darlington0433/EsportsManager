@@ -137,7 +137,7 @@ public class DonationReportHandler : IDonationReportHandler
                            "3. Thông tin kết nối đúng?";
             }
 
-            ConsoleRenderingService.ShowMessageBox($"Lỗi khi tải tổng quan donation: {errorMessage}{suggestion}", true, 5000);
+            ConsoleRenderingService.ShowMessageBox($"Lỗi khi tải tổng quan donation: {ex.Message}{suggestion}", true, 5000);
         }
     }
 
@@ -372,7 +372,7 @@ public class DonationReportHandler : IDonationReportHandler
                         break;
 
                     case ConsoleKey.F: // Add filter
-                        await SetupFiltersAsync(filter);
+                        SetupFilters(filter);
                         currentPage = 1; // Reset về trang 1 khi thay đổi filter
                         filter.PageNumber = currentPage;
                         break;
@@ -392,7 +392,7 @@ public class DonationReportHandler : IDonationReportHandler
                         break;
 
                     case ConsoleKey.S: // Statistics
-                        await ShowQuickStatsAsync(donations);
+                        ShowQuickStats(donations);
                         break;
 
                     case ConsoleKey.Q: // Quit
@@ -469,7 +469,7 @@ public class DonationReportHandler : IDonationReportHandler
     }
 
     // Helper method để setup filters
-    private async Task SetupFiltersAsync(DonationSearchFilterDto filter)
+    private void SetupFilters(DonationSearchFilterDto filter)
     {
         Console.Clear();
         ConsoleRenderingService.DrawBorder("THIẾT LẬP BỘ LỌC", 70, 20);
@@ -481,31 +481,31 @@ public class DonationReportHandler : IDonationReportHandler
         // Username filter
         Console.WriteLine($"👤 Tên người dùng hiện tại: {filter.Username ?? "Tất cả"}");
         Console.Write("   Nhập tên mới: ");
-        string username = Console.ReadLine();
+        var username = Console.ReadLine() ?? string.Empty;
         if (!string.IsNullOrWhiteSpace(username))
             filter.Username = username;
 
         // Amount range
         Console.WriteLine($"💰 Khoảng số tiền hiện tại: {filter.MinAmount:N0} - {filter.MaxAmount:N0}");
         Console.Write("   Số tiền tối thiểu: ");
-        string minAmount = Console.ReadLine();
+        var minAmount = Console.ReadLine() ?? string.Empty;
         if (!string.IsNullOrWhiteSpace(minAmount) && decimal.TryParse(minAmount, out decimal min))
             filter.MinAmount = min;
 
         Console.Write("   Số tiền tối đa: ");
-        string maxAmount = Console.ReadLine();
+        var maxAmount = Console.ReadLine() ?? string.Empty;
         if (!string.IsNullOrWhiteSpace(maxAmount) && decimal.TryParse(maxAmount, out decimal max))
             filter.MaxAmount = max;
 
         // Date range
         Console.WriteLine($"📅 Khoảng thời gian hiện tại: {filter.FromDate:dd/MM/yyyy} - {filter.ToDate:dd/MM/yyyy}");
         Console.Write("   Từ ngày (dd/MM/yyyy): ");
-        string fromDate = Console.ReadLine();
+        var fromDate = Console.ReadLine() ?? string.Empty;
         if (!string.IsNullOrWhiteSpace(fromDate) && DateTime.TryParse(fromDate, out DateTime from))
             filter.FromDate = from;
 
         Console.Write("   Đến ngày (dd/MM/yyyy): ");
-        string toDate = Console.ReadLine();
+        var toDate = Console.ReadLine() ?? string.Empty;
         if (!string.IsNullOrWhiteSpace(toDate) && DateTime.TryParse(toDate, out DateTime to))
             filter.ToDate = to;
 
@@ -513,7 +513,7 @@ public class DonationReportHandler : IDonationReportHandler
     }
 
     // Helper method để hiển thị thống kê nhanh
-    private async Task ShowQuickStatsAsync(List<TransactionDto> donations)
+    private void ShowQuickStats(List<TransactionDto> donations)
     {
         Console.Clear();
         ConsoleRenderingService.DrawBorder("THỐNG KÊ NHANH", 60, 15);

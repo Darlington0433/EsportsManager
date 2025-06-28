@@ -56,7 +56,17 @@ public class SystemStatsHandler
             bool useServiceData = true;
 
             // Lấy dữ liệu từng phần, nếu lỗi sẽ fallback
-            try { users = await _userService.GetAllUsersAsync(); totalUsers = users?.Count() ?? 0; activeUsers = users?.Count(u => u.Status == "Active") ?? 0; } catch { useServiceData = false; }
+            try {
+                var userResult = await _userService.GetAllUsersAsync();
+                users = userResult.Data?.Select(u => new UserProfileDto {
+                    Id = u.Id,
+                    Username = u.Username,
+                    Status = u.Status,
+                    Role = u.Role
+                }).ToList();
+                totalUsers = users?.Count ?? 0;
+                activeUsers = users?.Count(u => u.Status == "Active") ?? 0;
+            } catch { useServiceData = false; }
             try { tournaments = await _tournamentService.GetAllTournamentsAsync();
                 totalTournaments = tournaments?.Count() ?? 0;
                 if (tournaments != null)
@@ -156,14 +166,14 @@ public class SystemStatsHandler
             {
                 "💡 GỢI Ý:",
                 new string('─', width),
-                totalUsers == 0 ? "• Tạo thêm tài khoản người dùng để test hệ thống" : null,
-                totalTournaments == 0 ? "• Tạo giải đấu mới để tăng hoạt động" : null,
-                totalTeams == 0 ? "• Khuyến khích người chơi tạo đội" : null,
+                totalUsers == 0 ? "• Tạo thêm tài khoản người dùng để test hệ thống" : string.Empty,
+                totalTournaments == 0 ? "• Tạo giải đấu mới để tăng hoạt động" : string.Empty,
+                totalTeams == 0 ? "• Khuyến khích người chơi tạo đội" : string.Empty,
                 "• Chạy script sample data: database/ADD_SAMPLE_DONATIONS.sql"
             };
             foreach (var rec in recs)
             {
-                if (rec == null) continue;
+                if (string.IsNullOrEmpty(rec)) continue;
                 Console.SetCursorPosition(left, row++);
                 Console.WriteLine(rec.Length > width ? rec.Substring(0, width) : rec.PadRight(width));
             }
@@ -238,7 +248,7 @@ public class SystemStatsHandler
     }
 
     // Helper method để hiển thị thống kê chi tiết
-    private async Task ShowDetailedStatsAsync(List<UserProfileDto>? users, List<TournamentInfoDto>? tournaments, List<TeamInfoDto>? teams)
+    private Task ShowDetailedStatsAsync(List<UserProfileDto>? users, List<TournamentInfoDto>? tournaments, List<TeamInfoDto>? teams)
     {
         Console.Clear();
         ConsoleRenderingService.DrawBorder("THỐNG KÊ CHI TIẾT", 90, 30);
@@ -395,10 +405,11 @@ public class SystemStatsHandler
 
         Console.WriteLine("\nNhấn phím bất kỳ để quay lại...");
         Console.ReadKey(true);
+        return Task.CompletedTask;
     }
 
     // Helper method để tạo dữ liệu mẫu nếu cần
-    private async Task CreateSampleDataIfNeededAsync()
+    private Task CreateSampleDataIfNeededAsync()
     {
         Console.Clear();
         ConsoleRenderingService.DrawBorder("TẠO DỮ LIỆU MẪU", 70, 15);
@@ -423,6 +434,7 @@ public class SystemStatsHandler
             Console.WriteLine("Nhấn phím bất kỳ để tiếp tục...");
             Console.ReadKey();
         }
+        return Task.CompletedTask;
     }
 
     // Fallback method to get stats directly from database if services fail
@@ -438,8 +450,9 @@ public class SystemStatsHandler
             // Fallback - try each service individually
             try
             {
-                var users = await _userService.GetAllUsersAsync();
-                totalUsers = users?.Count ?? 0;
+                var usersResult = await _userService.GetAllUsersAsync();
+                var users = usersResult.Data;
+                totalUsers = users?.Count() ?? 0;
                 activeUsers = users?.Count(u => u.Status == "Active") ?? 0;
             }
             catch

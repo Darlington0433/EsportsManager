@@ -117,8 +117,8 @@ public static class ConsoleFormatter
         try
         {
             // Thử thiết lập kích thước lý tưởng
-            Console.SetBufferSize(PREFERRED_WIDTH, BUFFER_HEIGHT);
-            Console.SetWindowSize(PREFERRED_WIDTH, PREFERRED_HEIGHT);
+            Console.SetBufferSize(AppConstants.UI.CONSOLE_WIDTH, AppConstants.UI.CONSOLE_BUFFER);
+            Console.SetWindowSize(AppConstants.UI.CONSOLE_WIDTH, AppConstants.UI.CONSOLE_HEIGHT);
         }
         catch (ArgumentOutOfRangeException)
         {
@@ -184,7 +184,7 @@ public static class ConsoleFormatter
     {
         SetColor(Theme.Secondary);
         Console.WriteLine(new string(character, Math.Min(width, Console.WindowWidth - 1)));
-        ResetColor();
+        ResetColors();
     }
     
     /// <summary>
@@ -194,7 +194,7 @@ public static class ConsoleFormatter
     {
         SetColor(Theme.Warning);
         Console.Write($"\n{message}");
-        ResetColor();
+        ResetColors();
         Console.ReadKey(true);
     }
 }

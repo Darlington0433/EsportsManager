@@ -7,36 +7,94 @@ using Models = EsportsManager.BL.Models;
 namespace EsportsManager.BL.Interfaces;
 
 /// <summary>
-/// User service interface - áp dụng Interface Segregation Principle
-/// Chỉ chứa các phương thức liên quan đến User business logic
+/// Interface định nghĩa các thao tác quản lý người dùng
 /// </summary>
 public interface IUserService
 {
-    // Authentication methods
-    Task<Models.AuthenticationResult> AuthenticateAsync(LoginDto loginDto);
-    Task<BusinessResult<UserDto>> RegisterAsync(RegisterDto registerDto);
-    Task<BusinessResult> LogoutAsync(int userId);
+    /// <summary>
+    /// Lấy danh sách tất cả người dùng
+    /// </summary>
+    Task<BusinessResult<IEnumerable<UserDto>>> GetAllUsersAsync();
+
+    /// <summary>
+    /// Xóa người dùng theo ID
+    /// </summary>
+    Task<BusinessResult> DeleteUserAsync(int userId);
+
+    /// <summary>
+    /// Cập nhật vai trò của người dùng
+    /// </summary>
+    Task<BusinessResult> UpdateUserRoleAsync(int userId, string newRole);
+
+    /// <summary>
+    /// Cấm người dùng
+    /// </summary>
+    Task<BusinessResult> BanUserAsync(int userId);
+
+    /// <summary>
+    /// Đăng ký người dùng mới
+    /// </summary>
+    Task<Models.AuthenticationResult> RegisterAsync(RegisterDto registerDto);
+
+    /// <summary>
+    /// Đăng nhập người dùng
+    /// </summary>
+    Task<Models.AuthenticationResult> LoginAsync(LoginDto loginDto);
+
+    /// <summary>
+    /// Cập nhật thông tin người dùng
+    /// </summary>
+    Task<BusinessResult> UpdateUserAsync(int userId, UpdateUserDto updateDto);
+
+    /// <summary>
+    /// Đổi mật khẩu người dùng
+    /// </summary>
+    Task<BusinessResult> UpdatePasswordAsync(int userId, UpdatePasswordDto updateDto);
+
+    /// <summary>
+    /// Khôi phục mật khẩu
+    /// </summary>
+    Task<BusinessResult> ResetPasswordAsync(ResetPasswordDto resetDto);
+
+    /// <summary>
+    /// Xác thực email người dùng
+    /// </summary>
+    Task<BusinessResult> VerifyEmailAsync(string token);
+
+    /// <summary>
+    /// Gửi lại email xác thực
+    /// </summary>
+    Task<BusinessResult> ResendVerificationEmailAsync(string email);
+
+    /// <summary>
+    /// Lấy thông tin người dùng theo ID
+    /// </summary>
+    Task<BusinessResult<UserDto>> GetUserByIdAsync(int userId);
+
+    /// <summary>
+    /// Lấy thông tin người dùng theo email
+    /// </summary>
+    Task<BusinessResult<UserDto>> GetUserByEmailAsync(string email);
+
+    /// <summary>
+    /// Lấy thông tin người dùng theo username
+    /// </summary>
+    Task<BusinessResult<UserDto>> GetUserByUsernameAsync(string username);
 
     // User management methods
-    Task<BusinessResult<UserDto>> GetUserByIdAsync(int userId);
-    Task<BusinessResult<UserDto>> GetUserByUsernameAsync(string username);
     Task<BusinessResult<IEnumerable<UserDto>>> GetUsersByRoleAsync(string role);
     Task<BusinessResult<IEnumerable<UserDto>>> GetActiveUsersAsync();
 
     // User profile methods
     Task<BusinessResult<UserProfileDto>> GetUserProfileAsync(int userId);
     Task<BusinessResult<UserDto>> UpdateUserProfileAsync(int userId, UserDto userDto);
-    Task<BusinessResult> UpdatePasswordAsync(UpdatePasswordDto updatePasswordDto);
-    Task<BusinessResult> ResetPasswordAsync(ResetPasswordDto resetPasswordDto);
 
     // Admin methods
     Task<BusinessResult<UserDto>> CreateUserAsync(CreateUserDto createUserDto);
     Task<BusinessResult> UpdateUserStatusAsync(int userId, string status);
-    Task<List<UserProfileDto>> GetAllUsersAsync();
     Task<List<UserProfileDto>> SearchUsersAsync(string searchTerm);
     Task<bool> ToggleUserStatusAsync(int userId);
     Task<string> ResetPasswordAsync(int userId);
-    Task<bool> DeleteUserAsync(int userId, int currentUserId = 0);
     Task<BusinessResult<bool>> DeleteUserWithPermissionCheckAsync(int userId, int requestUserId);
 
     // Validation methods

@@ -15,21 +15,13 @@ namespace EsportsManager.BL.Services
     /// </summary>
     public class VotingService : IVotingService
     {
-        private readonly ILogger<VotingService> _logger;
         private readonly IVotesRepository _votesRepository;
-        private readonly IUsersRepository _usersRepository;
-        private readonly ITeamRepository _teamRepository;
+        private readonly ILogger<VotingService> _logger;
 
-        public VotingService(
-            ILogger<VotingService> logger,
-            IVotesRepository votesRepository,
-            IUsersRepository usersRepository,
-            ITeamRepository teamRepository)
+        public VotingService(IVotesRepository votesRepository, ILogger<VotingService> logger)
         {
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _votesRepository = votesRepository ?? throw new ArgumentNullException(nameof(votesRepository));
-            _usersRepository = usersRepository ?? throw new ArgumentNullException(nameof(usersRepository));
-            _teamRepository = teamRepository ?? throw new ArgumentNullException(nameof(teamRepository));
+            _votesRepository = votesRepository;
+            _logger = logger;
         }
 
         /// <summary>
@@ -39,45 +31,21 @@ namespace EsportsManager.BL.Services
         {
             try
             {
-                // Lấy tất cả vote cho Player
                 var votes = await _votesRepository.GetVotesByTargetAsync("Player", 0);
-
-                // Nhóm theo targetId và tính toán kết quả
-                var groupedVotes = votes.GroupBy(v => v.TargetID);
-                var results = new List<VotingResultDto>();
-
-                foreach (var group in groupedVotes)
-                {
-                    int targetId = group.Key;
-                    var user = await _usersRepository.GetByIdAsync(targetId);
-
-                    if (user == null) continue;
-
-                    var votesForTarget = group.ToList();
-                    var averageRating = Math.Round(votesForTarget.Average(v => v.Rating), 2);
-
-                    var ratingDistribution = new Dictionary<int, int>();
-                    for (int i = 1; i <= 5; i++)
+                var results = votes.GroupBy(v => v.TargetID)
+                    .Select(g => new VotingResultDto
                     {
-                        ratingDistribution[i] = votesForTarget.Count(v => v.Rating == i);
-                    }
-
-                    results.Add(new VotingResultDto
-                    {
-                        TargetId = targetId,
-                        TargetName = user.Username,
+                        TargetId = g.Key,
                         Type = "Player",
-                        TotalVotes = votesForTarget.Count,
-                        AverageRating = averageRating,
-                        RatingDistribution = ratingDistribution
-                    });
-                }
+                        TotalVotes = g.Count(),
+                        AverageRating = Math.Round(g.Average(v => v.Rating), 2),
+                        RatingDistribution = g.GroupBy(v => v.Rating)
+                            .ToDictionary(r => r.Key, r => r.Count())
+                    })
+                    .OrderByDescending(r => r.AverageRating)
+                    .ToList();
 
-                // Sắp xếp kết quả theo điểm trung bình giảm dần
-                results = results.OrderByDescending(r => r.AverageRating).ToList();
-
-                // Giới hạn số lượng kết quả nếu có
-                if (limit.HasValue && limit.Value > 0)
+                if (limit.HasValue)
                 {
                     results = results.Take(limit.Value).ToList();
                 }
@@ -86,7 +54,7 @@ namespace EsportsManager.BL.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting player voting results");
+                _logger.LogError(ex, "Lỗi khi lấy kết quả voting cho players");
                 throw;
             }
         }
@@ -98,45 +66,21 @@ namespace EsportsManager.BL.Services
         {
             try
             {
-                // Lấy tất cả vote cho Tournament
                 var votes = await _votesRepository.GetVotesByTargetAsync("Tournament", 0);
-
-                // Nhóm theo targetId và tính toán kết quả
-                var groupedVotes = votes.GroupBy(v => v.TargetID);
-                var results = new List<VotingResultDto>();
-
-                foreach (var group in groupedVotes)
-                {
-                    int targetId = group.Key;
-                    // Gọi đến repository để lấy tên của tournament
-                    // Giả sử có một hàm để lấy tên tournament từ ID
-                    string tournamentName = $"Tournament {targetId}"; // Thay bằng repository call thực
-
-                    var votesForTarget = group.ToList();
-                    var averageRating = Math.Round(votesForTarget.Average(v => v.Rating), 2);
-
-                    var ratingDistribution = new Dictionary<int, int>();
-                    for (int i = 1; i <= 5; i++)
+                var results = votes.GroupBy(v => v.TargetID)
+                    .Select(g => new VotingResultDto
                     {
-                        ratingDistribution[i] = votesForTarget.Count(v => v.Rating == i);
-                    }
-
-                    results.Add(new VotingResultDto
-                    {
-                        TargetId = targetId,
-                        TargetName = tournamentName,
+                        TargetId = g.Key,
                         Type = "Tournament",
-                        TotalVotes = votesForTarget.Count,
-                        AverageRating = averageRating,
-                        RatingDistribution = ratingDistribution
-                    });
-                }
+                        TotalVotes = g.Count(),
+                        AverageRating = Math.Round(g.Average(v => v.Rating), 2),
+                        RatingDistribution = g.GroupBy(v => v.Rating)
+                            .ToDictionary(r => r.Key, r => r.Count())
+                    })
+                    .OrderByDescending(r => r.AverageRating)
+                    .ToList();
 
-                // Sắp xếp kết quả theo điểm trung bình giảm dần
-                results = results.OrderByDescending(r => r.AverageRating).ToList();
-
-                // Giới hạn số lượng kết quả nếu có
-                if (limit.HasValue && limit.Value > 0)
+                if (limit.HasValue)
                 {
                     results = results.Take(limit.Value).ToList();
                 }
@@ -145,7 +89,7 @@ namespace EsportsManager.BL.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting tournament voting results");
+                _logger.LogError(ex, "Lỗi khi lấy kết quả voting cho tournaments");
                 throw;
             }
         }
@@ -157,11 +101,10 @@ namespace EsportsManager.BL.Services
         {
             try
             {
-                // Sử dụng repository để tìm kiếm thực tế
                 var votes = await _votesRepository.SearchVotesAsync(
                     voterId: searchDto.UserId,
-                    username: searchDto.Username,
-                    voteType: searchDto.VoteType,
+                    username: searchDto.Username ?? string.Empty,
+                    voteType: searchDto.VoteType ?? string.Empty,
                     targetId: searchDto.TargetId,
                     minRating: searchDto.MinRating,
                     maxRating: searchDto.MaxRating,
@@ -170,14 +113,20 @@ namespace EsportsManager.BL.Services
                     page: searchDto.Page,
                     pageSize: searchDto.PageSize);
 
-                // Chuyển đổi từ entity sang DTO
-                var result = votes.Select(v => MapVoteToVotingDto(v)).ToList();
-
-                return result;
+                return votes.Select(v => new VotingDto
+                {
+                    VotingId = v.VoteID,
+                    UserId = v.VoterID,
+                    VoteType = v.VoteType,
+                    TargetId = v.TargetID,
+                    Rating = v.Rating,
+                    Comment = v.Comment,
+                    VoteDate = v.CreatedAt
+                }).ToList();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error searching votes");
+                _logger.LogError(ex, "Lỗi khi tìm kiếm vote");
                 throw;
             }
         }
@@ -189,24 +138,16 @@ namespace EsportsManager.BL.Services
         {
             try
             {
-                // Lấy số lượng vote theo loại
-                int totalPlayerVotes = await _votesRepository.GetVoteCountByTypeAsync("Player");
-                int totalTournamentVotes = await _votesRepository.GetVoteCountByTypeAsync("Tournament");
-                int totalVotes = totalPlayerVotes + totalTournamentVotes;
-
-                // Lấy số lượng người vote độc nhất
-                int uniqueVoters = await _votesRepository.GetUniqueVotersCountAsync();
-
-                // Lấy thống kê theo tháng
+                var totalPlayerVotes = await _votesRepository.GetVoteCountByTypeAsync("Player");
+                var totalTournamentVotes = await _votesRepository.GetVoteCountByTypeAsync("Tournament");
+                var uniqueVoters = await _votesRepository.GetUniqueVotersCountAsync();
                 var votesByMonth = await _votesRepository.GetVotesByMonthAsync();
-
-                // Lấy top players và tournaments
                 var topPlayers = await GetPlayerVotingResultsAsync(5);
                 var topTournaments = await GetTournamentVotingResultsAsync(5);
 
                 return new VotingStatsDto
                 {
-                    TotalVotes = totalVotes,
+                    TotalVotes = totalPlayerVotes + totalTournamentVotes,
                     TotalPlayerVotes = totalPlayerVotes,
                     TotalTournamentVotes = totalTournamentVotes,
                     UniqueVoters = uniqueVoters,
@@ -217,7 +158,7 @@ namespace EsportsManager.BL.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting voting stats");
+                _logger.LogError(ex, "Lỗi khi lấy thống kê voting");
                 throw;
             }
         }
@@ -229,38 +170,23 @@ namespace EsportsManager.BL.Services
         {
             try
             {
-                // Sử dụng repository để lấy votes từ database
                 var votes = await _votesRepository.GetVotesByVoterAsync(userId);
-
-                // Chuyển đổi từ entity sang DTO
-                var result = votes.Select(v => MapVoteToVotingDto(v)).ToList();
-
-                return result;
+                return votes.Select(v => new VotingDto
+                {
+                    VotingId = v.VoteID,
+                    UserId = v.VoterID,
+                    VoteType = v.VoteType,
+                    TargetId = v.TargetID,
+                    Rating = v.Rating,
+                    Comment = v.Comment,
+                    VoteDate = v.CreatedAt
+                }).ToList();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting user votes");
+                _logger.LogError(ex, "Lỗi khi lấy votes của user");
                 throw;
             }
-        }
-
-        /// <summary>
-        /// Chuyển đổi từ Vote entity sang VotingDto
-        /// </summary>
-        private VotingDto MapVoteToVotingDto(Vote vote)
-        {
-            return new VotingDto
-            {
-                VotingId = vote.VoteID,
-                UserId = vote.VoterID,
-                Username = "", // Có thể cần gọi đến repository để lấy username
-                VoteType = vote.VoteType,
-                TargetId = vote.TargetID,
-                TargetName = "", // Cần gọi đến repository để lấy tên target
-                Rating = vote.Rating,
-                Comment = vote.Comment,
-                VoteDate = vote.CreatedAt
-            };
         }
 
         /// <summary>
@@ -270,7 +196,6 @@ namespace EsportsManager.BL.Services
         {
             try
             {
-                // Chuyển đổi từ DTO sang entity
                 var vote = new Vote
                 {
                     VoterID = votingDto.UserId,
@@ -281,16 +206,13 @@ namespace EsportsManager.BL.Services
                     CreatedAt = DateTime.UtcNow
                 };
 
-                // Thêm vote mới vào database
-                var addedVote = await _votesRepository.AddVoteAsync(vote);
-
-                return addedVote != null;
+                var result = await _votesRepository.AddVoteAsync(vote);
+                return result != null;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error submitting vote for {VoteType} with ID {TargetId}",
-                    votingDto.VoteType, votingDto.TargetId);
-                throw;
+                _logger.LogError(ex, "Lỗi khi thêm vote mới");
+                return false;
             }
         }
 
@@ -301,14 +223,44 @@ namespace EsportsManager.BL.Services
         {
             try
             {
-                // Đây là một chức năng mở rộng, chúng ta sẽ trả về danh sách rỗng
-                // hoặc có thể implement khi có dữ liệu thực về các esports category
-                return new List<VotingResultDto>();
+                var votes = await _votesRepository.GetVotesByTargetAsync("EsportsCategory", 0);
+                var results = votes.GroupBy(v => v.TargetID)
+                    .Select(g => new VotingResultDto
+                    {
+                        TargetId = g.Key,
+                        Type = "EsportsCategory",
+                        TotalVotes = g.Count(),
+                        AverageRating = Math.Round(g.Average(v => v.Rating), 2),
+                        RatingDistribution = g.GroupBy(v => v.Rating)
+                            .ToDictionary(r => r.Key, r => r.Count())
+                    })
+                    .OrderByDescending(r => r.AverageRating)
+                    .ToList();
+
+                if (limit.HasValue)
+                {
+                    results = results.Take(limit.Value).ToList();
+                }
+
+                return results;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting esports category voting results");
+                _logger.LogError(ex, "Lỗi khi lấy kết quả voting cho esports categories");
                 throw;
+            }
+        }
+
+        public async Task<bool> HasUserVotedAsync(int userId, string voteType, int targetId)
+        {
+            try
+            {
+                return await _votesRepository.HasVotedAsync(userId, voteType, targetId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi kiểm tra vote của user");
+                return false;
             }
         }
     }

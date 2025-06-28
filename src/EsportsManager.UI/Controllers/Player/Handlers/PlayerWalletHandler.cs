@@ -58,7 +58,7 @@ public class PlayerWalletHandler
                     return;
                 default:
                     ConsoleRenderingService.ShowNotification(
-                        WalletConstants.INVALID_OPTION_MESSAGE, ConsoleColor.Red);
+                        WalletConstants.Messages.INVALID_OPTION, ConsoleColor.Red);
                     break;
             }
         }
@@ -94,10 +94,10 @@ public class PlayerWalletHandler
             else
             {
                 ConsoleRenderingService.ShowNotification(
-                    WalletConstants.WALLET_NOT_FOUND_MESSAGE, ConsoleColor.Yellow);
+                    WalletConstants.Messages.WALLET_NOT_FOUND, ConsoleColor.Yellow);
             }
 
-            Console.WriteLine(WalletConstants.PRESS_ANY_KEY_MESSAGE);
+            Console.WriteLine(WalletConstants.Messages.PRESS_ANY_KEY);
             Console.ReadKey(true);
         }
         catch (Exception ex)
@@ -140,7 +140,7 @@ public class PlayerWalletHandler
                 DisplayTransactionTable(transactions);
             }
 
-            Console.WriteLine(WalletConstants.PRESS_ANY_KEY_MESSAGE);
+            Console.WriteLine(WalletConstants.Messages.PRESS_ANY_KEY);
             Console.ReadKey(true);
         }
         catch (Exception ex)
@@ -166,7 +166,7 @@ public class PlayerWalletHandler
             if (wallet == null)
             {
                 ConsoleRenderingService.ShowNotification(
-                    WalletConstants.WALLET_NOT_FOUND_MESSAGE, ConsoleColor.Red);
+                    WalletConstants.Messages.WALLET_NOT_FOUND, ConsoleColor.Red);
                 return;
             }
 
@@ -230,19 +230,19 @@ public class PlayerWalletHandler
                         : "";
 
                     ConsoleRenderingService.ShowNotification(
-                        WalletConstants.WITHDRAWAL_SUCCESS_MESSAGE + balanceMessage, ConsoleColor.Green);
+                        WalletConstants.Messages.WITHDRAWAL_SUCCESS + balanceMessage, ConsoleColor.Green);
                 }
                 else
                 {
                     ConsoleRenderingService.ShowNotification(
-                        result.Message ?? WalletConstants.WITHDRAWAL_FAILED_MESSAGE,
+                        result.Message ?? WalletConstants.Messages.WITHDRAWAL_FAILED,
                         ConsoleColor.Red);
                 }
             }
             else
             {
                 ConsoleRenderingService.ShowNotification(
-                    WalletConstants.OPERATION_CANCELLED_MESSAGE, ConsoleColor.Yellow);
+                    WalletConstants.Messages.OPERATION_CANCELLED, ConsoleColor.Yellow);
             }
 
             Thread.Sleep(2000);
@@ -260,7 +260,7 @@ public class PlayerWalletHandler
     /// </summary>
     private string GetWithdrawalMethod()
     {
-        var methods = WalletConstants.WITHDRAWAL_METHODS;
+        var methods = WalletConstants.WithdrawalMethods.OPTIONS;
         var methodOptions = methods.Select(m => m.Value).Concat(new[] { "❌ Hủy" }).ToArray();
 
         int methodSelection = InteractiveMenuService.DisplayInteractiveMenu(
@@ -300,14 +300,14 @@ public class PlayerWalletHandler
                     return $"Bank: {bankName}, Account: {bankAccount}, Holder: {accountHolder}";
 
                 case "EWallet":
-                    var ewalletOptions = WalletConstants.EWALLET_PROVIDERS.Values.Concat(new[] { "❌ Hủy" }).ToArray();
+                    var ewalletOptions = WalletConstants.EWalletProviders.OPTIONS.Values.Concat(new[] { "❌ Hủy" }).ToArray();
                     int ewalletChoice = InteractiveMenuService.DisplayInteractiveMenu(
                         "CHỌN VÍ ĐIỆN TỬ", ewalletOptions);
 
-                    if (ewalletChoice == -1 || ewalletChoice == WalletConstants.EWALLET_PROVIDERS.Count)
+                    if (ewalletChoice == -1 || ewalletChoice == WalletConstants.EWalletProviders.OPTIONS.Count)
                         return string.Empty;
 
-                    var selectedEwallet = WalletConstants.EWALLET_PROVIDERS.ElementAt(ewalletChoice);
+                    var selectedEwallet = WalletConstants.EWalletProviders.OPTIONS.ElementAt(ewalletChoice);
                     Console.Write($"Số điện thoại {selectedEwallet.Value}: ");
                     var phone = Console.ReadLine()?.Trim();
 

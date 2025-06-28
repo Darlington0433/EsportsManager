@@ -58,16 +58,29 @@ namespace EsportsManager.BL.DTOs
         public UserDto? User { get; set; }
         public string? Token { get; set; }
         public List<string> Errors { get; set; } = new();
-    }
 
-    /// <summary>
-    /// Kết quả validation
-    /// </summary>
-    public class ValidationResult
-    {
-        public bool IsValid { get; set; }
-        public List<string> Errors { get; set; } = new();
-    }
+        // Factory methods for clean code and consistency
+        public static AuthenticationResult Success(UserDto user, string? token = null, string? message = null)
+        {
+            return new AuthenticationResult
+            {
+                IsSuccess = true,
+                User = user,
+                Token = token,
+                Message = message ?? string.Empty,
+                Errors = new List<string>()
+            };
+        }
 
+        public static AuthenticationResult Failure(string message, List<string>? errors = null)
+        {
+            return new AuthenticationResult
+            {
+                IsSuccess = false,
+                Message = message,
+                Errors = errors ?? new List<string>()
+            };
+        }
+    }
 
 }

@@ -2,6 +2,7 @@ using System.Text.RegularExpressions;
 using EsportsManager.BL.Models;
 using System.Linq;
 using System.Collections.Generic;
+using System;
 
 namespace EsportsManager.BL.Utilities;
 
@@ -13,6 +14,10 @@ namespace EsportsManager.BL.Utilities;
 /// </summary>
 public static class InputValidator
 {
+    private static readonly Regex EmailRegex = new Regex(
+        @"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$",
+        RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
     #region Username Validation - Validation tên đăng nhập
     
     /// <summary>
@@ -76,7 +81,7 @@ public static class InputValidator
         if (!string.IsNullOrWhiteSpace(email))
         {
             // Kiểm tra format email cơ bản: phải có @ và domain
-            if (!Regex.IsMatch(email, @"^[^@\s]+@[^@\s]+\.[^@\s]+$"))
+            if (!EmailRegex.IsMatch(email))
                 errors.Add("Invalid email format");
 
             // Kiểm tra độ dài tối đa
@@ -283,4 +288,19 @@ public static class InputValidator
     }
     
     #endregion
+
+    public static bool IsValidEmail(string email)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+            return false;
+
+        try
+        {
+            return EmailRegex.IsMatch(email);
+        }
+        catch (RegexMatchTimeoutException)
+        {
+            return false;
+        }
+    }
 }

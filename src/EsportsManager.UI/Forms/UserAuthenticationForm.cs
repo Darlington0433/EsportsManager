@@ -84,7 +84,7 @@ namespace EsportsManager.UI.Forms
                         if (_selectedFieldIndex == _fieldLabels.Length - 1 && ValidateForm())
                         {
                             HandleSubmit();
-                            if (_authResult != null && _authResult.IsAuthenticated)
+                            if (_authResult != null && _authResult.IsSuccess)
                                 return true;
                         }
                         else
@@ -99,7 +99,7 @@ namespace EsportsManager.UI.Forms
                         if (ValidateForm())
                         {
                             HandleSubmit();
-                            if (_authResult != null && _authResult.IsAuthenticated)
+                            if (_authResult != null && _authResult.IsSuccess)
                                 return true;
                         }
                         break;
@@ -277,7 +277,7 @@ namespace EsportsManager.UI.Forms
                     Username = _fieldValues[0],
                     Password = _fieldValues[1]
                 };                // Gọi UserService để authenticate (sử dụng authentication thực tế) - chuyển thành synchronous
-                var result = _userService.AuthenticateAsync(loginDto).GetAwaiter().GetResult(); if (result.IsAuthenticated)
+                var result = _userService.LoginAsync(loginDto).GetAwaiter().GetResult(); if (result.IsSuccess)
                 {
                     // Đăng nhập thành công, hiển thị thông báo
                     ShowMessage($"Đăng nhập thành công! Chào mừng {result.Username}", false);
@@ -300,7 +300,7 @@ namespace EsportsManager.UI.Forms
                 else
                 {
                     // Hiển thị thông báo chi tiết dựa trên loại lỗi
-                    string errorMessage = result.ErrorMessage ?? "Tên đăng nhập hoặc mật khẩu không đúng!";
+                    string errorMessage = result.Message ?? "Tên đăng nhập hoặc mật khẩu không đúng!";
 
                     if (errorMessage.Contains("Account is not active"))
                     {

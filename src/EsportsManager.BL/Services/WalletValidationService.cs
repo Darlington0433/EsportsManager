@@ -1,7 +1,7 @@
 using EsportsManager.BL.Constants;
-using EsportsManager.BL.DTOs;
 using EsportsManager.BL.Models;
 using EsportsManager.BL.Utilities;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -46,10 +46,10 @@ public class WalletValidationService
 
         if (!ValidationHelper.IsValidAmount(amount, WalletConstants.MIN_WITHDRAWAL_AMOUNT, currentBalance, errors))
         {
-            return new ValidationResult { IsValid = false, Errors = errors };
+            return ValidationResult.Failure(errors);
         }
 
-        return new ValidationResult { IsValid = true };
+        return ValidationResult.Success();
     }
 
     /// <summary>
@@ -61,10 +61,10 @@ public class WalletValidationService
 
         if (!ValidationHelper.IsValidAmount(amount, WalletConstants.MIN_TOP_UP_AMOUNT, WalletConstants.MAX_TOP_UP_AMOUNT, errors))
         {
-            return new ValidationResult { IsValid = false, Errors = errors };
+            return ValidationResult.Failure(errors);
         }
 
-        return new ValidationResult { IsValid = true };
+        return ValidationResult.Success();
     }
 
     /// <summary>
@@ -77,10 +77,10 @@ public class WalletValidationService
         if (!ValidationHelper.IsValidAmount(amount, WalletConstants.MIN_DONATION_AMOUNT, 
             currentBalance ?? decimal.MaxValue, errors))
         {
-            return new ValidationResult { IsValid = false, Errors = errors };
+            return ValidationResult.Failure(errors);
         }
 
-        return new ValidationResult { IsValid = true };
+        return ValidationResult.Success();
     }
 
     /// <summary>
@@ -104,15 +104,15 @@ public class WalletValidationService
             ValidationHelper.IsNullOrEmpty(accountNumber, "Số tài khoản", errors) ||
             ValidationHelper.IsNullOrEmpty(accountName, "Tên chủ tài khoản", errors))
         {
-            return new ValidationResult { IsValid = false, Errors = errors };
+            return ValidationResult.Failure(errors);
         }
 
         if (!ValidationHelper.ValidateLength(accountNumber!, "Số tài khoản", 8, 20, errors))
         {
-            return new ValidationResult { IsValid = false, Errors = errors };
+            return ValidationResult.Failure(errors);
         }
 
-        return new ValidationResult { IsValid = true };
+        return ValidationResult.Success();
     }
 
     /// <summary>
@@ -218,41 +218,89 @@ public class WalletValidationService
             ValidateDescription(description)
         };
 
-        var failedResults = results.Where(r => !r.IsValid).ToList();
-        if (failedResults.Any())
+        var combinedResult = ValidationResult.Success();
+        foreach (var result in results)
         {
-            var errors = failedResults.SelectMany(r => r.Errors).ToList();
-            return ValidationResult.Failure(errors);
+            combinedResult = combinedResult.CombineWith(result);
         }
 
+        return combinedResult;
+    }
+
+    /// <summary>
+    /// Tính phí giao dịch và số tiền thực nhận
+    /// </summary>
+    /// <param name="amount">Số tiền giao dịch</param>
+    /// <returns>Tuple chứa (phí, số tiền thực nhận)</returns>
+    public (decimal fee, decimal netAmount) CalculateTransactionFee(decimal amount, string transactionType)
+    {
+        decimal feePercentage = transactionType.ToLower() switch
+        {
+            "withdrawal" => 0.01m, // 1% fee for withdrawals
+            "transfer" => 0.005m,  // 0.5% fee for transfers
+            _ => 0m               // No fee for deposits
+        };
+
+        decimal fee = amount * feePercentage;
+        decimal netAmount = amount - fee;
+
+        return (fee, netAmount);
+    }
+
+    public ValidationResult ValidateWalletCreation(decimal initialBalance)
+    {
+        if (initialBalance < 0)
+        {
+            return ValidationResult.Failure("Số dư ban đầu không được âm");
+        }
         return ValidationResult.Success();
     }
-}
 
-/// <summary>
-/// Validation result for business logic operations
-/// </summary>
-public class ValidationResult
-{
-    public bool IsValid { get; private set; }
-    public string ErrorMessage { get; private set; } = string.Empty;
-    public List<string> Errors { get; private set; } = new List<string>();
-
-    private ValidationResult(bool isValid, string errorMessage = "")
+    public ValidationResult ValidateDeposit(decimal amount)
     {
-        IsValid = isValid;
-        ErrorMessage = errorMessage;
+        if (amount <= 0)
+        {
+            return ValidationResult.Failure("Số tiền nạp phải lớn hơn 0");
+        }
+        return ValidationResult.Success();
     }
 
-    public static ValidationResult Success() => new(true);
-    public static ValidationResult Failure(string errorMessage) => new(false, errorMessage);
-
-    public void Combine(ValidationResult other)
+    public ValidationResult ValidateWithdrawal(decimal amount, decimal currentBalance)
     {
-        if (!other.IsValid)
+        var errors = new List<string>();
+
+        if (amount <= 0)
         {
-            IsValid = false;
-            Errors.AddRange(other.Errors);
+            errors.Add("Số tiền rút phải lớn hơn 0");
         }
+
+        if (amount > currentBalance)
+        {
+            errors.Add("Số dư không đủ để thực hiện giao dịch");
+        }
+
+        return errors.Any() ? ValidationResult.Failure(errors) : ValidationResult.Success();
+    }
+
+    public ValidationResult ValidateTransfer(decimal amount, decimal senderBalance, int receiverId)
+    {
+        var errors = new List<string>();
+
+        if (amount <= 0)
+        {
+            errors.Add("Số tiền chuyển phải lớn hơn 0");
+        }
+
+        if (amount > senderBalance)
+        {
+            errors.Add("Số dư không đủ để thực hiện giao dịch");
+        }
+
+        if (receiverId <= 0)
+        {
+            errors.Add("ID người nhận không hợp lệ");
+        }
+
+        return errors.Any() ? ValidationResult.Failure(errors) : ValidationResult.Success();
     }
 }

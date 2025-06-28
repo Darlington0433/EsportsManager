@@ -135,8 +135,6 @@ class Program
     // UI LAYER SERVICES
     // ═══════════════════════════════════════════════════════════════
     services.AddScoped<ConsoleUI.UserRoleSelector>();
-    services.AddScoped<ConsoleUI.Utilities.ConsoleRenderingService>();
-    services.AddScoped<ConsoleUI.Utilities.InteractiveMenuService>();
   }
 
   // ═══════════════════════════════════════════════════════════════

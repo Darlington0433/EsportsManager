@@ -7,178 +7,101 @@ using System.Linq;
 namespace EsportsManager.BL.Models;
 
 /// <summary>
-/// BusinessResult - Lớp wrapper cho kết quả xử lý business logic có dữ liệu trả về
-/// Sử dụng generic để có thể trả về bất kỳ kiểu dữ liệu nào
-/// </summary>
-public class BusinessResult<T>
-{
-    public bool IsSuccess { get; set; }
-    public string? ErrorMessage { get; set; }
-    public string? ErrorCode { get; set; }
-    public T? Data { get; set; }
-    public List<string> Errors { get; set; } = new();
-
-    /// <summary>
-    /// Tạo kết quả thành công với dữ liệu
-    /// </summary>
-    public static BusinessResult<T> Success(T data)
-    {
-        return new BusinessResult<T>
-        {
-            IsSuccess = true,
-            Data = data
-        };
-    }
-
-    /// <summary>
-    /// Tạo kết quả thất bại với thông báo lỗi
-    /// </summary>
-    public static BusinessResult<T> Failure(string errorMessage)
-    {
-        return new BusinessResult<T>
-        {
-            IsSuccess = false,
-            ErrorMessage = errorMessage
-        };
-    }
-
-    /// <summary>
-    /// Tạo kết quả thất bại với danh sách lỗi
-    /// </summary>
-    public static BusinessResult<T> Failure(List<string> errors)
-    {
-        return new BusinessResult<T>
-        {
-            IsSuccess = false,
-            Errors = errors,
-            ErrorMessage = string.Join("; ", errors)
-        };
-    }
-
-    /// <summary>
-    /// Thêm chi tiết database error cho kết quả lỗi
-    /// </summary>
-    public BusinessResult<T> WithDatabaseError(string details)
-    {
-        if (!IsSuccess)
-        {
-            ErrorMessage = $"Database Error: {ErrorMessage}. Details: {details}";
-            ErrorCode = "DB_ERROR";
-        }
-        return this;
-    }
-
-    /// <summary>
-    /// Thêm chi tiết validation error cho kết quả lỗi
-    /// </summary>
-    public BusinessResult<T> WithValidationError(string field, string details)
-    {
-        if (!IsSuccess)
-        {
-            ErrorMessage = $"Validation Error in {field}: {details}";
-            ErrorCode = "VALIDATION_ERROR";
-        }
-        return this;
-    }
-
-    /// <summary>
-    /// Thêm chi tiết security error cho kết quả lỗi
-    /// </summary> 
-    public BusinessResult<T> WithSecurityError()
-    {
-        if (!IsSuccess)
-        {
-            ErrorMessage = $"Security Error: {ErrorMessage}";
-            ErrorCode = "SECURITY_ERROR";
-        }
-        return this;
-    }
-}
-
-/// <summary>
-/// BusinessResult - Lớp wrapper cho kết quả xử lý business logic không có dữ liệu trả về
-/// Standalone class để tránh circular dependency
-/// Sử dụng cho các operation chỉ cần biết thành công/thất bại
+/// Kết quả trả về từ business layer
 /// </summary>
 public class BusinessResult
 {
-    public bool IsSuccess { get; set; }
-    public string? ErrorMessage { get; set; }
-    public List<string> Errors { get; set; } = new();
+    public bool IsSuccess { get; }
+    public string? Message { get; }
+    public string? ErrorCode { get; }
 
-    /// <summary>
-    /// Tạo kết quả thành công không có dữ liệu
-    /// </summary>
-    public static BusinessResult Success()
+    protected BusinessResult(bool isSuccess, string? message = null, string? errorCode = null)
     {
-        return new BusinessResult
-        {
-            IsSuccess = true
-        };
+        IsSuccess = isSuccess;
+        Message = message;
+        ErrorCode = errorCode;
     }
 
-    /// <summary>
-    /// Tạo kết quả thất bại với thông báo lỗi
-    /// </summary>
-    public static BusinessResult Failure(string errorMessage)
+    public static BusinessResult Success(string? message = null)
     {
-        return new BusinessResult
-        {
-            IsSuccess = false,
-            ErrorMessage = errorMessage
-        };
+        return new BusinessResult(true, message);
     }
 
-    /// <summary>
-    /// Tạo kết quả thất bại với danh sách lỗi
-    /// </summary>
-    public static BusinessResult Failure(List<string> errors)
+    public static BusinessResult Failure(string message, string? errorCode = null)
     {
-        return new BusinessResult
-        {
-            IsSuccess = false,
-            Errors = errors,
-            ErrorMessage = string.Join("; ", errors)
-        };
+        return new BusinessResult(false, message, errorCode);
+    }
+
+    public static BusinessResult WithDatabaseError(string message)
+    {
+        return new BusinessResult(false, message, "DB_ERROR");
+    }
+
+    public static BusinessResult WithValidationError(string message)
+    {
+        return new BusinessResult(false, message, "VALIDATION_ERROR");
     }
 }
 
 /// <summary>
-/// AuthenticationResult - Kết quả xác thực người dùng
-/// Chứa thông tin cơ bản của user sau khi xác thực thành công
+/// Kết quả trả về từ business layer với dữ liệu
 /// </summary>
-public class AuthenticationResult
+public class BusinessResult<T> : BusinessResult
 {
-    public bool IsAuthenticated { get; set; }
-    public int UserId { get; set; }
-    public string? Username { get; set; }
-    public string? Role { get; set; }
-    public string? ErrorMessage { get; set; }
+    public T? Data { get; }
 
-    /// <summary>
-    /// Tạo kết quả xác thực thành công
-    /// </summary>
-    public static AuthenticationResult Success(int userId, string username, string role)
+    private BusinessResult(bool isSuccess, T? data, string? message = null, string? errorCode = null)
+        : base(isSuccess, message, errorCode)
     {
-        return new AuthenticationResult
-        {
-            IsAuthenticated = true,
-            UserId = userId,
-            Username = username,
-            Role = role
-        };
+        Data = data;
     }
 
-    /// <summary>
-    /// Tạo kết quả xác thực thất bại
-    /// </summary>
-    public static AuthenticationResult Failure(string errorMessage)
+    public static BusinessResult<T> Success(T data, string? message = null)
     {
-        return new AuthenticationResult
-        {
-            IsAuthenticated = false,
-            ErrorMessage = errorMessage
-        };
+        return new BusinessResult<T>(true, data, message);
+    }
+
+    public new static BusinessResult<T> Failure(string message, string? errorCode = null)
+    {
+        return new BusinessResult<T>(false, default, message, errorCode);
+    }
+
+    public new static BusinessResult<T> WithDatabaseError(string message)
+    {
+        return new BusinessResult<T>(false, default, message, "DB_ERROR");
+    }
+
+    public new static BusinessResult<T> WithValidationError(string message)
+    {
+        return new BusinessResult<T>(false, default, message, "VALIDATION_ERROR");
+    }
+}
+
+/// <summary>
+/// Kết quả trả về từ quá trình xác thực
+/// </summary>
+public class AuthenticationResult : BusinessResult
+{
+    public int? UserId { get; }
+    public string? Username { get; }
+    public string? Role { get; }
+
+    private AuthenticationResult(bool isSuccess, int? userId = null, string? username = null, string? role = null, string? message = null)
+        : base(isSuccess, message)
+    {
+        UserId = userId;
+        Username = username;
+        Role = role;
+    }
+
+    public static AuthenticationResult Success(int userId, string username, string role)
+    {
+        return new AuthenticationResult(true, userId, username, role);
+    }
+
+    public new static AuthenticationResult Failure(string message)
+    {
+        return new AuthenticationResult(false, message: message);
     }
 }
 
@@ -190,80 +113,58 @@ public class ValidationResult
     /// <summary>
     /// Cho biết dữ liệu có hợp lệ hay không
     /// </summary>
-    public bool IsValid { get; set; }
+    public bool IsValid { get; }
 
     /// <summary>
     /// Danh sách các lỗi validation
     /// </summary>
-    public List<string> Errors { get; set; } = new();
+    private readonly List<string> _errors;
+    public IReadOnlyList<string> Errors => _errors.AsReadOnly();
 
     /// <summary>
     /// Thông báo lỗi tổng hợp
     /// </summary>
-    public string ErrorMessage => string.Join("; ", Errors);
+    public string ErrorMessage => string.Join("; ", _errors);
+
+    /// <summary>
+    /// Constructor với trạng thái và danh sách lỗi
+    /// </summary>
+    private ValidationResult(bool isValid, IEnumerable<string> errors = null)
+    {
+        IsValid = isValid;
+        _errors = errors?.ToList() ?? new List<string>();
+    }
 
     /// <summary>
     /// Tạo kết quả validation thành công
     /// </summary>
-    public static ValidationResult Success()
-    {
-        return new ValidationResult { IsValid = true };
-    }
+    public static ValidationResult Success() => new ValidationResult(true);
 
     /// <summary>
     /// Tạo kết quả validation thất bại với một lỗi
     /// </summary>
-    public static ValidationResult Failure(string error)
-    {
-        return new ValidationResult 
-        { 
-            IsValid = false,
-            Errors = new List<string> { error }
-        };
-    }
+    public static ValidationResult Failure(string error) 
+        => new ValidationResult(false, new[] { error });
 
     /// <summary>
     /// Tạo kết quả validation thất bại với nhiều lỗi
     /// </summary>
-    public static ValidationResult Failure(IEnumerable<string> errors)
-    {
-        return new ValidationResult
-        {
-            IsValid = false,
-            Errors = new List<string>(errors)
-        };
-    }
+    public static ValidationResult Failure(IEnumerable<string> errors) 
+        => new ValidationResult(false, errors);
 
     /// <summary>
-    /// Thêm lỗi vào kết quả validation
+    /// Kết hợp với một kết quả validation khác
     /// </summary>
-    public ValidationResult AddError(string error)
+    public ValidationResult CombineWith(ValidationResult other)
     {
-        Errors.Add(error);
-        IsValid = false;
-        return this;
-    }
+        if (other == null) return this;
 
-    /// <summary>
-    /// Thêm nhiều lỗi vào kết quả validation
-    /// </summary>
-    public ValidationResult AddErrors(IEnumerable<string> errors)
-    {
-        Errors.AddRange(errors);
-        IsValid = false;
-        return this;
-    }
-
-    /// <summary>
-    /// Kết hợp hai kết quả validation
-    /// </summary>
-    public ValidationResult Combine(ValidationResult other)
-    {
+        var combinedErrors = new List<string>(_errors);
         if (!other.IsValid)
         {
-            IsValid = false;
-            Errors.AddRange(other.Errors);
+            combinedErrors.AddRange(other.Errors);
         }
-        return this;
+
+        return new ValidationResult(IsValid && other.IsValid, combinedErrors);
     }
 }

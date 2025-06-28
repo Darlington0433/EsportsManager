@@ -6,1021 +6,612 @@ using EsportsManager.DAL.Interfaces;
 using EsportsManager.DAL.Models;
 using Microsoft.Extensions.Logging;
 using System;
-using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace EsportsManager.BL.Services;
 
-/// <summary>
-/// Service xử lý logic người dùng
-/// 
-/// SECURITY FEATURES:
-/// - Password hashing sử dụng BCrypt
-/// - Input validation comprehensive
-/// - Không log sensitive data (passwords)
-/// - Status checking (Active/Inactive users)
-/// </summary>
 public class UserService : IUserService
 {
-    private readonly IUsersRepository _userRepository;
+    private readonly IUsersRepository _usersRepository;
     private readonly ILogger<UserService> _logger;
 
-    /// <summary>
-    /// Constructor với dependency injection
-    /// </summary>
-    /// <param name="userRepository">IUsersRepository</param>
-    /// <param name="logger">Logger</param>
-    public UserService(IUsersRepository userRepository, ILogger<UserService> logger)
+    public UserService(IUsersRepository usersRepository, ILogger<UserService> logger)
     {
-        _userRepository = userRepository;
+        _usersRepository = usersRepository;
         _logger = logger;
     }
 
-    /// <summary>
-    /// Phương thức được gọi từ bên ngoài để xác thực người dùng
-    /// Thực hiện validation và kiểm tra thông tin đăng nhập
-    /// 
-    /// SECURITY FEATURES:
-    /// - Không log password
-    /// - Chỉ log failed login attempts
-    /// - Kiểm tra status của user
-    /// - Trả về các error message chung chung
-    /// </summary>
-    /// <param name="loginDto">Thông tin đăng nhập (username, password)</param>
-    /// <returns>AuthenticationResult chứa thông tin user nếu thành công</returns>
-    public async Task<Models.AuthenticationResult> AuthenticateAsync(LoginDto loginDto)
+    public async Task<BusinessResult<IEnumerable<UserDto>>> GetAllUsersAsync()
     {
         try
         {
-            // Validate input data first
-            var validation = ValidateLoginData(loginDto);
-            if (!validation.IsValid)
+            var users = await _usersRepository.GetAllAsync();
+            var userDtos = users.Select(u => new UserDto
             {
-                _logger.LogWarning("Login attempt failed during validation: {Username}", loginDto.Username);
-                return Models.AuthenticationResult.Failure(string.Join("; ", validation.Errors));
-            }
+                Id = u.UserID,
+                Username = u.Username,
+                Email = u.Email,
+                Role = u.Role
+            });
+            return BusinessResult<IEnumerable<UserDto>>.Success(userDtos);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Lỗi khi lấy danh sách người dùng");
+            return BusinessResult<IEnumerable<UserDto>>.Failure($"Lỗi khi lấy danh sách người dùng: {ex.Message}");
+        }
+    }
 
-            // Get user from repository
-            var user = await _userRepository.GetByUsernameAsync(loginDto.Username);
-
-            // Check if user exists
+    public async Task<BusinessResult> DeleteUserAsync(int userId)
+    {
+        try
+        {
+            var user = await _usersRepository.GetByIdAsync(userId);
             if (user == null)
             {
-                _logger.LogWarning("Login attempt failed for non-existent user: {Username}", loginDto.Username);
-                return Models.AuthenticationResult.Failure("Invalid username or password");
+                return BusinessResult.Failure("Không tìm thấy người dùng");
             }
 
-            // Check if user account is active
-            if (user.Status != EsportsManager.DAL.Models.UsersStatus.Active)
+            await _usersRepository.DeleteAsync(userId);
+            return BusinessResult.Success();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Lỗi khi xóa người dùng {UserId}", userId);
+            return BusinessResult.Failure($"Lỗi khi xóa người dùng: {ex.Message}");
+        }
+    }
+
+    public async Task<BusinessResult> UpdateUserRoleAsync(int userId, string newRole)
+    {
+        try
+        {
+            var user = await _usersRepository.GetByIdAsync(userId);
+            if (user == null)
             {
-                _logger.LogWarning("Login attempt for inactive account: {Username}", loginDto.Username);
-                return Models.AuthenticationResult.Failure("Account is not active");
-            }            // Xác thực mật khẩu
-            bool isPasswordValid = BCrypt.Net.BCrypt.Verify(loginDto.Password, user.PasswordHash);
-            if (!isPasswordValid)
-            {
-                _logger.LogWarning("Login attempt with invalid password: {Username}", loginDto.Username);
-                return Models.AuthenticationResult.Failure("Invalid username or password");
+                return BusinessResult.Failure("Không tìm thấy người dùng");
             }
 
-            // Update last login time
-            await _userRepository.UpdateLastLoginAsync(user.UserID);
+            if (newRole != DAL.Models.UsersRoles.Admin && newRole != DAL.Models.UsersRoles.Player && newRole != DAL.Models.UsersRoles.Viewer)
+            {
+                return BusinessResult.Failure("Vai trò không hợp lệ");
+            }
 
-            _logger.LogInformation("User logged in: {Username}", user.Username);
+            user.Role = newRole;
+            await _usersRepository.UpdateAsync(user);
+            return BusinessResult.Success();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Lỗi khi cập nhật vai trò cho người dùng {UserId}", userId);
+            return BusinessResult.Failure($"Lỗi khi cập nhật vai trò: {ex.Message}");
+        }
+    }
+
+    public async Task<BusinessResult> BanUserAsync(int userId)
+    {
+        try
+        {
+            var user = await _usersRepository.GetByIdAsync(userId);
+            if (user == null)
+            {
+                return BusinessResult.Failure("Không tìm thấy người dùng");
+            }
+
+            user.Status = DAL.Models.UsersStatus.Suspended;
+            await _usersRepository.UpdateAsync(user);
+            return BusinessResult.Success();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Lỗi khi cấm người dùng {UserId}", userId);
+            return BusinessResult.Failure($"Lỗi khi cấm người dùng: {ex.Message}");
+        }
+    }
+
+    public async Task<Models.AuthenticationResult> RegisterAsync(RegisterDto registerDto)
+    {
+        try
+        {
+            if (await _usersRepository.GetByUsernameAsync(registerDto.Username) != null)
+            {
+                return Models.AuthenticationResult.Failure("Tên đăng nhập đã tồn tại");
+            }
+
+            if (await _usersRepository.GetByEmailAsync(registerDto.Email) != null)
+            {
+                return Models.AuthenticationResult.Failure("Email đã được sử dụng");
+            }
+
+            var user = new Users
+            {
+                Username = registerDto.Username,
+                Email = registerDto.Email,
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(registerDto.Password),
+                Role = DAL.Models.UsersRoles.Viewer,
+                Status = DAL.Models.UsersStatus.Pending,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            await _usersRepository.AddAsync(user);
+            return Models.AuthenticationResult.Success(user.UserID, user.Username, user.Role);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Lỗi khi đăng ký người dùng");
+            return Models.AuthenticationResult.Failure($"Lỗi khi đăng ký: {ex.Message}");
+        }
+    }
+
+    public async Task<Models.AuthenticationResult> LoginAsync(LoginDto loginDto)
+    {
+        try
+        {
+            var user = await _usersRepository.GetByUsernameAsync(loginDto.Username);
+            if (user == null)
+            {
+                return Models.AuthenticationResult.Failure("Tên đăng nhập hoặc mật khẩu không đúng");
+            }
+
+            if (!BCrypt.Net.BCrypt.Verify(loginDto.Password, user.PasswordHash))
+            {
+                return Models.AuthenticationResult.Failure("Tên đăng nhập hoặc mật khẩu không đúng");
+            }
+
+            if (user.Status == DAL.Models.UsersStatus.Suspended)
+            {
+                return Models.AuthenticationResult.Failure("Tài khoản đã bị khóa");
+            }
 
             return Models.AuthenticationResult.Success(user.UserID, user.Username, user.Role);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during user authentication: {Username}", loginDto.Username);
-            return Models.AuthenticationResult.Failure("An error occurred during authentication");
+            _logger.LogError(ex, "Lỗi khi đăng nhập");
+            return Models.AuthenticationResult.Failure($"Lỗi khi đăng nhập: {ex.Message}");
         }
     }
 
-    /// <summary>
-    /// Đăng ký người dùng mới (thông thường)
-    /// </summary>
-    /// <param name="registerDto">Thông tin đăng ký</param>
-    /// <returns>Kết quả đăng ký và thông tin user mới</returns>
-    public async Task<BusinessResult<UserDto>> RegisterAsync(RegisterDto registerDto)
+    public async Task<BusinessResult> UpdateUserAsync(int userId, UpdateUserDto updateDto)
     {
         try
         {
-            // Validate registration data
-            var validation = ValidateRegisterData(registerDto);
-            if (!validation.IsValid)
+            var user = await _usersRepository.GetByIdAsync(userId);
+            if (user == null)
             {
-                _logger.LogWarning("Registration failed during validation for: {Username}", registerDto.Username);
-                return BusinessResult<UserDto>.Failure(validation.Errors);
+                return BusinessResult.Failure("Không tìm thấy người dùng");
             }
 
-            // Check if username already exists
-            bool usernameExists = await _userRepository.IsUsernameExistsAsync(registerDto.Username);
-            if (usernameExists)
+            if (!string.IsNullOrEmpty(updateDto.Email) && updateDto.Email != user.Email)
             {
-                _logger.LogWarning("Registration failed - username already exists: {Username}", registerDto.Username);
-                return BusinessResult<UserDto>.Failure("Username already exists");
+                if (await _usersRepository.GetByEmailAsync(updateDto.Email) != null)
+                {
+                    return BusinessResult.Failure("Email đã được sử dụng");
+                }
+                user.Email = updateDto.Email;
             }
 
-            // Check if email already exists
-            bool emailExists = await _userRepository.IsEmailExistsAsync(registerDto.Email);
-            if (emailExists)
-            {
-                _logger.LogWarning("Registration failed - email already exists: {Email}", registerDto.Email);
-                return BusinessResult<UserDto>.Failure("Email address already exists");
-            }
+            if (!string.IsNullOrEmpty(updateDto.FullName))
+                user.FullName = updateDto.FullName;
 
-            // Hash password
-            string passwordHash = PasswordHasher.HashPassword(registerDto.Password);
-
-            // Hash security answer
-            string hashedSecurityAnswer = !string.IsNullOrEmpty(registerDto.SecurityAnswer)
-                ? PasswordHasher.HashPassword(registerDto.SecurityAnswer)
-                : string.Empty;
-
-            // Create verification token
-            string emailVerificationToken = Guid.NewGuid().ToString("N");
-
-            // Create new user
-            var user = new EsportsManager.DAL.Models.Users
-            {
-                Username = registerDto.Username,
-                Email = registerDto.Email,
-                PasswordHash = passwordHash,
-                FullName = registerDto.FullName,
-                Role = !string.IsNullOrEmpty(registerDto.Role) ? registerDto.Role : EsportsManager.DAL.Models.UsersRoles.Viewer, // Use provided role or default to Viewer
-                Status = EsportsManager.DAL.Models.UsersStatus.Pending, // Start as Pending for Admin approval
-                EmailVerificationToken = emailVerificationToken,
-                IsEmailVerified = false,
-                SecurityQuestion = registerDto.SecurityQuestion,
-                SecurityAnswer = hashedSecurityAnswer,
-                CreatedAt = DateTime.UtcNow
-            };
-
-            // Save to database
-            var createdUser = await _userRepository.AddAsync(user);
-
-            // TODO: Send verification email (implement in email service)
-
-            // Map to UserDTO
-            var userDto = MapUserToDto(createdUser);
-
-            _logger.LogInformation("New user registered: {Username}", registerDto.Username);
-
-            return BusinessResult<UserDto>.Success(userDto);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error during user registration: {Username}", registerDto.Username);
-            return BusinessResult<UserDto>.Failure("An error occurred during registration");
-        }
-    }
-
-    /// <summary>
-    /// Logout user
-    /// </summary>
-    /// <param name="userId">User ID</param>
-    /// <returns>Task</returns>
-    public async Task<BusinessResult> LogoutAsync(int userId)
-    {
-        try
-        {
-            // Add any logout logic here (e.g. invalidate tokens, update last activity)
-            await Task.CompletedTask; // Add this to avoid compiler warning about lack of await
-            _logger.LogInformation("User logged out: {UserId}", userId);
+            await _usersRepository.UpdateAsync(user);
             return BusinessResult.Success();
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during user logout: {UserId}", userId);
-            return BusinessResult.Failure("An error occurred during logout");
+            _logger.LogError(ex, "Lỗi khi cập nhật thông tin người dùng {UserId}", userId);
+            return BusinessResult.Failure($"Lỗi khi cập nhật thông tin: {ex.Message}");
         }
     }
 
-    /// <summary>
-    /// Lấy thông tin user theo ID
-    /// </summary>
-    /// <param name="userId">ID của user cần tìm</param>
-    /// <returns>UserDTO</returns>
+    public async Task<BusinessResult> UpdatePasswordAsync(int userId, UpdatePasswordDto updateDto)
+    {
+        try
+        {
+            var user = await _usersRepository.GetByIdAsync(userId);
+            if (user == null)
+            {
+                return BusinessResult.Failure("Không tìm thấy người dùng");
+            }
+
+            if (!BCrypt.Net.BCrypt.Verify(updateDto.CurrentPassword, user.PasswordHash))
+            {
+                return BusinessResult.Failure("Mật khẩu hiện tại không đúng");
+            }
+
+            user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(updateDto.NewPassword);
+            await _usersRepository.UpdateAsync(user);
+            return BusinessResult.Success();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Lỗi khi cập nhật mật khẩu cho người dùng {UserId}", userId);
+            return BusinessResult.Failure($"Lỗi khi cập nhật mật khẩu: {ex.Message}");
+        }
+    }
+
+    public async Task<string> ResetPasswordAsync(int userId)
+    {
+        try
+        {
+            var user = await _usersRepository.GetByIdAsync(userId);
+            if (user == null)
+            {
+                throw new InvalidOperationException("Không tìm thấy người dùng");
+            }
+
+            // Tạo mật khẩu mới ngẫu nhiên
+            var newPassword = Guid.NewGuid().ToString("N").Substring(0, 8);
+            var hashedPassword = BCrypt.Net.BCrypt.HashPassword(newPassword);
+
+            // Cập nhật mật khẩu mới
+            await _usersRepository.UpdatePasswordAsync(userId, hashedPassword);
+
+            return newPassword;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Lỗi khi reset mật khẩu cho người dùng {UserId}", userId);
+            throw;
+        }
+    }
+
+    public async Task<BusinessResult> VerifyEmailAsync(string token)
+    {
+        try
+        {
+            var user = await _usersRepository.GetByEmailVerificationTokenAsync(token);
+            if (user == null)
+            {
+                return BusinessResult.Failure("Token không hợp lệ hoặc đã hết hạn");
+            }
+
+            user.IsEmailVerified = true;
+            user.EmailVerificationToken = null;
+            await _usersRepository.UpdateAsync(user);
+
+            return BusinessResult.Success();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Lỗi khi xác thực email");
+            return BusinessResult.Failure($"Lỗi khi xác thực email: {ex.Message}");
+        }
+    }
+
+    public async Task<BusinessResult> ResendVerificationEmailAsync(string email)
+    {
+        try
+        {
+            var user = await _usersRepository.GetByEmailAsync(email);
+            if (user == null)
+            {
+                return BusinessResult.Failure("Không tìm thấy người dùng với email này");
+            }
+
+            if (user.IsEmailVerified)
+            {
+                return BusinessResult.Failure("Email đã được xác thực");
+            }
+
+            // Tạo token mới
+            user.EmailVerificationToken = Guid.NewGuid().ToString("N");
+            await _usersRepository.UpdateAsync(user);
+
+            // TODO: Gửi email xác thực
+            return BusinessResult.Success();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Lỗi khi gửi lại email xác thực");
+            return BusinessResult.Failure($"Lỗi khi gửi lại email xác thực: {ex.Message}");
+        }
+    }
+
     public async Task<BusinessResult<UserDto>> GetUserByIdAsync(int userId)
     {
         try
         {
-            var user = await _userRepository.GetByIdAsync(userId);
+            var user = await _usersRepository.GetByIdAsync(userId);
             if (user == null)
             {
-                return BusinessResult<UserDto>.Failure("User not found");
+                return BusinessResult<UserDto>.Failure("Không tìm thấy người dùng");
             }
 
-            var userDto = MapUserToDto(user);
+            var userDto = new UserDto
+            {
+                Id = user.UserID,
+                Username = user.Username,
+                Email = user.Email,
+                FullName = user.FullName,
+                Role = user.Role
+            };
+
             return BusinessResult<UserDto>.Success(userDto);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error getting user by ID: {UserId}", userId);
-            return BusinessResult<UserDto>.Failure("An error occurred while retrieving the user");
+            _logger.LogError(ex, "Lỗi khi lấy thông tin người dùng {UserId}", userId);
+            return BusinessResult<UserDto>.Failure($"Lỗi khi lấy thông tin người dùng: {ex.Message}");
         }
     }
 
-    /// <summary>
-    /// Lấy thông tin user theo username
-    /// </summary>
-    /// <param name="username">Username của user</param>
-    /// <returns>UserDTO</returns>
+    public async Task<BusinessResult<UserDto>> GetUserByEmailAsync(string email)
+    {
+        try
+        {
+            var user = await _usersRepository.GetByEmailAsync(email);
+            if (user == null)
+            {
+                return BusinessResult<UserDto>.Failure("Không tìm thấy người dùng");
+            }
+
+            var userDto = new UserDto
+            {
+                Id = user.UserID,
+                Username = user.Username,
+                Email = user.Email,
+                FullName = user.FullName,
+                Role = user.Role
+            };
+
+            return BusinessResult<UserDto>.Success(userDto);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Lỗi khi lấy thông tin người dùng theo email {Email}", email);
+            return BusinessResult<UserDto>.Failure($"Lỗi khi lấy thông tin người dùng: {ex.Message}");
+        }
+    }
+
     public async Task<BusinessResult<UserDto>> GetUserByUsernameAsync(string username)
     {
         try
         {
-            var user = await _userRepository.GetByUsernameAsync(username);
+            var user = await _usersRepository.GetByUsernameAsync(username);
             if (user == null)
             {
-                return BusinessResult<UserDto>.Failure("User not found");
+                return BusinessResult<UserDto>.Failure("Không tìm thấy người dùng");
             }
 
-            var userDto = MapUserToDto(user);
+            var userDto = new UserDto
+            {
+                Id = user.UserID,
+                Username = user.Username,
+                Email = user.Email,
+                FullName = user.FullName,
+                Role = user.Role
+            };
+
             return BusinessResult<UserDto>.Success(userDto);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error getting user by username: {Username}", username);
-            return BusinessResult<UserDto>.Failure("An error occurred while retrieving the user");
+            _logger.LogError(ex, "Lỗi khi lấy thông tin người dùng theo username {Username}", username);
+            return BusinessResult<UserDto>.Failure($"Lỗi khi lấy thông tin người dùng: {ex.Message}");
         }
     }
 
-    /// <summary>
-    /// Lấy danh sách tất cả user
-    /// </summary>
-    /// <returns>Danh sách UserDTO</returns>
-    public async Task<List<UserProfileDto>> GetAllUsersAsync()
-    {
-        try
-        {
-            var users = await _userRepository.GetAllAsync();
-            var userProfiles = users.Select(u => new UserProfileDto
-            {
-                Id = u.UserID,
-                Username = u.Username,
-                Email = u.Email ?? string.Empty,
-                FullName = u.FullName,
-                Role = u.Role,
-                Status = u.Status,
-                CreatedAt = u.CreatedAt,
-                LastLoginAt = u.LastLoginAt,
-                TotalLogins = 0, // TODO: Implement method to get login count
-                IsEmailVerified = u.IsEmailVerified,
-                AvatarUrl = null, // Not in the current schema
-                Bio = null // Not in the current schema
-            }).ToList();
-
-            return userProfiles;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error getting all users");
-            return new List<UserProfileDto>();
-        }
-    }
-
-    /// <summary>
-    /// Lấy danh sách user theo role
-    /// </summary>
-    /// <param name="role">Role của user</param>
-    /// <returns>Danh sách UserDTO</returns>
     public async Task<BusinessResult<IEnumerable<UserDto>>> GetUsersByRoleAsync(string role)
     {
         try
         {
-            var users = await _userRepository.GetByRoleAsync(role);
-            var userDtos = users.Select(u => MapUserToDto(u)).ToList();
+            var users = await _usersRepository.GetByRoleAsync(role);
+            var userDtos = users.Select(u => new UserDto
+            {
+                Id = u.UserID,
+                Username = u.Username,
+                Email = u.Email,
+                FullName = u.FullName,
+                Role = u.Role
+            });
+
             return BusinessResult<IEnumerable<UserDto>>.Success(userDtos);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error getting users by role: {Role}", role);
-            return BusinessResult<IEnumerable<UserDto>>.Failure("An error occurred while retrieving users");
+            _logger.LogError(ex, "Lỗi khi lấy danh sách người dùng theo vai trò {Role}", role);
+            return BusinessResult<IEnumerable<UserDto>>.Failure($"Lỗi khi lấy danh sách người dùng: {ex.Message}");
         }
     }
 
-    /// <summary>
-    /// Lấy danh sách user đang active
-    /// </summary>
-    /// <returns>Danh sách UserDTO</returns>
     public async Task<BusinessResult<IEnumerable<UserDto>>> GetActiveUsersAsync()
     {
         try
         {
-            var users = await _userRepository.GetActiveUsersAsync();
-            var userDtos = users.Select(u => MapUserToDto(u)).ToList();
+            var users = await _usersRepository.GetActiveUsersAsync();
+            var userDtos = users.Select(u => new UserDto
+            {
+                Id = u.UserID,
+                Username = u.Username,
+                Email = u.Email,
+                FullName = u.FullName,
+                Role = u.Role
+            });
+
             return BusinessResult<IEnumerable<UserDto>>.Success(userDtos);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error getting active users");
-            return BusinessResult<IEnumerable<UserDto>>.Failure("An error occurred while retrieving users");
+            _logger.LogError(ex, "Lỗi khi lấy danh sách người dùng đang hoạt động");
+            return BusinessResult<IEnumerable<UserDto>>.Failure($"Lỗi khi lấy danh sách người dùng: {ex.Message}");
         }
     }
 
-    /// <summary>
-    /// Lấy thông tin profile của user
-    /// </summary>
-    /// <param name="userId">ID của user</param>
-    /// <returns>UserProfileDTO</returns>
     public async Task<BusinessResult<UserProfileDto>> GetUserProfileAsync(int userId)
     {
         try
         {
-            var user = await _userRepository.GetByIdAsync(userId);
+            var user = await _usersRepository.GetByIdAsync(userId);
             if (user == null)
             {
-                return BusinessResult<UserProfileDto>.Failure("User not found");
+                return BusinessResult<UserProfileDto>.Failure("Không tìm thấy người dùng");
             }
 
-            // Map to UserProfileDTO with additional data
-            var userProfileDto = new UserProfileDto
+            var profile = new UserProfileDto
             {
                 Id = user.UserID,
                 Username = user.Username,
-                Email = user.Email ?? string.Empty,
+                Email = user.Email,
                 FullName = user.FullName,
                 Role = user.Role,
-                Status = user.Status,
                 CreatedAt = user.CreatedAt,
                 LastLoginAt = user.LastLoginAt,
-                TotalLogins = 0, // TODO: Implement method to get login count
-                IsEmailVerified = user.IsEmailVerified,
-                AvatarUrl = null, // Not in the current schema
-                Bio = null // Not in the current schema
+                Status = user.Status
             };
 
-            return BusinessResult<UserProfileDto>.Success(userProfileDto);
+            return BusinessResult<UserProfileDto>.Success(profile);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error getting user profile: {UserId}", userId);
-            return BusinessResult<UserProfileDto>.Failure("An error occurred while retrieving the user profile");
+            _logger.LogError(ex, "Lỗi khi lấy thông tin profile người dùng {UserId}", userId);
+            return BusinessResult<UserProfileDto>.Failure($"Lỗi khi lấy thông tin profile: {ex.Message}");
         }
     }
 
-    /// <summary>
-    /// Cập nhật profile user
-    /// </summary>
-    /// <param name="userId">ID của user</param>
-    /// <param name="userDto">UserDTO</param>
-    /// <returns>UserDTO cập nhật</returns>
     public async Task<BusinessResult<UserDto>> UpdateUserProfileAsync(int userId, UserDto userDto)
     {
         try
         {
-            // Check if user exists
-            var user = await _userRepository.GetByIdAsync(userId);
+            var user = await _usersRepository.GetByIdAsync(userId);
             if (user == null)
             {
-                return BusinessResult<UserDto>.Failure("User not found");
+                return BusinessResult<UserDto>.Failure("Không tìm thấy người dùng");
             }
 
-            // Check if email is changed and if it already exists
+            // Kiểm tra email trùng lặp nếu email thay đổi
             if (!string.IsNullOrEmpty(userDto.Email) && userDto.Email != user.Email)
             {
-                bool emailExists = await _userRepository.IsEmailExistsAsync(userDto.Email);
-                if (emailExists)
+                if (await _usersRepository.GetByEmailAsync(userDto.Email) != null)
                 {
-                    return BusinessResult<UserDto>.Failure("Email address already exists");
+                    return BusinessResult<UserDto>.Failure("Email đã được sử dụng");
                 }
+                user.Email = userDto.Email;
             }
 
-            // Update user properties
-            // Only allow specific fields to be updated (not role or status)
-            user.Email = userDto.Email ?? user.Email;
-            user.FullName = userDto.FullName;
-            user.UpdatedAt = DateTime.UtcNow;
+            // Cập nhật thông tin
+            user.FullName = userDto.FullName ?? user.FullName;
+            user.Username = userDto.Username ?? user.Username;
 
-            // Save to database
-            var updatedUser = await _userRepository.UpdateAsync(user);
-            var updatedUserDto = MapUserToDto(updatedUser);
+            await _usersRepository.UpdateAsync(user);
 
-            return BusinessResult<UserDto>.Success(updatedUserDto);
+            var updatedDto = new UserDto
+            {
+                Id = user.UserID,
+                Username = user.Username,
+                Email = user.Email,
+                FullName = user.FullName,
+                Role = user.Role
+            };
+
+            return BusinessResult<UserDto>.Success(updatedDto);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error updating user profile: {UserId}", userId);
-            return BusinessResult<UserDto>.Failure("An error occurred while updating the user profile");
+            _logger.LogError(ex, "Lỗi khi cập nhật profile người dùng {UserId}", userId);
+            return BusinessResult<UserDto>.Failure($"Lỗi khi cập nhật profile: {ex.Message}");
         }
     }
 
-    /// <summary>
-    /// Cập nhật mật khẩu
-    /// </summary>
-    /// <param name="updatePasswordDto">DTO chứa thông tin cập nhật mật khẩu</param>
-    /// <returns>Kết quả cập nhật</returns>
-    public async Task<BusinessResult> UpdatePasswordAsync(UpdatePasswordDto updatePasswordDto)
+    public async Task<BusinessResult<UserDto>> CreateUserAsync(CreateUserDto createDto)
     {
         try
         {
-            var validation = ValidateUpdatePasswordData(updatePasswordDto);
-            if (!validation.IsValid)
+            var validationResult = ValidateUserData(createDto);
+            if (!validationResult.IsValid)
             {
-                return BusinessResult.Failure(validation.Errors);
+                return BusinessResult<UserDto>.Failure(string.Join(", ", validationResult.Errors));
             }
 
-            // Get user
-            var user = await _userRepository.GetByIdAsync(updatePasswordDto.UserId);
-            if (user == null)
+            if (await _usersRepository.GetByUsernameAsync(createDto.Username) != null)
             {
-                return BusinessResult.Failure("User not found");
+                return BusinessResult<UserDto>.Failure("Tên đăng nhập đã tồn tại");
             }
 
-            // Verify current password
-            bool isCurrentPasswordValid = PasswordHasher.VerifyPassword(
-                updatePasswordDto.CurrentPassword, user.PasswordHash);
-
-            if (!isCurrentPasswordValid)
+            if (await _usersRepository.GetByEmailAsync(createDto.Email) != null)
             {
-                return BusinessResult.Failure("Current password is incorrect");
+                return BusinessResult<UserDto>.Failure("Email đã được sử dụng");
             }
 
-            // Hash new password
-            string newPasswordHash = PasswordHasher.HashPassword(updatePasswordDto.NewPassword);
-
-            // Update password
-            bool success = await _userRepository.UpdatePasswordAsync(user.UserID, newPasswordHash);
-            if (!success)
+            var user = new Users
             {
-                return BusinessResult.Failure("Failed to update password");
-            }
-
-            _logger.LogInformation("Password updated for user: {Username}", user.Username);
-            return BusinessResult.Success();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error updating password: {UserId}", updatePasswordDto.UserId);
-            return BusinessResult.Failure("An error occurred while updating the password");
-        }
-    }
-
-    /// <summary>
-    /// Reset mật khẩu
-    /// </summary>
-    /// <param name="resetPasswordDto">DTO chứa thông tin reset mật khẩu</param>
-    /// <returns>Kết quả reset</returns>
-    public async Task<BusinessResult> ResetPasswordAsync(ResetPasswordDto resetPasswordDto)
-    {
-        try
-        {
-            var validation = ValidateResetPasswordData(resetPasswordDto);
-            if (!validation.IsValid)
-            {
-                return BusinessResult.Failure(validation.Errors);
-            }
-
-            // Get user by reset token
-            EsportsManager.DAL.Models.Users? user = null;
-            if (!string.IsNullOrEmpty(resetPasswordDto.Token))
-            {
-                user = await _userRepository.GetByPasswordResetTokenAsync(resetPasswordDto.Token);
-            }
-            else if (!string.IsNullOrEmpty(resetPasswordDto.Email))
-            {
-                user = await _userRepository.GetByEmailAsync(resetPasswordDto.Email);
-            }
-
-            if (user == null)
-            {
-                return BusinessResult.Failure("Invalid or expired token");
-            }
-
-            // Check if token is expired
-            if (user.PasswordResetExpiry.HasValue && user.PasswordResetExpiry < DateTime.UtcNow)
-            {
-                return BusinessResult.Failure("Reset token has expired");
-            }
-
-            // Hash new password
-            string tempPasswordHash = PasswordHasher.HashPassword(resetPasswordDto.NewPassword);
-
-            // Update password and clear reset token
-            var success = await _userRepository.UpdatePasswordAsync(user.UserID, tempPasswordHash);
-            if (success)
-            {
-                // Add method to clear password reset token
-                await _userRepository.UpdatePasswordResetTokenAsync(user.UserID, string.Empty, DateTime.MinValue);
-                _logger.LogInformation("Password reset for user: {Username}", user.Username);
-                return BusinessResult.Success();
-            }
-
-            return BusinessResult.Failure("Failed to reset password");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error resetting password");
-            return BusinessResult.Failure("An error occurred while resetting the password");
-        }
-    }
-
-    /// <summary>
-    /// Tạo người dùng mới (admin)
-    /// </summary>
-    /// <param name="createUserDto">DTO chứa thông tin người dùng mới</param>
-    /// <returns>UserDTO</returns>
-    public async Task<BusinessResult<UserDto>> CreateUserAsync(CreateUserDto createUserDto)
-    {
-        try
-        {
-            var validation = ValidateUserData(createUserDto);
-            if (!validation.IsValid)
-            {
-                return BusinessResult<UserDto>.Failure(validation.Errors);
-            }
-
-            // Check if username already exists
-            bool usernameExists = await _userRepository.IsUsernameExistsAsync(createUserDto.Username);
-            if (usernameExists)
-            {
-                return BusinessResult<UserDto>.Failure("Username already exists");
-            }
-
-            // Check if email already exists
-            bool emailExists = await _userRepository.IsEmailExistsAsync(createUserDto.Email);
-            if (emailExists)
-            {
-                return BusinessResult<UserDto>.Failure("Email address already exists");
-            }
-
-            // Hash password
-            string passwordHash = PasswordHasher.HashPassword(createUserDto.Password);
-
-            // Create new user
-            var user = new EsportsManager.DAL.Models.Users
-            {
-                Username = createUserDto.Username,
-                Email = createUserDto.Email,
-                PasswordHash = passwordHash,
-                FullName = createUserDto.FullName,
-                Role = createUserDto.Role ?? EsportsManager.DAL.Models.UsersRoles.Viewer, // Default to Viewer if not specified
-                Status = createUserDto.Status ?? EsportsManager.DAL.Models.UsersStatus.Active, // Default to Active if not specified
-                IsEmailVerified = true, // Admin-created accounts are verified by default
+                Username = createDto.Username,
+                Email = createDto.Email,
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(createDto.Password),
+                FullName = createDto.FullName,
+                Role = createDto.Role ?? DAL.Models.UsersRoles.Viewer,
+                Status = DAL.Models.UsersStatus.Pending,
                 CreatedAt = DateTime.UtcNow
             };
 
-            // Save to database
-            var createdUser = await _userRepository.AddAsync(user);
+            await _usersRepository.AddAsync(user);
 
-            // Map to DTO
-            var userDto = MapUserToDto(createdUser);
+            var userDto = new UserDto
+            {
+                Id = user.UserID,
+                Username = user.Username,
+                Email = user.Email,
+                FullName = user.FullName,
+                Role = user.Role
+            };
 
-            _logger.LogInformation("New user created by admin: {Username}", createUserDto.Username);
             return BusinessResult<UserDto>.Success(userDto);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error creating user: {Username}", createUserDto.Username);
-            return BusinessResult<UserDto>.Failure("An error occurred while creating the user");
+            _logger.LogError(ex, "Lỗi khi tạo người dùng mới");
+            return BusinessResult<UserDto>.Failure($"Lỗi khi tạo người dùng: {ex.Message}");
         }
     }
 
-    /// <summary>
-    /// Cập nhật trạng thái user
-    /// </summary>
-    /// <param name="userId">ID của user</param>
-    /// <param name="status">Trạng thái mới</param>
-    /// <returns>Kết quả cập nhật</returns>
     public async Task<BusinessResult> UpdateUserStatusAsync(int userId, string status)
     {
         try
         {
-            // Validate status
-            if (!IsValidStatus(status))
-            {
-                return BusinessResult.Failure("Invalid status value");
-            }
-
-            // Get user
-            var user = await _userRepository.GetByIdAsync(userId);
+            var user = await _usersRepository.GetByIdAsync(userId);
             if (user == null)
             {
-                return BusinessResult.Failure("User not found");
+                return BusinessResult.Failure("Không tìm thấy người dùng");
             }
 
-            // Update status
+            if (status != DAL.Models.UsersStatus.Active && status != DAL.Models.UsersStatus.Pending && status != DAL.Models.UsersStatus.Suspended)
+            {
+                return BusinessResult.Failure("Trạng thái không hợp lệ");
+            }
+
             user.Status = status;
-            user.UpdatedAt = DateTime.UtcNow;
-
-            // Save to database
-            await _userRepository.UpdateAsync(user);
-
-            _logger.LogInformation("User {Username} status updated to {Status}", user.Username, status);
+            await _usersRepository.UpdateAsync(user);
             return BusinessResult.Success();
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error updating user status: {UserId}, Status: {Status}", userId, status);
-            return BusinessResult.Failure("An error occurred while updating the user status");
+            _logger.LogError(ex, "Lỗi khi cập nhật trạng thái người dùng {UserId}", userId);
+            return BusinessResult.Failure($"Lỗi khi cập nhật trạng thái: {ex.Message}");
         }
-    }
-
-    /// <summary>
-    /// Xóa người dùng (soft delete)
-    /// </summary>
-    /// <param name="userId">ID của user cần xóa</param>
-    /// <param name="currentUserId">ID của user thực hiện yêu cầu (không sử dụng trong method này)</param>
-    /// <returns>Kết quả xóa</returns>
-    public async Task<bool> DeleteUserAsync(int userId, int currentUserId = 0)
-    {
-        try
-        {
-            // Get user
-            var user = await _userRepository.GetByIdAsync(userId);
-            if (user == null)
-            {
-                return false;
-            }
-
-            // Soft delete by setting status to Deleted
-            user.Status = EsportsManager.DAL.Models.UsersStatus.Deleted;
-            user.UpdatedAt = DateTime.UtcNow;
-
-            // Save to database
-            await _userRepository.UpdateAsync(user);
-
-            _logger.LogInformation("User deleted (soft delete): {Username}", user.Username);
-            return true;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error deleting user: {UserId}", userId);
-            return false;
-        }
-    }
-
-    /// <summary>
-    /// Xóa người dùng với kiểm tra quyền (Admin không thể xóa chính mình hoặc Admin khác)
-    /// </summary>
-    /// <param name="userId">ID của user cần xóa</param>
-    /// <param name="requestUserId">ID của user thực hiện yêu cầu</param>
-    /// <returns>Kết quả xóa</returns>
-    public async Task<BusinessResult<bool>> DeleteUserWithPermissionCheckAsync(int userId, int requestUserId)
-    {
-        try
-        {
-            // Get user to be deleted
-            var targetUser = await _userRepository.GetByIdAsync(userId);
-            if (targetUser == null)
-            {
-                return BusinessResult<bool>.Failure("User not found");
-            }
-
-            // Get requesting user
-            var requestUser = await _userRepository.GetByIdAsync(requestUserId);
-            if (requestUser == null)
-            {
-                return BusinessResult<bool>.Failure("Request user not found");
-            }
-
-            // Admin cannot delete themselves
-            if (requestUser.Role == "Admin" && requestUserId == userId)
-            {
-                return BusinessResult<bool>.Failure("Admin cannot delete their own account");
-            }
-
-            // Admin can only delete Player/Viewer, not other Admins
-            if (requestUser.Role == "Admin" && targetUser.Role == "Admin")
-            {
-                return BusinessResult<bool>.Failure("Admin cannot delete other Admin accounts");
-            }
-
-            // Only Admin can delete users
-            if (requestUser.Role != "Admin")
-            {
-                return BusinessResult<bool>.Failure("Only Admin can delete users");
-            }
-
-            // Perform soft delete
-            targetUser.Status = EsportsManager.DAL.Models.UsersStatus.Deleted;
-            targetUser.UpdatedAt = DateTime.UtcNow;
-
-            await _userRepository.UpdateAsync(targetUser);
-
-            _logger.LogInformation("User deleted by admin: {Username} deleted by {AdminUsername}",
-                targetUser.Username, requestUser.Username);
-
-            return BusinessResult<bool>.Success(true);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error deleting user: {UserId} by user: {RequestUserId}", userId, requestUserId);
-            return BusinessResult<bool>.Failure("An error occurred while deleting the user");
-        }
-    }
-
-    /// <summary>
-    /// Kiểm tra username có khả dụng không
-    /// </summary>
-    /// <param name="username">Username cần kiểm tra</param>
-    /// <returns>true nếu username chưa tồn tại</returns>
-    public async Task<BusinessResult<bool>> IsUsernameAvailableAsync(string username)
-    {
-        try
-        {
-            bool exists = await _userRepository.IsUsernameExistsAsync(username);
-            return BusinessResult<bool>.Success(!exists);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error checking username availability: {Username}", username);
-            return BusinessResult<bool>.Failure("An error occurred while checking username availability");
-        }
-    }
-
-    /// <summary>
-    /// Kiểm tra email có khả dụng không
-    /// </summary>
-    /// <param name="email">Email cần kiểm tra</param>
-    /// <returns>true nếu email chưa tồn tại</returns>
-    public async Task<BusinessResult<bool>> IsEmailAvailableAsync(string email)
-    {
-        try
-        {
-            bool exists = await _userRepository.IsEmailExistsAsync(email);
-            return BusinessResult<bool>.Success(!exists);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error checking email availability: {Email}", email);
-            return BusinessResult<bool>.Failure("An error occurred while checking email availability");
-        }
-    }
-
-    /// <summary>
-    /// Lấy tổng số người dùng
-    /// </summary>
-    /// <returns>Số lượng user</returns>
-    public async Task<BusinessResult<int>> GetTotalUsersCountAsync()
-    {
-        try
-        {
-            int count = await _userRepository.CountAsync();
-            return BusinessResult<int>.Success(count);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error getting total users count");
-            return BusinessResult<int>.Failure("An error occurred while getting the total users count");
-        }
-    }
-
-    /// <summary>
-    /// Lấy số người dùng theo role
-    /// </summary>
-    /// <param name="role">Role cần đếm</param>
-    /// <returns>Số lượng user theo role</returns>
-    public async Task<BusinessResult<int>> GetUserCountByRoleAsync(string role)
-    {
-        try
-        {
-            // Implementation needed in the repository
-            var users = await _userRepository.GetByRoleAsync(role);
-            int count = users.Count();
-            return BusinessResult<int>.Success(count);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error getting user count by role: {Role}", role);
-            return BusinessResult<int>.Failure("An error occurred while getting the user count");
-        }
-    }
-
-    /// <summary>
-    /// Lấy số người dùng đang active
-    /// </summary>
-    /// <returns>Số lượng user active</returns>
-    public async Task<BusinessResult<int>> GetActiveUsersCountAsync()
-    {
-        try
-        {
-            int count = await _userRepository.GetCountByStatusAsync(EsportsManager.DAL.Models.UsersStatus.Active);
-            return BusinessResult<int>.Success(count);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error getting active users count");
-            return BusinessResult<int>.Failure("An error occurred while getting the active users count");
-        }
-    }
-
-    /// <summary>
-    /// Validate dữ liệu create user
-    /// </summary>
-    /// <param name="createUserDto">CreateUserDTO</param>
-    /// <returns>ValidationResult</returns>
-    public Models.ValidationResult ValidateUserData(CreateUserDto createUserDto)
-    {
-        var errors = new List<string>();
-
-        // Validate username
-        if (string.IsNullOrWhiteSpace(createUserDto.Username))
-            errors.Add("Username is required");
-
-        // Validate email
-        if (string.IsNullOrWhiteSpace(createUserDto.Email))
-            errors.Add("Email is required");
-
-        // Validate password
-        if (string.IsNullOrWhiteSpace(createUserDto.Password))
-            errors.Add("Password is required");
-
-        return errors.Any() ? Models.ValidationResult.Failure(errors) : Models.ValidationResult.Success();
-    }
-
-    /// <summary>
-    /// Validate dữ liệu đăng nhập
-    /// </summary>
-    /// <param name="loginDto">LoginDTO</param>
-    /// <returns>ValidationResult</returns>
-    public Models.ValidationResult ValidateLoginData(LoginDto loginDto)
-    {
-        var errors = new List<string>();
-
-        if (string.IsNullOrWhiteSpace(loginDto.Username))
-            errors.Add("Username is required");
-
-        if (string.IsNullOrWhiteSpace(loginDto.Password))
-            errors.Add("Password is required");
-
-        return errors.Any() ? Models.ValidationResult.Failure(errors) : Models.ValidationResult.Success();
-    }
-
-    /// <summary>
-    /// Validate thông tin đăng ký
-    /// </summary>
-    /// <param name="registerDto">RegisterDTO</param>
-    /// <returns>ValidationResult</returns>
-    private Models.ValidationResult ValidateRegisterData(RegisterDto registerDto)
-    {
-        var errors = new List<string>();
-
-        // Validate required fields
-        if (string.IsNullOrWhiteSpace(registerDto.Username))
-            errors.Add("Username is required");
-
-        if (string.IsNullOrWhiteSpace(registerDto.Email))
-            errors.Add("Email is required");
-
-        if (string.IsNullOrWhiteSpace(registerDto.Password))
-            errors.Add("Password is required");
-
-        if (string.IsNullOrWhiteSpace(registerDto.ConfirmPassword))
-            errors.Add("Confirm password is required");
-
-        if (string.IsNullOrWhiteSpace(registerDto.FullName))
-            errors.Add("Full name is required");
-
-        if (string.IsNullOrWhiteSpace(registerDto.SecurityQuestion))
-            errors.Add("Security question is required");
-
-        if (string.IsNullOrWhiteSpace(registerDto.SecurityAnswer))
-            errors.Add("Security answer is required");
-
-        // Validate password match
-        if (registerDto.Password != registerDto.ConfirmPassword)
-            errors.Add("Password and confirm password do not match");
-
-        // Validate email format
-        if (!string.IsNullOrWhiteSpace(registerDto.Email) && !IsValidEmail(registerDto.Email))
-            errors.Add("Invalid email format");
-
-        // Validate username length
-        if (!string.IsNullOrWhiteSpace(registerDto.Username) &&
-            (registerDto.Username.Length < 3 || registerDto.Username.Length > 50))
-            errors.Add("Username must be between 3 and 50 characters");
-
-        // Validate password strength
-        if (!string.IsNullOrWhiteSpace(registerDto.Password) && registerDto.Password.Length < 6)
-            errors.Add("Password must be at least 6 characters long");
-
-        // Validate role
-        if (!string.IsNullOrWhiteSpace(registerDto.Role) &&
-            registerDto.Role != "Player" && registerDto.Role != "Viewer")
-            errors.Add("Invalid role. Only Player and Viewer roles are allowed for registration");
-
-        return errors.Any() ? Models.ValidationResult.Failure(errors) : Models.ValidationResult.Success();
-    }
-
-    /// <summary>
-    /// Validate email format
-    /// </summary>
-    /// <param name="email">Email to validate</param>
-    /// <returns>True if valid email format</returns>
-    private bool IsValidEmail(string email)
-    {
-        try
-        {
-            var addr = new System.Net.Mail.MailAddress(email);
-            return addr.Address == email;
-        }
-        catch
-        {
-            return false;
-        }
-    }
-
-    /// <summary>
-    /// Validate thông tin đổi mật khẩu
-    /// </summary>
-    /// <param name="updatePasswordDto">UpdatePasswordDTO</param>
-    /// <returns>ValidationResult</returns>
-    private Models.ValidationResult ValidateUpdatePasswordData(UpdatePasswordDto updatePasswordDto)
-    {
-        return string.IsNullOrWhiteSpace(updatePasswordDto.CurrentPassword)
-            ? Models.ValidationResult.Failure("Current password is required")
-            : Models.ValidationResult.Success();
-    }
-
-    /// <summary>
-    /// Validate thông tin reset mật khẩu
-    /// </summary>
-    /// <param name="resetPasswordDto">ResetPasswordDTO</param>
-    /// <returns>ValidationResult</returns>
-    private Models.ValidationResult ValidateResetPasswordData(ResetPasswordDto resetPasswordDto)
-    {
-        var errors = new List<string>();
-
-        // Validate token or email presence
-        if (string.IsNullOrWhiteSpace(resetPasswordDto.Token) && string.IsNullOrWhiteSpace(resetPasswordDto.Email))
-            errors.Add("Either reset token or email must be provided");
-
-        // Validate new password
-        if (string.IsNullOrWhiteSpace(resetPasswordDto.NewPassword))
-            errors.Add("New password is required");
-        else if (resetPasswordDto.NewPassword.Length < 8)
-            errors.Add("New password must be at least 8 characters long");
-
-        return errors.Any() ? Models.ValidationResult.Failure(errors) : Models.ValidationResult.Success();
-    }
-
-    /// <summary>
-    /// Check if the status is valid
-    /// </summary>
-    /// <param name="status">Status to validate</param>
-    /// <returns>true if valid</returns>
-    private bool IsValidStatus(string status)
-    {
-        // Check if status is one of the defined constants
-        return status == EsportsManager.DAL.Models.UsersStatus.Active ||
-               status == EsportsManager.DAL.Models.UsersStatus.Inactive ||
-               status == EsportsManager.DAL.Models.UsersStatus.Suspended ||
-               status == EsportsManager.DAL.Models.UsersStatus.Pending ||
-               status == EsportsManager.DAL.Models.UsersStatus.Deleted;
-    }
-
-    /// <summary>
-    /// Map Users entity to UserDTO
-    /// </summary>
-    /// <param name="user">Users entity</param>
-    /// <returns>UserDTO</returns>
-    private UserDto MapUserToDto(EsportsManager.DAL.Models.Users user)
-    {
-        return new UserDto
-        {
-            Id = user.UserID,
-            Username = user.Username,
-            Email = user.Email,
-            FullName = user.FullName,
-            Role = user.Role,
-            Status = user.Status,
-            CreatedAt = user.CreatedAt,
-            LastLoginAt = user.LastLoginAt,
-            IsEmailVerified = user.IsEmailVerified,
-            EmailVerificationToken = user.EmailVerificationToken
-        };
     }
 
     public async Task<List<UserProfileDto>> SearchUsersAsync(string searchTerm)
     {
         try
         {
-            var users = await _userRepository.SearchAsync(searchTerm);
-            var userProfiles = users.Select(u => new UserProfileDto
+            var users = await _usersRepository.SearchAsync(searchTerm);
+            return users.Select(u => new UserProfileDto
             {
                 Id = u.UserID,
                 Username = u.Username,
-                Email = u.Email ?? string.Empty,
+                Email = u.Email,
                 FullName = u.FullName,
                 Role = u.Role,
-                Status = u.Status,
                 CreatedAt = u.CreatedAt,
                 LastLoginAt = u.LastLoginAt,
-                TotalLogins = 0, // TODO: Implement method to get login count
-                IsEmailVerified = u.IsEmailVerified,
-                AvatarUrl = null, // Not in the current schema
-                Bio = null // Not in the current schema
+                Status = u.Status
             }).ToList();
-
-            return userProfiles;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error searching users: {SearchTerm}", searchTerm);
+            _logger.LogError(ex, "Lỗi khi tìm kiếm người dùng với từ khóa {SearchTerm}", searchTerm);
             return new List<UserProfileDto>();
         }
     }
@@ -1029,185 +620,321 @@ public class UserService : IUserService
     {
         try
         {
-            // Get user
-            var user = await _userRepository.GetByIdAsync(userId);
+            var user = await _usersRepository.GetByIdAsync(userId);
             if (user == null)
             {
                 return false;
             }
 
-            // Toggle status
-            user.Status = user.Status == EsportsManager.DAL.Models.UsersStatus.Active
-                ? EsportsManager.DAL.Models.UsersStatus.Inactive
-                : EsportsManager.DAL.Models.UsersStatus.Active;
-
-            user.UpdatedAt = DateTime.UtcNow;
-
-            // Save to database
-            await _userRepository.UpdateAsync(user);
-
-            _logger.LogInformation("User {Username} status toggled to {Status}", user.Username, user.Status);
+            if (user.Status == DAL.Models.UsersStatus.Active)
+            {
+                user.Status = DAL.Models.UsersStatus.Inactive;
+            }
+            else if (user.Status == DAL.Models.UsersStatus.Inactive)
+            {
+                user.Status = DAL.Models.UsersStatus.Active;
+            }
+            await _usersRepository.UpdateAsync(user);
             return true;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error toggling user status: {UserId}", userId);
+            _logger.LogError(ex, "Lỗi khi thay đổi trạng thái người dùng {UserId}", userId);
             return false;
         }
     }
 
-    public async Task<string> ResetPasswordAsync(int userId)
+    public async Task<BusinessResult<bool>> DeleteUserWithPermissionCheckAsync(int userId, int requestUserId)
     {
         try
         {
-            // Get user first to get their role
-            var user = await _userRepository.GetByIdAsync(userId);
+            var user = await _usersRepository.GetByIdAsync(userId);
+            var requestUser = await _usersRepository.GetByIdAsync(requestUserId);
+
             if (user == null)
             {
-                return "User not found";
+                return BusinessResult<bool>.Failure("Không tìm thấy người dùng cần xóa");
             }
 
-            // Generate a role-based password (role + "123")
-            string newPassword = GenerateRoleBasedPassword(user.Role);
-
-            // Hash the new password
-            string passwordHash = PasswordHasher.HashPassword(newPassword);
-
-            // Update password
-            bool success = await _userRepository.UpdatePasswordAsync(user.UserID, passwordHash);
-            if (!success)
+            if (requestUser == null)
             {
-                return "Failed to reset password";
+                return BusinessResult<bool>.Failure("Không tìm thấy người dùng yêu cầu");
             }
 
-            // TODO: Send new password via email or other means
+            // Kiểm tra quyền: chỉ admin mới có thể xóa user khác
+            if (requestUser.Role != DAL.Models.UsersRoles.Admin && requestUserId != userId)
+            {
+                return BusinessResult<bool>.Failure("Không có quyền xóa người dùng khác");
+            }
 
-            _logger.LogInformation("Password reset for user: {Username}", user.Username);
-            return newPassword; // Return the actual new password for display
+            await _usersRepository.DeleteAsync(userId);
+            return BusinessResult<bool>.Success(true);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error resetting password for user: {UserId}", userId);
-            return "An error occurred while resetting the password";
+            _logger.LogError(ex, "Lỗi khi xóa người dùng {UserId}", userId);
+            return BusinessResult<bool>.Failure($"Lỗi khi xóa người dùng: {ex.Message}");
         }
     }
 
-    /// <summary>
-    /// Generate a role-based password (role + "123")
-    /// </summary>
-    /// <param name="role">User role</param>
-    /// <returns>Role-based password</returns>
-    private string GenerateRoleBasedPassword(string role)
+    public async Task<BusinessResult<bool>> IsUsernameAvailableAsync(string username)
     {
-        return role.ToLower() + "123";
+        try
+        {
+            var exists = await _usersRepository.IsUsernameExistsAsync(username);
+            return BusinessResult<bool>.Success(!exists);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Lỗi khi kiểm tra tên đăng nhập {Username}", username);
+            return BusinessResult<bool>.Failure($"Lỗi khi kiểm tra tên đăng nhập: {ex.Message}");
+        }
     }
 
-    /// <summary>
-    /// Generate a random password (deprecated - keeping for backward compatibility)
-    /// </summary>
-    /// <returns>Randomly generated password</returns>
-    private string GenerateRandomPassword()
+    public async Task<BusinessResult<bool>> IsEmailAvailableAsync(string email)
     {
-        const int length = 8;
-        const string validChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
-        var random = new Random();
-        return new string(Enumerable.Repeat(validChars, length)
-          .Select(s => s[random.Next(s.Length)]).ToArray());
+        try
+        {
+            var exists = await _usersRepository.IsEmailExistsAsync(email);
+            return BusinessResult<bool>.Success(!exists);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Lỗi khi kiểm tra email {Email}", email);
+            return BusinessResult<bool>.Failure($"Lỗi khi kiểm tra email: {ex.Message}");
+        }
     }
 
-    /// <summary>
-    /// Get all accounts with Pending status
-    /// </summary>
-    /// <returns>List of pending accounts</returns>
+    public Models.ValidationResult ValidateUserData(CreateUserDto createUserDto)
+    {
+        if (createUserDto == null)
+        {
+            return Models.ValidationResult.Failure("Dữ liệu người dùng không được để trống");
+        }
+
+        var errors = new List<string>();
+
+        if (string.IsNullOrWhiteSpace(createUserDto.Username))
+        {
+            errors.Add("Tên đăng nhập không được để trống");
+        }
+        else if (createUserDto.Username.Length < 3 || createUserDto.Username.Length > 50)
+        {
+            errors.Add("Tên đăng nhập phải từ 3-50 ký tự");
+        }
+
+        if (string.IsNullOrWhiteSpace(createUserDto.Email))
+        {
+            errors.Add("Email không được để trống");
+        }
+        else if (!InputValidator.IsValidEmail(createUserDto.Email))
+        {
+            errors.Add("Email không hợp lệ");
+        }
+
+        if (string.IsNullOrWhiteSpace(createUserDto.Password))
+        {
+            errors.Add("Mật khẩu không được để trống");
+        }
+        else
+        {
+            var passwordValidation = ValidatePassword(createUserDto.Password);
+            if (!passwordValidation.IsValid)
+            {
+                errors.AddRange(passwordValidation.Errors);
+            }
+        }
+
+        return errors.Any() ? Models.ValidationResult.Failure(errors) : Models.ValidationResult.Success();
+    }
+
+    public Models.ValidationResult ValidateLoginData(LoginDto loginDto)
+    {
+        if (loginDto == null)
+        {
+            return Models.ValidationResult.Failure("Dữ liệu đăng nhập không được để trống");
+        }
+
+        var errors = new List<string>();
+
+        if (string.IsNullOrWhiteSpace(loginDto.Username))
+        {
+            errors.Add("Tên đăng nhập không được để trống");
+        }
+
+        if (string.IsNullOrWhiteSpace(loginDto.Password))
+        {
+            errors.Add("Mật khẩu không được để trống");
+        }
+
+        return errors.Any() ? Models.ValidationResult.Failure(errors) : Models.ValidationResult.Success();
+    }
+
+    private Models.ValidationResult ValidateUserDataInternal(string username, string email)
+    {
+        var errors = new List<string>();
+
+        if (string.IsNullOrWhiteSpace(username))
+        {
+            errors.Add("Tên người dùng không được để trống");
+        }
+        else if (username.Length < 3 || username.Length > 50)
+        {
+            errors.Add("Tên người dùng phải từ 3-50 ký tự");
+        }
+
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            errors.Add("Email không được để trống");
+        }
+        else if (!InputValidator.IsValidEmail(email))
+        {
+            errors.Add("Email không hợp lệ");
+        }
+
+        return errors.Any() ? Models.ValidationResult.Failure(errors) : Models.ValidationResult.Success();
+    }
+
+    private Models.ValidationResult ValidatePassword(string password)
+    {
+        var errors = new List<string>();
+
+        if (string.IsNullOrWhiteSpace(password))
+        {
+            errors.Add("Mật khẩu không được để trống");
+        }
+        else
+        {
+            if (password.Length < 8)
+                errors.Add("Mật khẩu phải có ít nhất 8 ký tự");
+            if (!password.Any(char.IsUpper))
+                errors.Add("Mật khẩu phải chứa ít nhất 1 chữ hoa");
+            if (!password.Any(char.IsLower))
+                errors.Add("Mật khẩu phải chứa ít nhất 1 chữ thường");
+            if (!password.Any(char.IsDigit))
+                errors.Add("Mật khẩu phải chứa ít nhất 1 chữ số");
+        }
+
+        return errors.Any() ? Models.ValidationResult.Failure(errors) : Models.ValidationResult.Success();
+    }
+
+    public async Task<BusinessResult<int>> GetTotalUsersCountAsync()
+    {
+        try
+        {
+            var count = await _usersRepository.CountAsync();
+            return BusinessResult<int>.Success(count);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Lỗi khi lấy tổng số người dùng");
+            return BusinessResult<int>.Failure($"Lỗi khi lấy tổng số người dùng: {ex.Message}");
+        }
+    }
+
+    public async Task<BusinessResult<int>> GetUserCountByRoleAsync(string role)
+    {
+        try
+        {
+            var count = await _usersRepository.GetCountByRoleAsync(role);
+            return BusinessResult<int>.Success(count);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Lỗi khi lấy số lượng người dùng theo vai trò {Role}", role);
+            return BusinessResult<int>.Failure($"Lỗi khi lấy số lượng người dùng: {ex.Message}");
+        }
+    }
+
+    public async Task<BusinessResult<int>> GetActiveUsersCountAsync()
+    {
+        try
+        {
+            var count = await _usersRepository.GetCountByStatusAsync(DAL.Models.UsersStatus.Active);
+            return BusinessResult<int>.Success(count);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Lỗi khi lấy số lượng người dùng đang hoạt động");
+            return BusinessResult<int>.Failure($"Lỗi khi lấy số lượng người dùng: {ex.Message}");
+        }
+    }
+
     public async Task<BusinessResult<IEnumerable<UserDto>>> GetPendingAccountsAsync()
     {
         try
         {
-            var users = await _userRepository.GetByStatusAsync("Pending");
+            var users = await _usersRepository.GetPendingUsersAsync();
             var userDtos = users.Select(u => new UserDto
             {
                 Id = u.UserID,
                 Username = u.Username,
                 Email = u.Email,
                 FullName = u.FullName,
-                Role = u.Role,
-                Status = u.Status,
-                CreatedAt = u.CreatedAt,
-                TotalLogins = 0, // TODO: Implement method to get login count
-                LastLoginAt = u.LastLoginAt
+                Role = u.Role
             });
 
-            return new BusinessResult<IEnumerable<UserDto>>
-            {
-                IsSuccess = true,
-                Data = userDtos
-            };
+            return BusinessResult<IEnumerable<UserDto>>.Success(userDtos);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error getting pending accounts");
-            return new BusinessResult<IEnumerable<UserDto>>
-            {
-                IsSuccess = false,
-                ErrorMessage = "Failed to get pending accounts"
-            };
+            _logger.LogError(ex, "Lỗi khi lấy danh sách tài khoản chờ duyệt");
+            return BusinessResult<IEnumerable<UserDto>>.Failure($"Lỗi khi lấy danh sách tài khoản chờ duyệt: {ex.Message}");
         }
     }
 
-    /// <summary>
-    /// Approve a pending account by changing status to Active
-    /// </summary>
-    /// <param name="userId">User ID to approve</param>
-    /// <returns>Success or failure result</returns>
     public async Task<BusinessResult> ApproveAccountAsync(int userId)
     {
         try
         {
-            var user = await _userRepository.GetByIdAsync(userId);
+            var user = await _usersRepository.GetByIdAsync(userId);
             if (user == null)
             {
-                return new BusinessResult
-                {
-                    IsSuccess = false,
-                    ErrorMessage = "User not found"
-                };
+                return BusinessResult.Failure("Không tìm thấy người dùng");
             }
 
-            if (user.Status != "Pending")
+            if (user.Status != DAL.Models.UsersStatus.Pending)
             {
-                return new BusinessResult
-                {
-                    IsSuccess = false,
-                    ErrorMessage = "User is not in pending status"
-                };
+                return BusinessResult.Failure("Tài khoản không ở trạng thái chờ duyệt");
             }
 
-            user.Status = "Active";
-            user.UpdatedAt = DateTime.Now;
-
-            var updatedUser = await _userRepository.UpdateAsync(user);
-            if (updatedUser != null)
-            {
-                _logger.LogInformation("Account approved for user: {Username}", user.Username);
-                return new BusinessResult { IsSuccess = true };
-            }
-            else
-            {
-                return new BusinessResult
-                {
-                    IsSuccess = false,
-                    ErrorMessage = "Failed to update user status"
-                };
-            }
+            user.Status = DAL.Models.UsersStatus.Active;
+            await _usersRepository.UpdateAsync(user);
+            return BusinessResult.Success();
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error approving account for user: {UserId}", userId);
-            return new BusinessResult
-            {
-                IsSuccess = false,
-                ErrorMessage = "An error occurred while approving the account"
-            };
+            _logger.LogError(ex, "Lỗi khi duyệt tài khoản {UserId}", userId);
+            return BusinessResult.Failure($"Lỗi khi duyệt tài khoản: {ex.Message}");
         }
     }
-}
+
+    public async Task<BusinessResult> ResetPasswordAsync(ResetPasswordDto resetDto)
+    {
+        try
+        {
+            var user = await _usersRepository.GetByEmailAsync(resetDto.Email);
+            if (user == null)
+            {
+                return BusinessResult.Failure("Không tìm thấy người dùng với email này");
+            }
+
+            // Tạo mật khẩu mới ngẫu nhiên
+            var tempPassword = Guid.NewGuid().ToString("N").Substring(0, 8);
+            var hashedPassword = BCrypt.Net.BCrypt.HashPassword(tempPassword);
+
+            // Cập nhật mật khẩu mới
+            await _usersRepository.UpdatePasswordAsync(user.UserID, hashedPassword);
+
+            // TODO: Gửi email chứa mật khẩu tạm thời cho người dùng
+            _logger.LogInformation("Đã tạo mật khẩu tạm thời cho user {UserId}", user.UserID);
+
+            return BusinessResult.Success();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Lỗi khi reset mật khẩu cho email {Email}", resetDto.Email);
+            return BusinessResult.Failure($"Lỗi khi reset mật khẩu: {ex.Message}");
+        }
+    }
+} 

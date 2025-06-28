@@ -52,7 +52,7 @@ public class ServiceManager
     {
         // Create handlers
         var userManagementHandler = new UserManagementHandler(_userService, _achievementService);
-        var tournamentManagementHandler = new AdminTournamentManagementHandler(adminUser, _tournamentService, _teamService);
+        var tournamentManagementHandler = new EsportsManager.UI.Controllers.Admin.Handlers.TournamentManagementHandler(adminUser, _tournamentService, _teamService);
         var systemStatsHandler = new SystemStatsHandler(_userService, _tournamentService, _teamService);
         var donationReportHandler = new DonationReportHandler(_walletService, _userService);
         var votingResultsHandler = new VotingResultsHandler(_userService, _tournamentService, _votingService);
@@ -74,7 +74,7 @@ public class ServiceManager
     public PlayerController CreatePlayerController(UserProfileDto playerUser)
     {
         // Tạo các handler instances với đúng thứ tự tham số
-        var tournamentManagementHandler = new TournamentManagementHandler(playerUser, _tournamentService, _teamService);
+        var tournamentManagementHandler = new EsportsManager.UI.Controllers.Shared.Handlers.TournamentManagementHandler(playerUser, _tournamentService, _teamService);
         var teamManagementHandler = new PlayerTeamManagementHandler(playerUser, _teamService);
         var profileHandler = new PlayerProfileHandler(playerUser, _userService);
         var tournamentViewHandler = new TournamentViewHandler(_tournamentService);

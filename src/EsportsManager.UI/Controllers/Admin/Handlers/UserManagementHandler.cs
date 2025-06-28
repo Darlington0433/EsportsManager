@@ -423,13 +423,13 @@ public class UserManagementHandler
                 if (confirmation.ToUpper() == "YES")
                 {
                     var result = await _userService.DeleteUserAsync(userId);
-                    if (result)
+                    if (result.IsSuccess)
                     {
                         ConsoleRenderingService.ShowMessageBox($"✅ Đã xóa thành công user ID: {userId}", false, 3000);
                     }
                     else
                     {
-                        ConsoleRenderingService.ShowMessageBox("❌ Xóa thất bại", true, 3000);
+                        ConsoleRenderingService.ShowMessageBox($"❌ Xóa thất bại: {result.Message}", true, 3000);
                     }
                 }
                 else
