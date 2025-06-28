@@ -75,32 +75,37 @@ namespace EsportsManager.UI.Forms
                         break;
 
                     case ConsoleKey.DownArrow:
-                        _selectedFieldIndex = (_selectedFieldIndex < _fieldLabels.Length - 1) ? _selectedFieldIndex + 1 : 0;
-                        break;
-
                     case ConsoleKey.Tab:
                         _selectedFieldIndex = (_selectedFieldIndex < _fieldLabels.Length - 1) ? _selectedFieldIndex + 1 : 0;
                         break;
 
                     case ConsoleKey.Enter:
                         HandleFieldInput();
+                        if (_selectedFieldIndex == _fieldLabels.Length - 1 && ValidateForm())
+                        {
+                            HandleSubmit();
+                            if (_authResult != null && _authResult.IsAuthenticated)
+                                return true;
+                        }
+                        else
+                        {
+                            if (_selectedFieldIndex < _fieldLabels.Length - 1)
+                                _selectedFieldIndex++;
+                        }
                         break;
-                    case ConsoleKey.Escape:
-                        return false; // User hủy bỏ
 
                     case ConsoleKey.F1:
-                        // Xử lý submit form
+                    case ConsoleKey.S:
                         if (ValidateForm())
                         {
                             HandleSubmit();
-                            // Bây giờ HandleSubmit() đã synchronous, kiểm tra kết quả ngay
                             if (_authResult != null && _authResult.IsAuthenticated)
-                            {
-                                return true; // Đăng nhập thành công
-                            }
-                            // Nếu đăng nhập thất bại, tiếp tục vòng lặp để user thử lại
+                                return true;
                         }
                         break;
+
+                    case ConsoleKey.Escape:
+                        return false; // User hủy bỏ
                 }
             }
         }
@@ -189,15 +194,8 @@ namespace EsportsManager.UI.Forms
             }
 
             // Vẽ hướng dẫn phím ở cuối form - căn giữa và cắt nếu quá dài
-            string helpText = "↑↓/Tab: Chọn   Enter: Nhập   F1: Đăng nhập   Esc: Thoát";
+            string helpText = "↑↓/Tab: Chọn   Enter: Nhập   Enter: Đăng nhập   Esc: Thoát";
             int maxHelpWidth = formWidth - 4; // Để trong khung border
-
-            // Cắt text nếu quá dài
-            if (helpText.Length > maxHelpWidth)
-            {
-                helpText = "↑↓: Chọn   Enter: Nhập   F1: OK   Esc: Thoát";
-            }
-
             // Tính vị trí căn giữa
             int helpX = left + ((formWidth - helpText.Length) / 2);
             SafeConsole.SetCursorPosition(helpX, top + formHeight - 2);

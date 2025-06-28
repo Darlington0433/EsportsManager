@@ -108,15 +108,20 @@ namespace EsportsManager.UI.Controllers.Player.Handlers
         {
             Console.Clear();
             ConsoleRenderingService.DrawBorder("TẠO TEAM MỚI", 80, 12);
+            int borderLeft = (Console.WindowWidth - 80) / 2;
+            int borderTop = (Console.WindowHeight - 12) / 4;
+            int cursorY = borderTop + 2;
 
+            Console.SetCursorPosition(borderLeft + 2, cursorY++);
             Console.Write("Tên team: ");
             string teamName = Console.ReadLine() ?? "";
-
+            Console.SetCursorPosition(borderLeft + 2, cursorY++);
             Console.Write("Mô tả team: ");
             string description = Console.ReadLine() ?? "";
 
             if (string.IsNullOrWhiteSpace(teamName))
             {
+                Console.SetCursorPosition(borderLeft + 2, cursorY++);
                 ConsoleRenderingService.ShowMessageBox("Tên team không được rỗng!", true, 2000);
                 return;
             }
@@ -131,6 +136,7 @@ namespace EsportsManager.UI.Controllers.Player.Handlers
 
                 var team = await _teamService.CreateTeamAsync(teamDto, _currentUser.Id);
 
+                Console.SetCursorPosition(borderLeft + 2, cursorY++);
                 if (team != null)
                 {
                     ConsoleRenderingService.ShowMessageBox($"Tạo team '{teamName}' thành công!", false, 3000);
@@ -142,6 +148,7 @@ namespace EsportsManager.UI.Controllers.Player.Handlers
             }
             catch (Exception ex)
             {
+                Console.SetCursorPosition(borderLeft + 2, cursorY++);
                 ConsoleRenderingService.ShowMessageBox($"Lỗi: {ex.Message}", true, 3000);
             }
         }
@@ -152,37 +159,45 @@ namespace EsportsManager.UI.Controllers.Player.Handlers
             {
                 Console.Clear();
                 ConsoleRenderingService.DrawBorder("THAM GIA TEAM", 80, 15);
+                int borderLeft = (Console.WindowWidth - 80) / 2;
+                int borderTop = (Console.WindowHeight - 15) / 4;
+                int cursorY = borderTop + 2;
 
+                Console.SetCursorPosition(borderLeft + 2, cursorY++);
                 Console.Write("Nhập tên team muốn tham gia: ");
                 string teamName = Console.ReadLine()?.Trim() ?? "";
 
                 if (string.IsNullOrWhiteSpace(teamName))
                 {
+                    Console.SetCursorPosition(borderLeft + 2, cursorY++);
                     ConsoleRenderingService.ShowMessageBox("Tên team không được rỗng!", true, 2000);
                     return;
                 }
 
-                // Search for team by name
                 var teams = await _teamService.SearchTeamsAsync(teamName);
                 if (!teams.Any())
                 {
+                    Console.SetCursorPosition(borderLeft + 2, cursorY++);
                     ConsoleRenderingService.ShowMessageBox("Không tìm thấy team nào với tên này!", true, 2000);
                     return;
                 }
 
-                Console.WriteLine("\nKết quả tìm kiếm:");
+                Console.SetCursorPosition(borderLeft + 2, cursorY++);
+                Console.WriteLine("Kết quả tìm kiếm:");
                 for (int i = 0; i < teams.Count(); i++)
                 {
                     var team = teams.ElementAt(i);
+                    Console.SetCursorPosition(borderLeft + 4, cursorY++);
                     Console.WriteLine($"{i + 1}. {team.Name} - {team.Description} ({team.MemberCount} thành viên)");
                 }
 
-                Console.Write($"\nChọn team (1-{teams.Count()}): ");
+                Console.SetCursorPosition(borderLeft + 2, cursorY++);
+                Console.Write($"Chọn team (1-{teams.Count()}): ");
                 if (int.TryParse(Console.ReadLine(), out int choice) && choice >= 1 && choice <= teams.Count())
                 {
                     var selectedTeam = teams.ElementAt(choice - 1);
                     var result = await _teamService.RequestToJoinTeamAsync(selectedTeam.Id, _currentUser.Id);
-                    
+                    Console.SetCursorPosition(borderLeft + 2, cursorY++);
                     if (result)
                     {
                         ConsoleRenderingService.ShowMessageBox($"Đã gửi yêu cầu tham gia team '{selectedTeam.Name}' thành công!", false, 3000);
@@ -195,6 +210,9 @@ namespace EsportsManager.UI.Controllers.Player.Handlers
             }
             catch (Exception ex)
             {
+                int borderLeft = (Console.WindowWidth - 80) / 2;
+                int borderTop = (Console.WindowHeight - 15) / 4;
+                Console.SetCursorPosition(borderLeft + 2, borderTop + 13);
                 ConsoleRenderingService.ShowMessageBox($"Lỗi: {ex.Message}", true, 3000);
             }
         }
@@ -209,43 +227,43 @@ namespace EsportsManager.UI.Controllers.Player.Handlers
                 var teams = await _teamService.GetAllTeamsAsync();
                 if (!teams.Any())
                 {
+                    int borderLeft = (Console.WindowWidth - 100) / 2;
+                    int borderTop = (Console.WindowHeight - 20) / 4;
+                    Console.SetCursorPosition(borderLeft + 2, borderTop + 2);
                     ConsoleRenderingService.ShowNotification("Chưa có team nào trong hệ thống", ConsoleColor.Yellow);
                     return;
                 }
 
-                int borderLeft = (Console.WindowWidth - 100) / 2;
-                int borderTop = (Console.WindowHeight - 20) / 4;
+                int borderLeft2 = (Console.WindowWidth - 100) / 2;
+                int borderTop2 = (Console.WindowHeight - 20) / 4;
+                int cursorY = borderTop2 + 2;
 
-                Console.SetCursorPosition(borderLeft + 2, borderTop + 2);
+                Console.SetCursorPosition(borderLeft2 + 2, cursorY++);
                 Console.ForegroundColor = ConsoleColor.White;
                 Console.WriteLine($"{"ID",-5} {"Tên Team",-25} {"Mô tả",-30} {"Thành viên",-12} {"Trạng thái",-10}");
-                Console.SetCursorPosition(borderLeft + 2, borderTop + 3);
+                Console.SetCursorPosition(borderLeft2 + 2, cursorY++);
                 Console.WriteLine(new string('─', 85));
 
-                int currentRow = borderTop + 4;
-                foreach (var team in teams.Take(12))
+                foreach (var team in teams)
                 {
-                    Console.SetCursorPosition(borderLeft + 2, currentRow);
-                    Console.ForegroundColor = ConsoleColor.Green;
+                    Console.SetCursorPosition(borderLeft2 + 2, cursorY++);
                     var row = string.Format("{0,-5} {1,-25} {2,-30} {3,-12} {4,-10}",
-                        team.Id,
-                        DisplayFormattingService.FormatTeamNameForDisplay(team.Name),
-                        DisplayFormattingService.FormatTeamDescriptionForDisplay(team.Description),
-                        $"{team.MemberCount}/{team.MaxMembers}",
-                        team.Status);
+                        team.Id, team.Name, team.Description, team.MemberCount, team.Status);
                     Console.WriteLine(row);
-                    currentRow++;
                 }
 
                 Console.ResetColor();
-                Console.SetCursorPosition(borderLeft + 2, borderTop + 17);
+                Console.SetCursorPosition(borderLeft2 + 2, cursorY++);
                 Console.WriteLine($"Tổng cộng: {teams.Count()} team");
-                Console.SetCursorPosition(borderLeft + 2, borderTop + 18);
-                Console.WriteLine("Nhấn phím bất kỳ để tiếp tục...");
-                Console.ReadKey(true);
+                Console.SetCursorPosition(borderLeft2 + 2, cursorY++);
+                Console.WriteLine("Nhấn Enter để tiếp tục...");
+                Console.ReadLine();
             }
             catch (Exception ex)
             {
+                int borderLeft = (Console.WindowWidth - 100) / 2;
+                int borderTop = (Console.WindowHeight - 20) / 4;
+                Console.SetCursorPosition(borderLeft + 2, borderTop + 18);
                 ConsoleRenderingService.ShowMessageBox($"Lỗi: {ex.Message}", true, 3000);
             }
         }
@@ -256,8 +274,8 @@ namespace EsportsManager.UI.Controllers.Player.Handlers
             {
                 Console.Clear();
                 ConsoleRenderingService.DrawBorder($"THÔNG TIN TEAM: {team.Name}", 100, 20);
-
                 var (left, top, contentWidth) = ConsoleRenderingService.GetBorderContentPosition(100, 20);
+                int cursorY = top + 2;
 
                 string[] teamInfo = {
                     $"📝 Tên team: {team.Name}",
@@ -268,27 +286,30 @@ namespace EsportsManager.UI.Controllers.Player.Handlers
                     "",
                     "📋 Danh sách thành viên:"
                 };
-
-                ConsoleRenderingService.WriteMultipleInBorder(teamInfo, left, top, 0);
+                foreach (var line in teamInfo)
+                {
+                    Console.SetCursorPosition(left + 2, cursorY++);
+                    Console.WriteLine(line);
+                }
 
                 // Show team members
                 var members = await _teamService.GetTeamMembersAsync(team.Id);
-                int memberRow = 8;
                 foreach (var member in members.Take(8))
                 {
-                    Console.SetCursorPosition(left + 2, top + memberRow);
+                    Console.SetCursorPosition(left + 4, cursorY++);
                     var roleText = member.Role == "Leader" ? "👑 Leader" : "👤 Member";
                     var statusText = member.Status == "Active" ? "✅" : "⏳";
                     Console.WriteLine($"{statusText} {member.Username} - {roleText}");
-                    memberRow++;
                 }
 
-                Console.SetCursorPosition(left, top + 17);
+                Console.SetCursorPosition(left + 2, top + 17);
                 Console.WriteLine("Nhấn phím bất kỳ để tiếp tục...");
                 Console.ReadKey(true);
             }
             catch (Exception ex)
             {
+                var (left, top, _) = ConsoleRenderingService.GetBorderContentPosition(100, 20);
+                Console.SetCursorPosition(left + 2, top + 18);
                 ConsoleRenderingService.ShowMessageBox($"Lỗi: {ex.Message}", true, 3000);
             }
         }
@@ -299,12 +320,19 @@ namespace EsportsManager.UI.Controllers.Player.Handlers
             {
                 Console.Clear();
                 ConsoleRenderingService.DrawBorder("RỜI KHỎI TEAM", 80, 12);
+                int borderLeft = (Console.WindowWidth - 80) / 2;
+                int borderTop = (Console.WindowHeight - 12) / 4;
+                int cursorY = borderTop + 2;
 
+                Console.SetCursorPosition(borderLeft + 2, cursorY++);
                 Console.WriteLine($"⚠️  Bạn có chắc chắn muốn rời khỏi team '{team.Name}' không?");
+                Console.SetCursorPosition(borderLeft + 2, cursorY++);
                 Console.WriteLine("Hành động này không thể hoàn tác.");
-                Console.Write("\nXác nhận rời team (YES để xác nhận): ");
+                Console.SetCursorPosition(borderLeft + 2, cursorY++);
+                Console.Write("Xác nhận rời team (YES để xác nhận): ");
 
                 var confirmation = Console.ReadLine()?.Trim();
+                Console.SetCursorPosition(borderLeft + 2, cursorY++);
                 if (confirmation?.ToUpper() == "YES")
                 {
                     var result = await _teamService.RemoveMemberAsync(team.Id, _currentUser.Id, _currentUser.Id);
@@ -324,6 +352,9 @@ namespace EsportsManager.UI.Controllers.Player.Handlers
             }
             catch (Exception ex)
             {
+                int borderLeft = (Console.WindowWidth - 80) / 2;
+                int borderTop = (Console.WindowHeight - 12) / 4;
+                Console.SetCursorPosition(borderLeft + 2, borderTop + 10);
                 ConsoleRenderingService.ShowMessageBox($"Lỗi: {ex.Message}", true, 3000);
             }
         }
@@ -338,39 +369,45 @@ namespace EsportsManager.UI.Controllers.Player.Handlers
                 var members = await _teamService.GetTeamMembersAsync(teamId);
                 if (!members.Any())
                 {
+                    int borderLeft = (Console.WindowWidth - 80) / 2;
+                    int borderTop = (Console.WindowHeight - 15) / 4;
+                    Console.SetCursorPosition(borderLeft + 2, borderTop + 2);
                     ConsoleRenderingService.ShowNotification("Team chưa có thành viên nào", ConsoleColor.Yellow);
                     return;
                 }
 
-                int borderLeft = (Console.WindowWidth - 80) / 2;
-                int borderTop = (Console.WindowHeight - 15) / 4;
+                int borderLeft2 = (Console.WindowWidth - 80) / 2;
+                int borderTop2 = (Console.WindowHeight - 15) / 4;
+                int cursorY = borderTop2 + 2;
 
-                Console.SetCursorPosition(borderLeft + 2, borderTop + 2);
+                Console.SetCursorPosition(borderLeft2 + 2, cursorY++);
                 Console.ForegroundColor = ConsoleColor.White;
                 Console.WriteLine($"{"Username",-20} {"Vai trò",-15} {"Ngày tham gia",-15} {"Trạng thái",-10}");
-                Console.SetCursorPosition(borderLeft + 2, borderTop + 3);
+                Console.SetCursorPosition(borderLeft2 + 2, cursorY++);
                 Console.WriteLine(new string('─', 65));
 
-                int currentRow = borderTop + 4;
                 foreach (var member in members.Take(8))
                 {
-                    Console.SetCursorPosition(borderLeft + 2, currentRow);
+                    Console.SetCursorPosition(borderLeft2 + 2, cursorY);
                     Console.ForegroundColor = member.Role == "Leader" ? ConsoleColor.Yellow : ConsoleColor.Green;
                     var role = member.Role == "Leader" ? "👑 Leader" : "👤 Member";
                     var status = member.Status == "Active" ? "✅ Active" : "⏳ Pending";
                     Console.WriteLine($"{member.Username,-20} {role,-15} {member.JoinDate:dd/MM/yyyy,-15} {status,-10}");
-                    currentRow++;
+                    cursorY++;
                 }
 
                 Console.ResetColor();
-                Console.SetCursorPosition(borderLeft + 2, borderTop + 12);
+                Console.SetCursorPosition(borderLeft2 + 2, cursorY++);
                 Console.WriteLine($"Tổng cộng: {members.Count()} thành viên");
-                Console.SetCursorPosition(borderLeft + 2, borderTop + 13);
+                Console.SetCursorPosition(borderLeft2 + 2, cursorY++);
                 Console.WriteLine("Nhấn phím bất kỳ để tiếp tục...");
                 Console.ReadKey(true);
             }
             catch (Exception ex)
             {
+                int borderLeft = (Console.WindowWidth - 80) / 2;
+                int borderTop = (Console.WindowHeight - 15) / 4;
+                Console.SetCursorPosition(borderLeft + 2, borderTop + 12);
                 ConsoleRenderingService.ShowMessageBox($"Lỗi: {ex.Message}", true, 3000);
             }
         }

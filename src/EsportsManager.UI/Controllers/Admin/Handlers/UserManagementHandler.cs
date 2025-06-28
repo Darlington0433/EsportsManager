@@ -25,36 +25,144 @@ public class UserManagementHandler
             Console.Clear();
             ConsoleRenderingService.DrawBorder("DANH SÁCH NGƯỜI DÙNG", 80, 20);
 
+            int borderLeft = (Console.WindowWidth - 80) / 2;
+            int borderTop = (Console.WindowHeight - 20) / 4;
+            int borderBottom = borderTop + 20;
+
             if (!result.IsSuccess || result.Data == null || !result.Data.Any())
             {
-                // Set cursor vào giữa border để hiển thị thông báo
-                int centerX = (Console.WindowWidth - 30) / 2;
-                int centerY = Console.WindowHeight / 2;
-                Console.SetCursorPosition(centerX, centerY);
+                Console.SetCursorPosition(borderLeft + 2, borderBottom + 1);
                 Console.ForegroundColor = ConsoleColor.Yellow;
                 Console.WriteLine("Không có người dùng nào.");
                 Console.ResetColor();
-                Console.SetCursorPosition(centerX - 10, centerY + 2);
+                Console.SetCursorPosition(borderLeft + 2, borderBottom + 2);
                 Console.WriteLine("Nhấn phím bất kỳ để tiếp tục...");
                 Console.ReadKey(true);
                 return;
             }
 
-            // Tính vị trí để hiển thị data bên trong border
-            int borderLeft = (Console.WindowWidth - 80) / 2;
-            int borderTop = (Console.WindowHeight - 20) / 4;
-
-            // Set cursor vào bên trong border (cách border 2 ký tự từ trái và 2 dòng từ trên)
             Console.SetCursorPosition(borderLeft + 2, borderTop + 2);
 
-            DisplayUsersTableInBorder(result.Data, borderLeft + 2, borderTop + 2, 76);
-
-            // Hiển thị tổng số và thông báo ở cuối border
-            Console.SetCursorPosition(borderLeft + 2, borderTop + 16);
+            Console.SetCursorPosition(borderLeft + 2, borderBottom + 1);
             Console.WriteLine($"Tổng cộng: {result.Data.Count()} người dùng");
-            Console.SetCursorPosition(borderLeft + 2, borderTop + 17);
-            Console.WriteLine("Nhấn phím bất kỳ để tiếp tục...");
-            Console.ReadKey(true);
+            // Đã bỏ gọi PrintUserListShortcuts ở đây để tránh trùng lặp
+
+            int selectedIndex = 0;
+            var users = result.Data.ToList();
+            int maxRows = 12;
+            int page = 0;
+            int totalPages = (int)Math.Ceiling(users.Count / (double)maxRows);
+
+            void RenderPage()
+            {
+                Console.SetCursorPosition(borderLeft + 2, borderTop + 2);
+                var pageUsers = users.Skip(page * maxRows).Take(maxRows).ToList();
+                int tableStartY = borderTop + 3;
+                // Header
+                Console.SetCursorPosition(borderLeft + 2, tableStartY);
+                var header = string.Format("{0,-5} {1,-15} {2,-25} {3,-10} {4,-10}",
+                    "ID", "Username", "Email", "Role", "Status");
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.WriteLine(header);
+                Console.SetCursorPosition(borderLeft + 2, tableStartY + 1);
+                Console.WriteLine(new string('─', 70));
+                // Data rows
+                for (int i = 0; i < pageUsers.Count; i++)
+                {
+                    Console.SetCursorPosition(borderLeft + 2, tableStartY + 2 + i);
+                    if (i == selectedIndex)
+                    {
+                        Console.BackgroundColor = ConsoleColor.DarkGray;
+                        Console.ForegroundColor = ConsoleColor.Black;
+                    }
+                    else
+                    {
+                        Console.BackgroundColor = ConsoleColor.Black;
+                        Console.ForegroundColor = pageUsers[i].Status == "Active" ? ConsoleColor.Green : ConsoleColor.Red;
+                    }
+                    var email = pageUsers[i].Email;
+                    var emailDisplay = string.IsNullOrEmpty(email)
+    ? "N/A"
+    : (email.Length > 24 ? email.Substring(0, 24) : email);
+                    var row = string.Format("{0,-5} {1,-15} {2,-25} {3,-10} {4,-10}",
+                        pageUsers[i].Id,
+                        pageUsers[i].Username.Length > 14 ? pageUsers[i].Username.Substring(0, 14) : pageUsers[i].Username,
+                        $"{emailDisplay}",
+                        pageUsers[i].Role,
+                        pageUsers[i].Status);
+                    Console.WriteLine(row);
+                    Console.ResetColor();
+                }
+                // Footer
+                Console.SetCursorPosition(borderLeft + 2, borderBottom);
+                Console.WriteLine($"[Trang {page + 1}/{totalPages}]");
+                // Chỉ in hướng dẫn phím tắt 1 lần duy nhất ở dưới cùng màn hình
+                if (page == 0 && selectedIndex == 0) // hoặc chỉ in ở lần đầu tiên RenderPage
+                    PrintUserListShortcuts(borderLeft + 2, borderBottom + 1);
+            }
+
+            RenderPage();
+            while (true)
+            {
+                var key = Console.ReadKey(true);
+                if (key.Key == ConsoleKey.F)
+                {
+                    await SearchUsersAsync();
+                    break;
+                }
+                else if (key.Key == ConsoleKey.LeftArrow && page > 0)
+                {
+                    page--;
+                    selectedIndex = 0;
+                    RenderPage();
+                }
+                else if (key.Key == ConsoleKey.RightArrow && page < totalPages - 1)
+                {
+                    page++;
+                    selectedIndex = 0;
+                    RenderPage();
+                }
+                else if (key.Key == ConsoleKey.UpArrow && selectedIndex > 0)
+                {
+                    selectedIndex--;
+                    RenderPage();
+                }
+                else if (key.Key == ConsoleKey.DownArrow && selectedIndex < Math.Min(maxRows, users.Count - page * maxRows) - 1)
+                {
+                    selectedIndex++;
+                    RenderPage();
+                }
+                else if (key.Key == ConsoleKey.Enter)
+                {
+                    var pageUsers = users.Skip(page * maxRows).Take(maxRows).ToList();
+                    if (selectedIndex < pageUsers.Count)
+                    {
+                        var selectedUser = pageUsers[selectedIndex];
+                        // Lấy thông tin profile chi tiết từ service
+                        var profileResult = await _userService.GetUserProfileAsync(selectedUser.Id);
+                        if (profileResult.IsSuccess && profileResult.Data != null)
+                        {
+                            ShowUserProfile(profileResult.Data);
+                        }
+                        else
+                        {
+                            ConsoleRenderingService.ShowMessageBox("Không lấy được thông tin chi tiết người dùng!", true, 2000);
+                        }
+                        RenderPage();
+                    }
+                }
+                else if (key.Key == ConsoleKey.C)
+                {
+                    // Gọi hàm tạo mới hoặc xử lý tạo mới ở đây
+                    // await CreateUserAsync();
+                    break;
+                }
+                else if (key.Key == ConsoleKey.Escape)
+                {
+                    // Thoát menu
+                    break;
+                }
+            }
         }
         catch (Exception ex)
         {
@@ -66,7 +174,13 @@ public class UserManagementHandler
     {
         try
         {
-            Console.Write("\nNhập từ khóa tìm kiếm: ");
+            Console.Clear();
+            ConsoleRenderingService.DrawBorder("TÌM KIẾM NGƯỜI DÙNG", 80, 20);
+            int borderLeft = (Console.WindowWidth - 80) / 2;
+            int borderTop = (Console.WindowHeight - 20) / 4;
+            int borderBottom = borderTop + 20;
+            Console.SetCursorPosition(borderLeft + 2, borderBottom + 1);
+            Console.Write("Nhập từ khóa tìm kiếm: ");
             var searchTerm = Console.ReadLine()?.Trim();
 
             if (string.IsNullOrEmpty(searchTerm))
@@ -86,35 +200,29 @@ public class UserManagementHandler
 
             Console.Clear();
             ConsoleRenderingService.DrawBorder($"KẾT QUẢ TÌM KIẾM: {searchTerm}", 80, 20);
+            borderLeft = (Console.WindowWidth - 80) / 2;
+            borderTop = (Console.WindowHeight - 20) / 4;
+            borderBottom = borderTop + 20;
 
             if (!filteredUsers.Any())
             {
-                // Set cursor vào giữa border để hiển thị thông báo
-                int centerX = (Console.WindowWidth - 25) / 2;
-                int centerY = Console.WindowHeight / 2;
-                Console.SetCursorPosition(centerX, centerY);
+                Console.SetCursorPosition(borderLeft + 2, borderBottom + 1);
                 Console.ForegroundColor = ConsoleColor.Yellow;
                 Console.WriteLine("Không tìm thấy kết quả nào");
                 Console.ResetColor();
-                Console.SetCursorPosition(centerX - 10, centerY + 2);
+                Console.SetCursorPosition(borderLeft + 2, borderBottom + 2);
                 Console.WriteLine("Nhấn phím bất kỳ để tiếp tục...");
                 Console.ReadKey(true);
                 return;
             }
 
-            // Tính vị trí để hiển thị data bên trong border
-            int borderLeft = (Console.WindowWidth - 80) / 2;
-            int borderTop = (Console.WindowHeight - 20) / 4;
-
-            // Set cursor vào bên trong border
             Console.SetCursorPosition(borderLeft + 2, borderTop + 2);
-
             DisplayUsersTableInBorder(filteredUsers, borderLeft + 2, borderTop + 2, 76);
 
-            // Hiển thị tổng số và thông báo ở cuối border
-            Console.SetCursorPosition(borderLeft + 2, borderTop + 16);
+            Console.SetCursorPosition(borderLeft + 2, borderBottom + 1);
             Console.WriteLine($"Tìm thấy: {filteredUsers.Count()} kết quả");
-            Console.SetCursorPosition(borderLeft + 2, borderTop + 17);
+            PrintUserListShortcuts(borderLeft + 2, borderBottom + 2);
+            Console.SetCursorPosition(borderLeft + 2, borderBottom + 3);
             Console.WriteLine("Nhấn phím bất kỳ để tiếp tục...");
             Console.ReadKey(true);
         }
@@ -128,7 +236,13 @@ public class UserManagementHandler
     {
         try
         {
-            Console.Write("\nNhập User ID cần thay đổi trạng thái: ");
+            Console.Clear();
+            ConsoleRenderingService.DrawBorder("THAY ĐỔI TRẠNG THÁI NGƯỜI DÙNG", 80, 12);
+            int borderLeft = (Console.WindowWidth - 80) / 2;
+            int borderTop = (Console.WindowHeight - 12) / 4;
+            int borderBottom = borderTop + 12;
+            Console.SetCursorPosition(borderLeft + 2, borderBottom + 1);
+            Console.Write("Nhập User ID cần thay đổi trạng thái: ");
             if (!int.TryParse(Console.ReadLine(), out int userId))
             {
                 ConsoleRenderingService.ShowNotification("User ID không hợp lệ!", ConsoleColor.Red);
@@ -146,14 +260,13 @@ public class UserManagementHandler
             var newStatus = user.Status == "Active" ? "Inactive" : "Active";
             var actionText = newStatus == "Active" ? "kích hoạt" : "vô hiệu hóa";
 
-            Console.WriteLine($"\nThông tin người dùng:");
-            Console.WriteLine($"ID: {user.Id}");
-            Console.WriteLine($"Username: {user.Username}");
-            Console.WriteLine($"Email: {user.Email}");
-            Console.WriteLine($"Trạng thái hiện tại: {user.Status}");
-            Console.WriteLine($"Trạng thái mới: {newStatus}");
+            Console.SetCursorPosition(borderLeft + 2, borderTop + 2);
+            Console.WriteLine($"ID: {user.Id} | Username: {user.Username} | Email: {user.Email}");
+            Console.SetCursorPosition(borderLeft + 2, borderTop + 3);
+            Console.WriteLine($"Trạng thái hiện tại: {user.Status} → Trạng thái mới: {newStatus}");
 
-            Console.Write($"\nXác nhận {actionText} người dùng này? (y/n): ");
+            Console.SetCursorPosition(borderLeft + 2, borderBottom + 2);
+            Console.Write($"Xác nhận {actionText} người dùng này? (y/n): ");
             var confirmation = Console.ReadLine()?.ToLower();
 
             if (confirmation == "y" || confirmation == "yes")
@@ -183,7 +296,13 @@ public class UserManagementHandler
     {
         try
         {
-            Console.Write("\nNhập User ID cần reset mật khẩu: ");
+            Console.Clear();
+            ConsoleRenderingService.DrawBorder("RESET MẬT KHẨU NGƯỜI DÙNG", 80, 12);
+            int borderLeft = (Console.WindowWidth - 80) / 2;
+            int borderTop = (Console.WindowHeight - 12) / 4;
+            int borderBottom = borderTop + 12;
+            Console.SetCursorPosition(borderLeft + 2, borderBottom + 1);
+            Console.Write("Nhập User ID cần reset mật khẩu: ");
             if (!int.TryParse(Console.ReadLine(), out int userId))
             {
                 ConsoleRenderingService.ShowNotification("User ID không hợp lệ!", ConsoleColor.Red);
@@ -198,11 +317,11 @@ public class UserManagementHandler
             }
 
             var user = userResult.Data;
-            Console.WriteLine($"\nThông tin người dùng:");
-            Console.WriteLine($"Username: {user.Username}");
-            Console.WriteLine($"Email: {user.Email}");
+            Console.SetCursorPosition(borderLeft + 2, borderTop + 2);
+            Console.WriteLine($"Username: {user.Username} | Email: {user.Email}");
 
-            Console.Write("\nXác nhận reset mật khẩu? (y/n): ");
+            Console.SetCursorPosition(borderLeft + 2, borderBottom + 2);
+            Console.Write("Xác nhận reset mật khẩu? (y/n): ");
             var confirmation = Console.ReadLine()?.ToLower();
 
             if (confirmation == "y" || confirmation == "yes")
@@ -234,18 +353,26 @@ public class UserManagementHandler
         {
             Console.Clear();
             ConsoleRenderingService.DrawBorder("XÓA NGƯỜI DÙNG", 80, 15);
-
+            int borderLeft = (Console.WindowWidth - 80) / 2;
+            int borderTop = (Console.WindowHeight - 15) / 4;
+            int borderBottom = borderTop + 15;
+            Console.SetCursorPosition(borderLeft + 2, borderTop + 2);
             Console.WriteLine("⚠️  CẢNH BÁO: Thao tác này sẽ xóa vĩnh viễn người dùng!");
+            Console.SetCursorPosition(borderLeft + 2, borderTop + 3);
             Console.WriteLine("📋 Dữ liệu sẽ bị xóa:");
-            Console.WriteLine("   • Thông tin tài khoản");
-            Console.WriteLine("   • Lịch sử tham gia giải đấu");
-            Console.WriteLine("   • Dữ liệu team");
-            Console.WriteLine("   • Lịch sử giao dịch");
+            Console.SetCursorPosition(borderLeft + 4, borderTop + 4);
+            Console.WriteLine("• Thông tin tài khoản");
+            Console.SetCursorPosition(borderLeft + 4, borderTop + 5);
+            Console.WriteLine("• Lịch sử tham gia giải đấu");
+            Console.SetCursorPosition(borderLeft + 4, borderTop + 6);
+            Console.WriteLine("• Dữ liệu team");
+            Console.SetCursorPosition(borderLeft + 4, borderTop + 7);
+            Console.WriteLine("• Lịch sử giao dịch");
 
-            Console.Write("\nNhập User ID cần xóa: ");
+            Console.SetCursorPosition(borderLeft + 2, borderBottom + 1);
+            Console.Write("Nhập User ID cần xóa: ");
             if (int.TryParse(Console.ReadLine(), out int userId))
             {
-                // Check if trying to delete their own account (Admin cannot delete themselves)
                 var currentUser = EsportsManager.UI.Services.UserSessionManager.CurrentUser;
                 if (currentUser != null && currentUser.Id == userId && currentUser.Role == "Admin")
                 {
@@ -253,7 +380,6 @@ public class UserManagementHandler
                     return;
                 }
 
-                // Get user details to check role
                 var userResult = await _userService.GetUserByIdAsync(userId);
                 if (!userResult.IsSuccess || userResult.Data == null)
                 {
@@ -262,20 +388,17 @@ public class UserManagementHandler
                 }
 
                 var targetUser = userResult.Data;
-
-                // Admin can only delete Player/Viewer, not other Admins
                 if (targetUser.Role == "Admin")
                 {
                     ConsoleRenderingService.ShowMessageBox("❌ Admin không thể xóa tài khoản Admin khác!", true, 3000);
                     return;
                 }
 
-                Console.WriteLine($"\nThông tin người dùng sẽ bị xóa:");
-                Console.WriteLine($"Username: {targetUser.Username}");
-                Console.WriteLine($"Email: {targetUser.Email}");
-                Console.WriteLine($"Role: {targetUser.Role}");
+                Console.SetCursorPosition(borderLeft + 2, borderTop + 9);
+                Console.WriteLine($"Username: {targetUser.Username} | Email: {targetUser.Email} | Role: {targetUser.Role}");
 
-                Console.Write($"\nXác nhận xóa user ID {userId}? (YES để xác nhận): ");
+                Console.SetCursorPosition(borderLeft + 2, borderBottom + 2);
+                Console.Write($"Xác nhận xóa user ID {userId}? (YES để xác nhận): ");
                 string confirmation = Console.ReadLine() ?? "";
 
                 if (confirmation.ToUpper() == "YES")
@@ -503,5 +626,90 @@ public class UserManagementHandler
         }
 
         Console.ResetColor();
+    }
+
+    // Thêm hàm in hướng dẫn/phím tắt dưới border
+    private void PrintUserListShortcuts(int left, int y)
+    {
+        Console.SetCursorPosition(left, y);
+        Console.Write("• Nhấn ");
+        Console.ForegroundColor = ConsoleColor.Yellow;
+        Console.Write("F");
+        Console.ResetColor();
+        Console.Write(" để tìm kiếm, ");
+        Console.ForegroundColor = ConsoleColor.Yellow;
+        Console.Write("Enter");
+        Console.ResetColor();
+        Console.Write(" xem chi tiết, ");
+        Console.ForegroundColor = ConsoleColor.Yellow;
+        Console.Write("C");
+        Console.ResetColor();
+        Console.Write(" tạo mới, ");
+        Console.ForegroundColor = ConsoleColor.Red;
+        Console.Write("ESC");
+        Console.ResetColor();
+        Console.WriteLine(" để thoát.");
+    }
+
+    // Thêm hàm hiển thị chi tiết user
+    private void ShowUserDetail(UserDto user)
+    {
+        Console.Clear();
+        ConsoleRenderingService.DrawBorder($"THÔNG TIN NGƯỜI DÙNG: {user.Username}", 60, 10);
+        int left = (Console.WindowWidth - 60) / 2 + 2;
+        int top = (Console.WindowHeight - 10) / 4 + 2;
+        Console.SetCursorPosition(left, top);
+        Console.WriteLine($"ID: {user.Id}");
+        Console.SetCursorPosition(left, top + 1);
+        Console.WriteLine($"Username: {user.Username}");
+        Console.SetCursorPosition(left, top + 2);
+        Console.WriteLine($"Email: {user.Email}");
+        Console.SetCursorPosition(left, top + 3);
+        Console.WriteLine($"Role: {user.Role}");
+        Console.SetCursorPosition(left, top + 4);
+        Console.WriteLine($"Status: {user.Status}");
+        Console.SetCursorPosition(left, top + 6);
+        Console.WriteLine("Nhấn phím bất kỳ để quay lại...");
+        Console.ReadKey(true);
+        Console.Clear();
+        // Sau khi xem chi tiết, vẽ lại trang danh sách
+        // (Có thể gọi lại RenderPage nếu cần)
+    }
+
+    // Thêm hàm hiển thị chi tiết user profile
+    private void ShowUserProfile(UserProfileDto user)
+    {
+        // Tạo danh sách các dòng thông tin
+        var infoLines = new List<string>
+        {
+            $"ID: {user.Id}",
+            $"Username: {user.Username}",
+            $"Email: {user.Email}",
+            $"Họ tên: {user.FullName ?? ""}",
+            $"Số điện thoại: {user.PhoneNumber ?? ""}",
+            $"Role: {user.Role}",
+            $"Status: {user.Status}",
+            $"Ngày tạo: {user.CreatedAt:dd/MM/yyyy HH:mm}",
+            $"Lần đăng nhập cuối: {(user.LastLoginAt.HasValue ? user.LastLoginAt.Value.ToString("dd/MM/yyyy HH:mm") : "")}"        
+        };
+        int boxWidth = Math.Max(infoLines.Max(l => l.Length) + 8, 50); // padding 4 mỗi bên, tối thiểu 50
+        int boxHeight = infoLines.Count + 5; // 3 dòng trên + info + 2 dòng dưới
+        int left = (Console.WindowWidth - boxWidth) / 2;
+        int top = (Console.WindowHeight - boxHeight) / 2;
+
+        Console.Clear();
+        // Vẽ border trước, không clear lại sau khi vẽ
+        ConsoleRenderingService.DrawBorder($"THÔNG TIN NGƯỜI DÙNG: {user.Username}", boxWidth, boxHeight);
+
+        int contentLeft = left + 2;
+        int contentTop = top + 3; // +3 để tránh đè lên dòng tiêu đề border
+        for (int i = 0; i < infoLines.Count; i++)
+        {
+            Console.SetCursorPosition(contentLeft, contentTop + i);
+            Console.WriteLine(infoLines[i].PadRight(boxWidth - 4));
+        }
+        Console.SetCursorPosition(contentLeft, contentTop + infoLines.Count + 1);
+        Console.Write("Nhấn phím bất kỳ để quay lại...".PadRight(boxWidth - 4));
+        Console.ReadKey(true);
     }
 }
