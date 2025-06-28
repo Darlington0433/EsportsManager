@@ -55,7 +55,11 @@ public class UserManagementHandler
 
             void RenderPage()
             {
-                Console.SetCursorPosition(borderLeft + 2, borderTop + 2);
+                Console.Clear();
+                ConsoleRenderingService.DrawBorder("DANH SÁCH NGƯỜI DÙNG", 80, 20);
+                int borderLeft = (Console.WindowWidth - 80) / 2;
+                int borderTop = (Console.WindowHeight - 20) / 4;
+                int borderBottom = borderTop + 20;
                 var pageUsers = users.Skip(page * maxRows).Take(maxRows).ToList();
                 int tableStartY = borderTop + 3;
                 // Header
@@ -82,8 +86,8 @@ public class UserManagementHandler
                     }
                     var email = pageUsers[i].Email;
                     var emailDisplay = string.IsNullOrEmpty(email)
-    ? "N/A"
-    : (email.Length > 24 ? email.Substring(0, 24) : email);
+                        ? "N/A"
+                        : (email.Length > 24 ? email.Substring(0, 24) : email);
                     var row = string.Format("{0,-5} {1,-15} {2,-25} {3,-10} {4,-10}",
                         pageUsers[i].Id,
                         pageUsers[i].Username.Length > 14 ? pageUsers[i].Username.Substring(0, 14) : pageUsers[i].Username,
@@ -94,11 +98,14 @@ public class UserManagementHandler
                     Console.ResetColor();
                 }
                 // Footer
-                Console.SetCursorPosition(borderLeft + 2, borderBottom);
+                int footerY = borderBottom;
+                int footerX = borderLeft + (80 - 15) / 2; // căn giữa chuỗi [Trang x/y]
+                Console.SetCursorPosition(footerX, footerY);
                 Console.WriteLine($"[Trang {page + 1}/{totalPages}]");
-                // Chỉ in hướng dẫn phím tắt 1 lần duy nhất ở dưới cùng màn hình
-                if (page == 0 && selectedIndex == 0) // hoặc chỉ in ở lần đầu tiên RenderPage
-                    PrintUserListShortcuts(borderLeft + 2, borderBottom + 1);
+                // Luôn hiển thị chỉ dẫn phím tắt ở dưới border, căn giữa
+                int shortcutY = borderBottom + 1;
+                int shortcutX = borderLeft + (80 - 60) / 2; // căn giữa chỉ dẫn (giả sử chỉ dẫn dài 60 ký tự)
+                PrintUserListShortcuts(shortcutX, shortcutY);
             }
 
             RenderPage();
@@ -143,6 +150,16 @@ public class UserManagementHandler
                         if (profileResult.IsSuccess && profileResult.Data != null)
                         {
                             ShowUserProfile(profileResult.Data);
+                            // Làm mới danh sách sau khi xem profile
+                            Console.Clear();
+                            var refreshResult = await _userService.GetActiveUsersAsync();
+                            if (refreshResult.IsSuccess && refreshResult.Data != null)
+                            {
+                                users = refreshResult.Data.ToList();
+                                totalPages = (int)Math.Ceiling(users.Count / (double)maxRows);
+                                if (page >= totalPages) page = Math.Max(0, totalPages - 1);
+                                selectedIndex = 0;
+                            }
                         }
                         else
                         {
@@ -679,37 +696,35 @@ public class UserManagementHandler
     // Thêm hàm hiển thị chi tiết user profile
     private void ShowUserProfile(UserProfileDto user)
     {
-        // Tạo danh sách các dòng thông tin
+        // Chuẩn bị dữ liệu hiển thị
         var infoLines = new List<string>
         {
             $"ID: {user.Id}",
             $"Username: {user.Username}",
-            $"Email: {user.Email}",
-            $"Họ tên: {user.FullName ?? ""}",
-            $"Số điện thoại: {user.PhoneNumber ?? ""}",
+            $"Email: {user.Email ?? "N/A"}",
+            $"Họ tên: {user.FullName ?? "N/A"}",
+            $"Số điện thoại: {user.PhoneNumber ?? "N/A"}",
             $"Role: {user.Role}",
             $"Status: {user.Status}",
             $"Ngày tạo: {user.CreatedAt:dd/MM/yyyy HH:mm}",
-            $"Lần đăng nhập cuối: {(user.LastLoginAt.HasValue ? user.LastLoginAt.Value.ToString("dd/MM/yyyy HH:mm") : "")}"        
+            $"Lần đăng nhập cuối: {(user.LastLoginAt.HasValue ? user.LastLoginAt.Value.ToString("dd/MM/yyyy HH:mm") : "N/A")}"
         };
-        int boxWidth = Math.Max(infoLines.Max(l => l.Length) + 8, 50); // padding 4 mỗi bên, tối thiểu 50
-        int boxHeight = infoLines.Count + 5; // 3 dòng trên + info + 2 dòng dưới
-        int left = (Console.WindowWidth - boxWidth) / 2;
-        int top = (Console.WindowHeight - boxHeight) / 2;
-
+        // Tính toán kích thước box phù hợp
+        int boxWidth = Math.Max(infoLines.Max(l => l.Length) + 8, 50);
+        int boxHeight = infoLines.Count + 5;
+        // Vẽ border căn giữa
         Console.Clear();
-        // Vẽ border trước, không clear lại sau khi vẽ
         ConsoleRenderingService.DrawBorder($"THÔNG TIN NGƯỜI DÙNG: {user.Username}", boxWidth, boxHeight);
-
-        int contentLeft = left + 2;
-        int contentTop = top + 3; // +3 để tránh đè lên dòng tiêu đề border
+        // Lấy vị trí content bên trong border
+        var (contentLeft, contentTop, contentWidth) = ConsoleRenderingService.GetBorderContentPosition(boxWidth, boxHeight);
+        // Hiển thị từng dòng thông tin
         for (int i = 0; i < infoLines.Count; i++)
         {
             Console.SetCursorPosition(contentLeft, contentTop + i);
-            Console.WriteLine(infoLines[i].PadRight(boxWidth - 4));
+            Console.WriteLine(infoLines[i].PadRight(contentWidth));
         }
         Console.SetCursorPosition(contentLeft, contentTop + infoLines.Count + 1);
-        Console.Write("Nhấn phím bất kỳ để quay lại...".PadRight(boxWidth - 4));
+        Console.Write("Nhấn phím bất kỳ để quay lại...".PadRight(contentWidth));
         Console.ReadKey(true);
     }
 }

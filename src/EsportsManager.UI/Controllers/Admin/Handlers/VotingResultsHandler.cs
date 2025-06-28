@@ -65,43 +65,57 @@ public class VotingResultsHandler : IVotingResultsHandler
     {
         try
         {
+            int borderWidth = 100;
+            int borderHeight = 25;
+            int maxRows = 15;
             Console.Clear();
-            ConsoleRenderingService.DrawBorder("KẾT QUẢ VOTING PLAYER", 100, 25);
-
-            Console.WriteLine("🏆 KẾT QUẢ VOTING PLAYER:");
-            Console.WriteLine("-------------------------");
-
+            ConsoleRenderingService.DrawBorder("KẾT QUẢ VOTING PLAYER", borderWidth, borderHeight);
+            var (left, top, width) = ConsoleRenderingService.GetBorderContentPosition(borderWidth, borderHeight);
             // Lấy dữ liệu từ service
             var playerResults = await _votingService.GetPlayerVotingResultsAsync();
-
             if (playerResults == null || !playerResults.Any())
             {
-                Console.WriteLine("\n⚠️ Không có dữ liệu voting cho players.");
+                Console.SetCursorPosition(left, top);
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine("Không có dữ liệu voting cho players.".PadRight(width));
+                Console.ResetColor();
+                Console.SetCursorPosition(left, top + 1);
+                Console.WriteLine("Nhấn phím bất kỳ để tiếp tục...".PadRight(width));
+                Console.ReadKey(true);
+                return;
             }
-            else
+            // Header
+            var header = string.Format("{0,-5}{1,-15}{2,-10}{3,-10}{4,-30}",
+                "ID", "Player", "Điểm TB", "Số vote", "Phân bố điểm");
+            Console.SetCursorPosition(left, top);
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.WriteLine(header.Length > width ? header.Substring(0, width) : header.PadRight(width));
+            Console.SetCursorPosition(left, top + 1);
+            Console.WriteLine(new string('-', Math.Min(70, width)));
+            // Data rows
+            int displayCount = Math.Min(playerResults.Count, maxRows);
+            foreach (var (result, i) in playerResults.OrderByDescending(r => r.AverageRating).Select((r, i) => (r, i)))
             {
-                // Header
-                Console.WriteLine($"{"ID",-5}{"Player",-15}{"Điểm TB",-10}{"Số vote",-10}{"Phân bố điểm",-30}");
-                Console.WriteLine(new string('-', 70));
-
-                // Data
-                foreach (var result in playerResults.OrderByDescending(r => r.AverageRating))
-                {
-                    // Tạo phân bố điểm dạng biểu đồ text đơn giản
-                    string distribution = "";
-                    for (int i = 1; i <= 5; i++)
-                    {
-                        int count = result.RatingDistribution.ContainsKey(i) ? result.RatingDistribution[i] : 0;
-                        distribution += $"{i}★:{count} ";
-                    }
-
-                    Console.WriteLine($"{result.TargetId,-5}{result.TargetName,-15}{result.AverageRating,-10:F2}{result.TotalVotes,-10}{distribution,-30}");
-                }
-
-                Console.WriteLine($"\nTổng số: {playerResults.Count} players có đánh giá");
+                if (i >= maxRows) break;
+                string distribution = string.Join(" ", Enumerable.Range(1, 5).Select(star => $"{star}★:{(result.RatingDistribution.ContainsKey(star) ? result.RatingDistribution[star] : 0)}"));
+                var row = string.Format("{0,-5}{1,-15}{2,-10:F2}{3,-10}{4,-30}",
+                    result.TargetId,
+                    result.TargetName.Length > 14 ? result.TargetName.Substring(0, 14) : result.TargetName,
+                    result.AverageRating,
+                    result.TotalVotes,
+                    distribution.Length > 29 ? distribution.Substring(0, 29) : distribution);
+                Console.SetCursorPosition(left, top + 2 + i);
+                Console.WriteLine(row.Length > width ? row.Substring(0, width) : row.PadRight(width));
             }
-
-            Console.WriteLine("\nNhấn phím bất kỳ để tiếp tục...");
+            Console.ResetColor();
+            // Footer
+            int footerY = top + 2 + maxRows;
+            string totalInfo = $"Tổng số: {playerResults.Count} players có đánh giá";
+            if (totalInfo.Length > width) totalInfo = totalInfo.Substring(0, width);
+            Console.SetCursorPosition(left, footerY);
+            Console.WriteLine(totalInfo.PadRight(width));
+            Console.SetCursorPosition(left, footerY + 1);
+            Console.WriteLine("Nhấn phím bất kỳ để tiếp tục...".PadRight(width));
             Console.ReadKey(true);
         }
         catch (Exception ex)
@@ -114,43 +128,57 @@ public class VotingResultsHandler : IVotingResultsHandler
     {
         try
         {
+            int borderWidth = 100;
+            int borderHeight = 25;
+            int maxRows = 15;
             Console.Clear();
-            ConsoleRenderingService.DrawBorder("KẾT QUẢ VOTING TOURNAMENT", 100, 25);
-
-            Console.WriteLine("🎖️ KẾT QUẢ VOTING TOURNAMENT:");
-            Console.WriteLine("-----------------------------");
-
+            ConsoleRenderingService.DrawBorder("KẾT QUẢ VOTING TOURNAMENT", borderWidth, borderHeight);
+            var (left, top, width) = ConsoleRenderingService.GetBorderContentPosition(borderWidth, borderHeight);
             // Lấy dữ liệu từ service
             var tournamentResults = await _votingService.GetTournamentVotingResultsAsync();
-
             if (tournamentResults == null || !tournamentResults.Any())
             {
-                Console.WriteLine("\n⚠️ Không có dữ liệu voting cho tournaments.");
+                Console.SetCursorPosition(left, top);
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine("Không có dữ liệu voting cho tournaments.".PadRight(width));
+                Console.ResetColor();
+                Console.SetCursorPosition(left, top + 1);
+                Console.WriteLine("Nhấn phím bất kỳ để tiếp tục...".PadRight(width));
+                Console.ReadKey(true);
+                return;
             }
-            else
+            // Header
+            var header = string.Format("{0,-5}{1,-25}{2,-10}{3,-10}{4,-30}",
+                "ID", "Tournament", "Điểm TB", "Số vote", "Phân bố điểm");
+            Console.SetCursorPosition(left, top);
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.WriteLine(header.Length > width ? header.Substring(0, width) : header.PadRight(width));
+            Console.SetCursorPosition(left, top + 1);
+            Console.WriteLine(new string('-', Math.Min(80, width)));
+            // Data rows
+            int displayCount = Math.Min(tournamentResults.Count, maxRows);
+            foreach (var (result, i) in tournamentResults.OrderByDescending(r => r.AverageRating).Select((r, i) => (r, i)))
             {
-                // Header
-                Console.WriteLine($"{"ID",-5}{"Tournament",-25}{"Điểm TB",-10}{"Số vote",-10}{"Phân bố điểm",-30}");
-                Console.WriteLine(new string('-', 80));
-
-                // Data
-                foreach (var result in tournamentResults.OrderByDescending(r => r.AverageRating))
-                {
-                    // Tạo phân bố điểm dạng biểu đồ text đơn giản
-                    string distribution = "";
-                    for (int i = 1; i <= 5; i++)
-                    {
-                        int count = result.RatingDistribution.ContainsKey(i) ? result.RatingDistribution[i] : 0;
-                        distribution += $"{i}★:{count} ";
-                    }
-
-                    Console.WriteLine($"{result.TargetId,-5}{result.TargetName,-25}{result.AverageRating,-10:F2}{result.TotalVotes,-10}{distribution,-30}");
-                }
-
-                Console.WriteLine($"\nTổng số: {tournamentResults.Count} tournaments có đánh giá");
+                if (i >= maxRows) break;
+                string distribution = string.Join(" ", Enumerable.Range(1, 5).Select(star => $"{star}★:{(result.RatingDistribution.ContainsKey(star) ? result.RatingDistribution[star] : 0)}"));
+                var row = string.Format("{0,-5}{1,-25}{2,-10:F2}{3,-10}{4,-30}",
+                    result.TargetId,
+                    result.TargetName.Length > 24 ? result.TargetName.Substring(0, 24) : result.TargetName,
+                    result.AverageRating,
+                    result.TotalVotes,
+                    distribution.Length > 29 ? distribution.Substring(0, 29) : distribution);
+                Console.SetCursorPosition(left, top + 2 + i);
+                Console.WriteLine(row.Length > width ? row.Substring(0, width) : row.PadRight(width));
             }
-
-            Console.WriteLine("\nNhấn phím bất kỳ để tiếp tục...");
+            Console.ResetColor();
+            // Footer
+            int footerY = top + 2 + maxRows;
+            string totalInfo = $"Tổng số: {tournamentResults.Count} tournaments có đánh giá";
+            if (totalInfo.Length > width) totalInfo = totalInfo.Substring(0, width);
+            Console.SetCursorPosition(left, footerY);
+            Console.WriteLine(totalInfo.PadRight(width));
+            Console.SetCursorPosition(left, footerY + 1);
+            Console.WriteLine("Nhấn phím bất kỳ để tiếp tục...".PadRight(width));
             Console.ReadKey(true);
         }
         catch (Exception ex)

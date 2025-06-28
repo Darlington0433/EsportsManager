@@ -52,5 +52,8 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
+  <Target Name="RemoveCreatedump" AfterTargets="Build;Publish">
+    <Delete Files="$(OutDir)createdump.exe" ContinueOnError="true" />
+  </Target>
 
 </Project>

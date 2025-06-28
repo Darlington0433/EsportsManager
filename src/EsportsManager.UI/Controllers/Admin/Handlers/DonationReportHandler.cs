@@ -73,38 +73,47 @@ public class DonationReportHandler : IDonationReportHandler
     {
         try
         {
+            int borderWidth = 80;
+            int borderHeight = 20;
             Console.Clear();
-            ConsoleRenderingService.DrawBorder("TỔNG QUAN DONATION", 80, 20);
-
+            ConsoleRenderingService.DrawBorder("TỔNG QUAN DONATION", borderWidth, borderHeight);
+            var (left, top, width) = ConsoleRenderingService.GetBorderContentPosition(borderWidth, borderHeight);
             // Hiển thị thông báo đang tải
-            Console.WriteLine("Đang tải dữ liệu...");
-
+            Console.SetCursorPosition(left, top);
+            Console.WriteLine("Đang tải dữ liệu...".PadRight(width));
             // Lấy dữ liệu từ service
             var overview = await _walletService.GetDonationOverviewAsync();
-
             Console.Clear();
-            ConsoleRenderingService.DrawBorder("TỔNG QUAN DONATION", 80, 20);
-
+            ConsoleRenderingService.DrawBorder("TỔNG QUAN DONATION", borderWidth, borderHeight);
+            (left, top, width) = ConsoleRenderingService.GetBorderContentPosition(borderWidth, borderHeight);
             // Hiển thị thông tin tổng quan
-            Console.WriteLine("📊 THỐNG KÊ DONATION:");
-            Console.WriteLine(new string('─', 50));
-            Console.WriteLine($"💰 Tổng số donation: {overview.TotalDonations:N0} lượt");
-            Console.WriteLine($"🎯 Số người nhận donation: {overview.TotalReceivers:N0}");
-            Console.WriteLine($"👥 Số người donation: {overview.TotalDonators:N0}");
-            Console.WriteLine($"📈 Tổng giá trị: {overview.TotalDonationAmount:N0} VND");
-            Console.WriteLine($"⏱️ Cập nhật lần cuối: {overview.LastUpdated:dd/MM/yyyy HH:mm:ss}");
-
-            // Hiển thị thống kê theo loại
-            Console.WriteLine("\n📊 THỐNG KÊ THEO LOẠI:");
-            Console.WriteLine(new string('─', 50));
+            string[] lines = {
+                "📊 THỐNG KÊ DONATION:",
+                new string('─', Math.Min(50, width)),
+                $"💰 Tổng số donation: {overview.TotalDonations:N0} lượt",
+                $"🎯 Số người nhận donation: {overview.TotalReceivers:N0}",
+                $"👥 Số người donation: {overview.TotalDonators:N0}",
+                $"📈 Tổng giá trị: {overview.TotalDonationAmount:N0} VND",
+                $"⏱️ Cập nhật lần cuối: {overview.LastUpdated:dd/MM/yyyy HH:mm:ss}",
+                "",
+                "📊 THỐNG KÊ THEO LOẠI:",
+                new string('─', Math.Min(50, width))
+            };
+            for (int i = 0; i < lines.Length; i++)
+            {
+                Console.SetCursorPosition(left, top + i);
+                Console.WriteLine(lines[i].Length > width ? lines[i].Substring(0, width) : lines[i].PadRight(width));
+            }
+            int row = top + lines.Length;
             foreach (var item in overview.DonationByType)
             {
-                string type = item.Key == "Tournament" ? "Giải đấu" :
-                              item.Key == "Team" ? "Đội" : item.Key;
-                Console.WriteLine($"- {type}: {item.Value:N0} VND");
+                string type = item.Key == "Tournament" ? "Giải đấu" : item.Key == "Team" ? "Đội" : item.Key;
+                string line = $"- {type}: {item.Value:N0} VND";
+                Console.SetCursorPosition(left, row++);
+                Console.WriteLine(line.Length > width ? line.Substring(0, width) : line.PadRight(width));
             }
-
-            Console.WriteLine("\nNhấn phím bất kỳ để tiếp tục...");
+            Console.SetCursorPosition(left, row + 1);
+            Console.WriteLine("Nhấn phím bất kỳ để tiếp tục...".PadRight(width));
             Console.ReadKey(true);
         }
         catch (Exception ex)
@@ -136,39 +145,43 @@ public class DonationReportHandler : IDonationReportHandler
     {
         try
         {
+            int borderWidth = 80;
+            int borderHeight = 20;
+            int maxRows = 10;
             Console.Clear();
-            ConsoleRenderingService.DrawBorder("TOP NGƯỜI NHẬN DONATION", 80, 20);
-
+            ConsoleRenderingService.DrawBorder("TOP NGƯỜI NHẬN DONATION", borderWidth, borderHeight);
+            var (left, top, width) = ConsoleRenderingService.GetBorderContentPosition(borderWidth, borderHeight);
             // Hiển thị thông báo đang tải
-            Console.WriteLine("Đang tải dữ liệu...");
-
+            Console.SetCursorPosition(left, top);
+            Console.WriteLine("Đang tải dữ liệu...".PadRight(width));
             // Lấy data từ service (mặc định là 10 người)
             var topReceivers = await _walletService.GetTopDonationReceiversAsync();
-
             Console.Clear();
-            ConsoleRenderingService.DrawBorder("TOP NGƯỜI NHẬN DONATION", 80, 20);
-
-            Console.WriteLine("🏆 TOP NGƯỜI NHẬN DONATION NHIỀU NHẤT:");
-            Console.WriteLine(new string('─', 70));
-            Console.WriteLine($"{"Hạng",5} {"Tên",15} {"Loại",10} {"Số donation",12} {"Tổng tiền",15} {"Donation gần nhất",20}");
-            Console.WriteLine(new string('─', 70));
-
+            ConsoleRenderingService.DrawBorder("TOP NGƯỜI NHẬN DONATION", borderWidth, borderHeight);
+            (left, top, width) = ConsoleRenderingService.GetBorderContentPosition(borderWidth, borderHeight);
+            // Header
+            var header = string.Format("{0,5} {1,-15} {2,-10} {3,12} {4,15} {5,20}",
+                "Hạng", "Tên", "Loại", "Số donation", "Tổng tiền", "Donation gần nhất");
+            Console.SetCursorPosition(left, top);
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.WriteLine(header.Length > width ? header.Substring(0, width) : header.PadRight(width));
+            Console.SetCursorPosition(left, top + 1);
+            Console.WriteLine(new string('─', Math.Min(70, width)));
             int rank = 1;
-            foreach (var receiver in topReceivers)
+            int row = top + 2;
+            foreach (var receiver in topReceivers.Take(maxRows))
             {
-                string formattedName = receiver.Username.Length > 15
-                    ? receiver.Username.Substring(0, 12) + "..."
-                    : receiver.Username;
-
-                string formattedType = receiver.UserType == "Tournament" ? "Giải đấu" :
-                                      receiver.UserType == "Team" ? "Đội" : receiver.UserType;
-
-                Console.WriteLine($"{rank,5} {formattedName,-15} {formattedType,-10} {receiver.DonationCount,12} " +
-                                 $"{receiver.TotalAmount,15:N0} {receiver.LastDonation,20:dd/MM/yyyy HH:mm}");
+                string formattedName = receiver.Username.Length > 15 ? receiver.Username.Substring(0, 12) + "..." : receiver.Username;
+                string formattedType = receiver.UserType == "Tournament" ? "Giải đấu" : receiver.UserType == "Team" ? "Đội" : receiver.UserType;
+                var line = string.Format("{0,5} {1,-15} {2,-10} {3,12} {4,15:N0} {5,20:dd/MM/yyyy HH:mm}",
+                    rank, formattedName, formattedType, receiver.DonationCount, receiver.TotalAmount, receiver.LastDonation);
+                Console.SetCursorPosition(left, row++);
+                Console.WriteLine(line.Length > width ? line.Substring(0, width) : line.PadRight(width));
                 rank++;
             }
-
-            Console.WriteLine("\nNhấn phím bất kỳ để tiếp tục...");
+            Console.ResetColor();
+            Console.SetCursorPosition(left, row + 1);
+            Console.WriteLine("Nhấn phím bất kỳ để tiếp tục...".PadRight(width));
             Console.ReadKey(true);
         }
         catch (Exception ex)

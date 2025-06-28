@@ -68,20 +68,55 @@ public class TournamentManagementHandler : BaseHandler
         try
         {
             var tournaments = await _tournamentService.GetAllTournamentsAsync();
-
+            int borderWidth = 120;
+            int borderHeight = 25;
+            int maxRows = 15;
             Console.Clear();
-            ConsoleRenderingService.DrawBorder("DANH SÁCH GIẢI ĐẤU", 120, 25);
-
+            ConsoleRenderingService.DrawBorder("DANH SÁCH GIẢI ĐẤU", borderWidth, borderHeight);
+            var (left, top, width) = ConsoleRenderingService.GetBorderContentPosition(borderWidth, borderHeight);
             if (tournaments == null || !tournaments.Any())
             {
-                ConsoleRenderingService.ShowNotification("Chưa có giải đấu nào trong hệ thống.", ConsoleColor.Yellow);
+                Console.SetCursorPosition(left, top);
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine("Chưa có giải đấu nào trong hệ thống.".PadRight(width));
+                Console.ResetColor();
+                Console.SetCursorPosition(left, top + 1);
+                Console.WriteLine("Nhấn phím bất kỳ để tiếp tục...".PadRight(width));
+                Console.ReadKey(true);
                 return;
             }
-
-            DisplayTournamentsTable(tournaments);
-
-            Console.WriteLine($"\nTổng cộng: {tournaments.Count} giải đấu");
-            Console.WriteLine("\nNhấn phím bất kỳ để tiếp tục...");
+            // Header
+            var header = string.Format("{0,-5} {1,-30} {2,-15} {3,-10} {4,-10} {5,-15}",
+                "ID", "Tên giải đấu", "Trạng thái", "Ngày bắt đầu", "Ngày kết thúc", "Tổng giải thưởng");
+            Console.SetCursorPosition(left, top);
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.WriteLine(header.Length > width ? header.Substring(0, width) : header.PadRight(width));
+            Console.SetCursorPosition(left, top + 1);
+            Console.WriteLine(new string('─', Math.Min(110, width)));
+            // Data rows
+            int displayCount = Math.Min(tournaments.Count, maxRows);
+            for (int i = 0; i < displayCount; i++)
+            {
+                var t = tournaments[i];
+                Console.SetCursorPosition(left, top + 2 + i);
+                var row = string.Format("{0,-5} {1,-30} {2,-15} {3,-10:dd/MM} {4,-10:dd/MM} {5,-15:N0}",
+                    t.TournamentId,
+                    t.TournamentName.Length > 29 ? t.TournamentName.Substring(0, 29) : t.TournamentName,
+                    t.Status,
+                    t.StartDate,
+                    t.EndDate,
+                    t.PrizePool);
+                Console.WriteLine(row.Length > width ? row.Substring(0, width) : row.PadRight(width));
+            }
+            Console.ResetColor();
+            // Footer
+            int footerY = top + 2 + maxRows;
+            string totalInfo = $"Tổng cộng: {tournaments.Count} giải đấu";
+            if (totalInfo.Length > width) totalInfo = totalInfo.Substring(0, width);
+            Console.SetCursorPosition(left, footerY);
+            Console.WriteLine(totalInfo.PadRight(width));
+            Console.SetCursorPosition(left, footerY + 1);
+            Console.WriteLine("Nhấn phím bất kỳ để tiếp tục...".PadRight(width));
             Console.ReadKey(true);
         }
         catch (Exception ex)
@@ -227,38 +262,7 @@ public class TournamentManagementHandler : BaseHandler
             Console.Clear();
             ConsoleRenderingService.DrawBorder("DUYỆT ĐĂNG KÝ GIẢI ĐẤU", 120, 25);
 
-<<<<<<< HEAD
             // Get pending tournament registrations using the new service method
-=======
-            int borderLeft = (Console.WindowWidth - 80) / 2;
-            int borderTop = (Console.WindowHeight - 20) / 4;
-
-            // TODO: Cần bổ sung phương thức GetPendingRegistrationsAsync vào ITournamentService và triển khai trong TournamentService
-            Console.SetCursorPosition(borderLeft + 2, borderTop + 2);
-            Console.ForegroundColor = ConsoleColor.Yellow;
-            Console.WriteLine("⚠️ Tính năng chưa được triển khai đầy đủ");
-            Console.WriteLine();
-
-            Console.SetCursorPosition(borderLeft + 2, borderTop + 4);
-            Console.ForegroundColor = ConsoleColor.White;
-            Console.WriteLine("Cần bổ sung các phương thức sau vào ITournamentService:");
-            Console.SetCursorPosition(borderLeft + 2, borderTop + 5);
-            Console.WriteLine("- GetPendingRegistrationsAsync()");
-            Console.SetCursorPosition(borderLeft + 2, borderTop + 6);
-            Console.WriteLine("- ApproveRegistrationAsync(int registrationId)");
-
-            Console.SetCursorPosition(borderLeft + 2, borderTop + 8);
-            Console.WriteLine("Vui lòng liên hệ với team phát triển để hoàn thiện tính năng này.");
-
-            Console.ResetColor();
-            Console.SetCursorPosition(borderLeft + 2, borderTop + 10);
-            Console.WriteLine("Nhấn phím bất kỳ để quay lại...");
-            Console.ReadKey(true);
-
-            await Task.CompletedTask; // Để đảm bảo phương thức có await
-
-            /* TODO: Triển khai khi bổ sung các phương thức vào ITournamentService
->>>>>>> remote/Quan
             var pendingRegistrations = await _tournamentService.GetPendingRegistrationsAsync();
             
             if (!pendingRegistrations.Any())
@@ -304,13 +308,8 @@ public class TournamentManagementHandler : BaseHandler
             
             if (int.TryParse(Console.ReadLine(), out int registrationId) && registrationId > 0)
             {
-<<<<<<< HEAD
                 var selectedRegistration = pendingRegistrations.FirstOrDefault(r => r.RegistrationId == registrationId);
                 if (selectedRegistration == null)
-=======
-                var result = await _tournamentService.ApproveRegistrationAsync(registrationId);
-                if (result)
->>>>>>> remote/Quan
                 {
                     ConsoleRenderingService.ShowMessageBox("❌ Không tìm thấy đăng ký với ID này!", true, 2000);
                     return;

@@ -23,11 +23,14 @@ public class SystemStatsHandler
     {
         try
         {
+            int borderWidth = 80;
+            int borderHeight = 25;
             Console.Clear();
-            ConsoleRenderingService.DrawBorder("THỐNG KÊ HỆ THỐNG", 80, 25);
-
+            ConsoleRenderingService.DrawBorder("THỐNG KÊ HỆ THỐNG", borderWidth, borderHeight);
+            var (left, top, width) = ConsoleRenderingService.GetBorderContentPosition(borderWidth, borderHeight);
             // Show loading message
-            Console.WriteLine("🔄 Đang tải dữ liệu thống kê...");
+            Console.SetCursorPosition(left, top);
+            Console.WriteLine("🔄 Đang tải dữ liệu thống kê...".PadRight(width));
 
             // Initialize variables with defaults
             List<UserProfileDto>? users = null;
@@ -103,88 +106,68 @@ public class SystemStatsHandler
 
             // Clear and redraw with actual data
             Console.Clear();
-            ConsoleRenderingService.DrawBorder("THỐNG KÊ HỆ THỐNG", 80, 25);
+            ConsoleRenderingService.DrawBorder("THỐNG KÊ HỆ THỐNG", borderWidth, borderHeight);
+            (left, top, width) = ConsoleRenderingService.GetBorderContentPosition(borderWidth, borderHeight);
 
-            Console.WriteLine("📊 TỔNG QUAN HỆ THỐNG:");
-            Console.WriteLine(new string('═', 60));
-            Console.WriteLine($"👥 Tổng số người dùng      : {totalUsers:N0}");
-            Console.WriteLine($"🏆 Tổng số giải đấu        : {totalTournaments:N0}");
-            Console.WriteLine($"⚔️ Tổng số đội             : {totalTeams:N0}");
-            Console.WriteLine($"🎮 Giải đấu đang hoạt động : {ongoingTournaments:N0}");
-            Console.WriteLine($"✅ Giải đấu đã hoàn thành  : {completedTournaments:N0}");
-
-            Console.WriteLine("\n💰 THỐNG KÊ TÀI CHÍNH:");
-            Console.WriteLine(new string('═', 60));
-            Console.WriteLine($"💎 Tổng giải thưởng        : {totalPrizePool:N0} VND");
-            Console.WriteLine($"� Tổng phí tham gia       : {totalEntryFees:N0} VND");
-            Console.WriteLine($"� Doanh thu ước tính      : {(totalEntryFees - totalPrizePool):N0} VND");
-
-            Console.WriteLine("\n📈 THỐNG KÊ HOẠT ĐỘNG:");
-            Console.WriteLine(new string('═', 60));
-            Console.WriteLine($"👤 Người dùng hoạt động    : {activeUsers:N0}");
-            Console.WriteLine($"📊 Trung bình team/giải đấu: {avgTeamsPerTournament:F1}");
-            Console.WriteLine($"🏃 Tỷ lệ người dùng hoạt động: {(totalUsers > 0 ? (double)activeUsers / totalUsers * 100 : 0):F1}%");
-
-            Console.WriteLine("\n📅 HOẠT ĐỘNG GẦN ĐÂY:");
-            Console.WriteLine(new string('═', 60));
-            Console.WriteLine($"🆕 Giải đấu tạo trong 7 ngày: {recentTournaments:N0}");
-            Console.WriteLine($"� Tỷ lệ tăng trưởng       : {(totalTournaments > 0 ? (double)recentTournaments / totalTournaments * 100 : 0):F1}%");
-
-            // Add system health check
-            Console.WriteLine("\n� TÌNH TRẠNG HỆ THỐNG:");
-            Console.WriteLine(new string('═', 60));
-            
-            string systemHealth = "🟢 Tốt";
-            if (totalUsers == 0 && totalTournaments == 0 && totalTeams == 0)
+            // Hiển thị các dòng thống kê, cắt dòng nếu quá dài
+            string[] lines = {
+                "📊 TỔNG QUAN HỆ THỐNG:",
+                new string('═', Math.Min(60, width)),
+                $"👥 Tổng số người dùng      : {totalUsers:N0}",
+                $"🏆 Tổng số giải đấu        : {totalTournaments:N0}",
+                $"⚔️ Tổng số đội             : {totalTeams:N0}",
+                $"🎮 Giải đấu đang hoạt động : {ongoingTournaments:N0}",
+                $"✅ Giải đấu đã hoàn thành  : {completedTournaments:N0}",
+                "",
+                "💰 THỐNG KÊ TÀI CHÍNH:",
+                new string('═', Math.Min(60, width)),
+                $"💎 Tổng giải thưởng        : {totalPrizePool:N0} VND",
+                $"� Tổng phí tham gia       : {totalEntryFees:N0} VND",
+                $"� Doanh thu ước tính      : {(totalEntryFees - totalPrizePool):N0} VND",
+                "",
+                "📈 THỐNG KÊ HOẠT ĐỘNG:",
+                new string('═', Math.Min(60, width)),
+                $"👤 Người dùng hoạt động    : {activeUsers:N0}",
+                $"📊 Trung bình team/giải đấu: {avgTeamsPerTournament:F1}",
+                $"🏃 Tỷ lệ người dùng hoạt động: {(totalUsers > 0 ? (double)activeUsers / totalUsers * 100 : 0):F1}%",
+                "",
+                "📅 HOẠT ĐỘNG GẦN ĐÂY:",
+                new string('═', Math.Min(60, width)),
+                $"🆕 Giải đấu tạo trong 7 ngày: {recentTournaments:N0}",
+                $"� Tỷ lệ tăng trưởng       : {(totalTournaments > 0 ? (double)recentTournaments / totalTournaments * 100 : 0):F1}%",
+                "",
+                "� TÌNH TRẠNG HỆ THỐNG:",
+                new string('═', Math.Min(60, width)),
+                $"⚡ Trạng thái hệ thống     : {((totalUsers == 0 && totalTournaments == 0 && totalTeams == 0) ? "🔴 Không có dữ liệu" : (activeUsers < totalUsers * 0.5 ? "🟡 Cần chú ý" : "🟢 Tốt"))}",
+                $"🕐 Cập nhật lần cuối      : {DateTime.Now:dd/MM/yyyy HH:mm:ss}"
+            };
+            for (int i = 0; i < lines.Length; i++)
             {
-                systemHealth = "🔴 Không có dữ liệu";
+                Console.SetCursorPosition(left, top + i);
+                Console.WriteLine(lines[i].Length > width ? lines[i].Substring(0, width) : lines[i].PadRight(width));
             }
-            else if (activeUsers < totalUsers * 0.5)
-            {
-                systemHealth = "🟡 Cần chú ý";
-            }
-            
-            Console.WriteLine($"⚡ Trạng thái hệ thống     : {systemHealth}");
-            Console.WriteLine($"🕐 Cập nhật lần cuối      : {DateTime.Now:dd/MM/yyyy HH:mm:ss}");
-
+            int row = top + lines.Length;
             // Show recommendations if no data
             if (totalUsers == 0 || totalTournaments == 0 || totalTeams == 0)
             {
-                Console.WriteLine("\n💡 GỢI Ý:");
-                Console.WriteLine(new string('─', 60));
-                if (totalUsers == 0)
-                    Console.WriteLine("• Tạo thêm tài khoản người dùng để test hệ thống");
-                if (totalTournaments == 0)
-                    Console.WriteLine("• Tạo giải đấu mới để tăng hoạt động");
-                if (totalTeams == 0)
-                    Console.WriteLine("• Khuyến khích người chơi tạo đội");
-                
-                Console.WriteLine("• Chạy script sample data: database/ADD_SAMPLE_DONATIONS.sql");
+                string[] recs = {
+                    "💡 GỢI Ý:",
+                    new string('─', Math.Min(60, width)),
+                    totalUsers == 0 ? "• Tạo thêm tài khoản người dùng để test hệ thống" : null,
+                    totalTournaments == 0 ? "• Tạo giải đấu mới để tăng hoạt động" : null,
+                    totalTeams == 0 ? "• Khuyến khích người chơi tạo đội" : null,
+                    "• Chạy script sample data: database/ADD_SAMPLE_DONATIONS.sql"
+                };
+                foreach (var rec in recs)
+                {
+                    if (rec == null) continue;
+                    Console.SetCursorPosition(left, row++);
+                    Console.WriteLine(rec.Length > width ? rec.Substring(0, width) : rec.PadRight(width));
+                }
             }
-
-            Console.WriteLine("\n🎮 LỰA CHỌN:");
-            Console.WriteLine("- [R] Làm mới dữ liệu");
-            Console.WriteLine("- [D] Xem chi tiết từng loại");
-            Console.WriteLine("- [F] Sửa lỗi database");
-            Console.WriteLine("- [S] Tạo dữ liệu mẫu");
-            Console.WriteLine("- [Enter] Quay lại menu");
-
-            var key = Console.ReadKey(true);
-            switch (key.Key)
-            {
-                case ConsoleKey.R:
-                    await ViewSystemStatsAsync(); // Refresh
-                    break;
-                case ConsoleKey.D:
-                    await ShowDetailedStatsAsync(users, tournaments, teams);
-                    break;
-                case ConsoleKey.F:
-                    await RunDatabaseFixesAsync();
-                    break;
-                case ConsoleKey.S:
-                    await CreateSampleDataIfNeededAsync();
-                    break;
-            }
+            Console.SetCursorPosition(left, row + 1);
+            Console.WriteLine("Nhấn phím bất kỳ để tiếp tục...".PadRight(width));
+            Console.ReadKey(true);
         }
         catch (Exception ex)
         {
