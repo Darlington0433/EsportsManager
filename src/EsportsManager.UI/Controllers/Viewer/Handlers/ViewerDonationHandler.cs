@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using EsportsManager.BL.DTOs;
 using EsportsManager.BL.Interfaces;
@@ -93,21 +94,44 @@ namespace EsportsManager.UI.Controllers.Viewer.Handlers
                     return;
                 }
 
-                Console.WriteLine("👥 Chọn player để donation:");
+                // Hiển thị bảng danh sách player
+                Console.WriteLine("👥 DANH SÁCH PLAYER:");
+                Console.WriteLine("┌─────────────────────────────────────────────────────────────────────┐");
+                Console.WriteLine("│ STT │      USERNAME       │            EMAIL            │    ROLE    │");
+                Console.WriteLine("├─────┼─────────────────────┼─────────────────────────────┼────────────┤");
+
                 for (int i = 0; i < playersList.Count; i++)
                 {
-                    Console.WriteLine($"{i + 1}. {playersList[i].Username} - {playersList[i].Email ?? "N/A"}");
+                    string username = playersList[i].Username?.PadRight(19) ?? "N/A".PadRight(19);
+                    string email = (playersList[i].Email ?? "N/A").PadRight(27);
+                    string role = "Player".PadRight(10);
+
+                    if (username.Length > 19) username = username.Substring(0, 16) + "...";
+                    if (email.Length > 27) email = email.Substring(0, 24) + "...";
+
+                    Console.WriteLine($"│ {(i + 1).ToString().PadLeft(3)} │ {username} │ {email} │ {role} │");
                 }
 
-                Console.Write($"\nNhập số thứ tự player (1-{playersList.Count}): ");
-                if (!int.TryParse(Console.ReadLine(), out int choice) ||
-                    choice < 1 || choice > playersList.Count)
+                Console.WriteLine("└─────────────────────────────────────────────────────────────────────┘");
+
+                Console.Write("\n💡 Nhập USERNAME của player bạn muốn donate: ");
+                string? inputUsername = Console.ReadLine()?.Trim();
+
+                if (string.IsNullOrEmpty(inputUsername))
                 {
-                    ConsoleRenderingService.ShowMessageBox("Lựa chọn không hợp lệ!", false, 1500);
+                    ConsoleRenderingService.ShowMessageBox("Username không được để trống!", false, 1500);
                     return;
                 }
 
-                var selectedPlayer = playersList[choice - 1];
+                // Tìm player theo username (không phân biệt hoa thường)
+                var selectedPlayer = playersList.FirstOrDefault(p =>
+                    string.Equals(p.Username, inputUsername, StringComparison.OrdinalIgnoreCase));
+
+                if (selectedPlayer == null)
+                {
+                    ConsoleRenderingService.ShowMessageBox($"Không tìm thấy player với username '{inputUsername}'!", false, 2000);
+                    return;
+                }
 
                 // Nhập số tiền donation
                 Console.Write($"Nhập số tiền donation (tối thiểu {WalletConstants.MIN_DONATION_AMOUNT:N0} VND): ");
@@ -130,7 +154,8 @@ namespace EsportsManager.UI.Controllers.Viewer.Handlers
                 string message = Console.ReadLine() ?? "";
 
                 // Xác nhận donation
-                Console.WriteLine($"\n💸 Xác nhận donation {amount:N0} VND cho {selectedPlayer.Username}?");
+                Console.WriteLine($"\n💸 Xác nhận donation {amount:N0} VND cho player '{selectedPlayer.Username}'?");
+                Console.WriteLine($"   📧 Email: {selectedPlayer.Email ?? "N/A"}");
                 Console.Write("Nhập 'YES' để xác nhận: ");
 
                 if (Console.ReadLine()?.ToUpper() == "YES")
@@ -172,7 +197,7 @@ namespace EsportsManager.UI.Controllers.Viewer.Handlers
                     }
                     else
                     {
-                        ConsoleRenderingService.ShowMessageBox("Đã hủy donation", false, 1500);
+                        ConsoleRenderingService.ShowMessageBox("❌ Donation thất bại! Vui lòng thử lại.", false, 2000);
                     }
                 }
             }

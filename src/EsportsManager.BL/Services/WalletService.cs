@@ -399,8 +399,79 @@ namespace EsportsManager.BL.Services
         /// </summary>
         public async Task<TransactionResultDto> DonateAsync(int fromUserId, DonationDto donationDto)
         {
-            await Task.CompletedTask;
-            throw new NotImplementedException("Donation feature not implemented in database-only mode");
+            if (donationDto == null)
+                throw new ArgumentNullException(nameof(donationDto));
+
+            if (donationDto.Amount <= 0)
+                return new TransactionResultDto
+                {
+                    Success = false,
+                    Message = "Số tiền không hợp lệ",
+                    Errors = new List<string> { "Số tiền phải lớn hơn 0" }
+                };
+
+            if (donationDto.PlayerId == null || donationDto.PlayerId <= 0)
+                return new TransactionResultDto
+                {
+                    Success = false,
+                    Message = "Player ID không hợp lệ",
+                    Errors = new List<string> { "Phải chỉ định player để donation" }
+                };
+
+            try
+            {
+                // Create parameters for stored procedure
+                var parameters = new[]
+                {
+                    _dataContext.CreateParameter("p_FromUserID", fromUserId),
+                    _dataContext.CreateParameter("p_ToUserID", donationDto.PlayerId.Value),
+                    _dataContext.CreateParameter("p_Amount", donationDto.Amount),
+                    _dataContext.CreateParameter("p_Message", donationDto.Message ?? ""),
+                    _dataContext.CreateParameter("p_TargetType", donationDto.DonationType ?? "Player"),
+                    _dataContext.CreateParameter("p_TargetID", donationDto.PlayerId.Value)
+                };
+
+                var result = _dataContext.ExecuteStoredProcedure("sp_CreateDonation", parameters);
+
+                if (result != null && result.Rows.Count > 0)
+                {
+                    var row = result.Rows[0];
+                    return await Task.FromResult(new TransactionResultDto
+                    {
+                        Success = true,
+                        Message = "Donation thành công",
+                        Transaction = new TransactionDto
+                        {
+                            Id = SafeGetInt32(row["TransactionID"]),
+                            Amount = SafeGetDecimal(row["Amount"]),
+                            TransactionType = row["TransactionType"]?.ToString() ?? "",
+                            Status = row["Status"]?.ToString() ?? "",
+                            CreatedAt = SafeGetDateTime(row["CreatedAt"]),
+                            Note = row["Message"]?.ToString() ?? ""
+                        },
+                        NewBalance = SafeGetDecimal(row["NewBalance"])
+                    });
+                }
+
+                return await Task.FromResult(new TransactionResultDto
+                {
+                    Success = false,
+                    Message = "Donation thất bại",
+                    Errors = new List<string> { "Không thể thực hiện donation" }
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error processing donation from user {FromUserId} to player {PlayerId}",
+                    fromUserId, donationDto.PlayerId);
+
+                return await Task.FromResult(new TransactionResultDto
+                {
+                    Success = false,
+                    Message = "Lỗi hệ thống",
+                    Errors = new List<string> { ex.Message }
+                });
+            }
         }
 
         /// <summary>
