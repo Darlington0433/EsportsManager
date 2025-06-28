@@ -485,12 +485,21 @@ public class UserManagementHandler
 
             var selectedUser = userResult.Data;
 
-                // Get available achievements from service
-                var availableAchievements = await _achievementService.GetAvailableAchievementsAsync();
-
+            // Kiểm tra role phải là Player
+            if (selectedUser.Role != "Player")
+            {
+                string roleMessage = selectedUser.Role switch
+                {
+                    "Admin" => "❌ Không thể gán thành tích cho Admin!",
+                    "Viewer" => "❌ Không thể gán thành tích cho Viewer!",
+                    _ => $"❌ Không thể gán thành tích cho role '{selectedUser.Role}'!"
+                };
                 ConsoleRenderingService.ShowMessageBox($"{roleMessage}\n💡 Chỉ có thể gán thành tích cho tài khoản Player.", true, 3000);
                 return;
             }
+
+            // Get available achievements from service
+            var availableAchievements = await _achievementService.GetAvailableAchievementsAsync();
 
             // Hiển thị thông tin Player đã chọn
             Console.SetCursorPosition(borderLeft + 2, borderTop + 9);
@@ -543,11 +552,10 @@ public class UserManagementHandler
                     var currentUser = EsportsManager.UI.Services.UserSessionManager.CurrentUser;
                     int adminId = currentUser?.Id ?? 1; // Fallback to admin ID 1
 
-                    var success = await _achievementService.AssignAchievementAsync(
+                    var success = await _achievementService.AssignAchievementToPlayerAsync(
                         selectedUser.Id,
                         selectedAchievement,
-                        description,
-                        adminId);
+                        description);
 
                     if (success)
                     {
@@ -573,7 +581,6 @@ public class UserManagementHandler
             ConsoleRenderingService.ShowMessageBox($"Lỗi: {ex.Message}", true, 3000);
         }
     }
-
     private void DisplayUsersTable(IEnumerable<UserDto> users)
     {
         var header = string.Format("{0,-5} {1,-20} {2,-30} {3,-10} {4,-10}",
