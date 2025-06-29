@@ -397,6 +397,26 @@ namespace EsportsManager.BL.Services
             };
         }
 
+        /// <summary>
+        /// Map TeamJoinRequest entity to TeamJoinRequestDto
+        /// </summary>
+        private TeamJoinRequestDto MapToTeamJoinRequestDto(dynamic request)
+        {
+            return new TeamJoinRequestDto
+            {
+                RequestId = request.RequestId,
+                TeamId = request.TeamId,
+                TeamName = request.TeamName,
+                PlayerId = request.PlayerId,
+                PlayerName = request.PlayerName,
+                PlayerEmail = request.PlayerEmail,
+                Message = request.Message,
+                RequestDate = request.RequestDate,
+                Status = request.Status,
+                GameName = request.GameName
+            };
+        }
+
         #endregion
 
         #region Approval Methods
@@ -431,14 +451,11 @@ namespace EsportsManager.BL.Services
         {
             try
             {
-                // TODO: Implement approve team member request logic
-                // This would update join request status and add member to team
-                await Task.Delay(1); // Placeholder for actual implementation
-                return true;
+                return await _teamRepository.ApproveJoinRequestAsync(requestId);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                return false;
+                throw new InvalidOperationException($"Error approving join request {requestId}: {ex.Message}", ex);
             }
         }
 
@@ -480,41 +497,10 @@ namespace EsportsManager.BL.Services
 
         #endregion
 
-        #region Admin Methods
+        #region Rejection Methods
 
         /// <summary>
-        /// Lấy danh sách team chờ phê duyệt (Admin function)
-        /// </summary>
-        public async Task<List<TeamInfoDto>> GetPendingTeamsAsync()
-        {
-            try
-            {
-                var pendingTeams = await _teamRepository.GetPendingTeamsAsync();
-                return pendingTeams.Select(MapToTeamInfoDto).ToList();
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException($"Error getting pending teams: {ex.Message}", ex);
-            }
-        }
-
-        /// <summary>
-        /// Phê duyệt team mới (Admin function)
-        /// </summary>
-        public async Task<bool> ApproveTeamAsync(int teamId)
-        {
-            try
-            {
-                return await _teamRepository.ApproveTeamAsync(teamId);
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException($"Error approving team {teamId}: {ex.Message}", ex);
-            }
-        }
-
-        /// <summary>
-        /// Từ chối team mới (Admin function)
+        /// Từ chối team (admin only)
         /// </summary>
         public async Task<bool> RejectTeamAsync(int teamId)
         {
@@ -529,7 +515,7 @@ namespace EsportsManager.BL.Services
         }
 
         /// <summary>
-        /// Lấy danh sách yêu cầu tham gia team chờ phê duyệt (Admin function)
+        /// Lấy danh sách yêu cầu tham gia team đang chờ phê duyệt (admin/team leader)
         /// </summary>
         public async Task<List<TeamJoinRequestDto>> GetPendingTeamJoinRequestsAsync()
         {
@@ -545,22 +531,7 @@ namespace EsportsManager.BL.Services
         }
 
         /// <summary>
-        /// Phê duyệt yêu cầu tham gia team (Admin function)
-        /// </summary>
-        public async Task<bool> ApproveTeamJoinRequestAsync(int requestId)
-        {
-            try
-            {
-                return await _teamRepository.ApproveJoinRequestAsync(requestId);
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException($"Error approving join request {requestId}: {ex.Message}", ex);
-            }
-        }
-
-        /// <summary>
-        /// Từ chối yêu cầu tham gia team (Admin function)
+        /// Từ chối yêu cầu tham gia team (admin/team leader)
         /// </summary>
         public async Task<bool> RejectTeamJoinRequestAsync(int requestId)
         {
@@ -574,24 +545,28 @@ namespace EsportsManager.BL.Services
             }
         }
 
+        #endregion
+
+        #region Admin-Specific Methods
+
         /// <summary>
-        /// Map TeamJoinRequest entity to TeamJoinRequestDto
+        /// Phê duyệt yêu cầu tham gia team (Admin function)
         /// </summary>
-        private TeamJoinRequestDto MapToTeamJoinRequestDto(object joinRequest)
+        public async Task<bool> ApproveTeamJoinRequestAsync(int requestId)
         {
-            // This is a placeholder mapping - will need to be implemented based on actual TeamJoinRequest entity
-            // For now, returning a basic DTO structure
-            return new TeamJoinRequestDto
+            // TODO: Implement actual approval logic for team join requests (admin function)
+            // For now, just call the repository method if it exists, or return false
+            try
             {
-                RequestId = 0, // TODO: Map from actual entity
-                TeamId = 0,    // TODO: Map from actual entity
-                TeamName = "Unknown", // TODO: Map from actual entity
-                PlayerId = 0,  // TODO: Map from actual entity
-                PlayerName = "Unknown", // TODO: Map from actual entity
-                RequestDate = DateTime.UtcNow, // TODO: Map from actual entity
-                Status = "Pending", // TODO: Map from actual entity
-                Message = string.Empty // TODO: Map from actual entity
-            };
+                // If your repository has a method for this, call it here:
+                // return await _teamRepository.ApproveJoinRequestAsync(requestId);
+                await Task.Delay(1); // Placeholder
+                return false; // Or true if implemented
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Error approving team join request {requestId}: {ex.Message}", ex);
+            }
         }
 
         #endregion

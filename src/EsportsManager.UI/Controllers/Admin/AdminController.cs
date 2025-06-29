@@ -72,14 +72,11 @@ public class AdminUIController : BaseController, IAdminUIController
                     _tournamentManagementHandler.ManageTournamentsAsync().GetAwaiter().GetResult();
                     break;
                 case 2:
-                case 2:
                     _tournamentManagementHandler.ApproveTournamentRegistrationsAsync().GetAwaiter().GetResult();
                     break;
                 case 3:
-                case 3:
                     _tournamentManagementHandler.ManageTeamsAsync().GetAwaiter().GetResult();
                     break;
-                case 4:
                 case 4:
                     _userManagementHandler.AssignAchievementsAsync().GetAwaiter().GetResult();
                     break;
@@ -87,17 +84,13 @@ public class AdminUIController : BaseController, IAdminUIController
                     HandleGameManagementAsync().GetAwaiter().GetResult();
                     break;
                 case 6:
-                case 5:
                     _systemStatsHandler.ViewSystemStatsAsync().GetAwaiter().GetResult();
                     break;
-                case 6:
+                case 7:
                     _donationReportHandler.ViewDonationReportsAsync().GetAwaiter().GetResult();
                     break;
-                case 7:
-                    _votingResultsHandler.ViewVotingResultsAsync().GetAwaiter().GetResult();
-                    break;
                 case 8:
-                    _feedbackManagementHandler.ManageFeedbackAsync().GetAwaiter().GetResult();
+                    _votingResultsHandler.ViewVotingResultsAsync().GetAwaiter().GetResult();
                     break;
                 case 9:
                     _userManagementHandler.DeleteUsersAsync().GetAwaiter().GetResult();

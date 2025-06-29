@@ -27,6 +27,7 @@ public class TournamentManagementHandler : BaseHandler
         ITeamService teamService) : base(currentUser)
     {
         _tournamentService = tournamentService;
+        _teamService = teamService;
     }
 
     public async Task ManageTournamentsAsync()
@@ -280,7 +281,6 @@ public class TournamentManagementHandler : BaseHandler
 
             Console.SetCursorPosition(borderLeft + 2, borderTop + 22);
             Console.Write("Nhập Registration ID cần duyệt (0 để quay lại): ");
-            
             if (int.TryParse(Console.ReadLine(), out int registrationId) && registrationId > 0)
             {
                 var result = await _tournamentService.ApproveRegistrationAsync(registrationId);
@@ -293,7 +293,6 @@ public class TournamentManagementHandler : BaseHandler
                     ConsoleRenderingService.ShowMessageBox("❌ Duyệt đăng ký thất bại!", true, 2000);
                 }
             }
-            */
         }
         catch (Exception ex)
         {
@@ -801,7 +800,7 @@ public class TournamentManagementHandler : BaseHandler
 
                 if (confirm == "y" || confirm == "yes")
                 {
-                    ConsoleRenderingService.ShowMessageBox($"✅ Đã duyệt {selectedReq.Player} gia nhập đội {selectedReq.Team}!", false, 3000);
+                    ConsoleRenderingService.ShowMessageBox($"✅ Đã duyệt {selectedReq.PlayerName} gia nhập đội {selectedReq.TeamName}!", false, 3000);
                 }
                 else
                 {

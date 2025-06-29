@@ -183,7 +183,7 @@ namespace EsportsManager.UI.Controllers.Player.Handlers
                 };
 
                 // Gọi service để đổi mật khẩu
-                var result = await _userService.UpdatePasswordAsync(updatePasswordDto);
+                var result = await _userService.UpdatePasswordAsync(_currentUser.Id, updatePasswordDto);
 
                 if (result.IsSuccess)
                 {
@@ -191,7 +191,7 @@ namespace EsportsManager.UI.Controllers.Player.Handlers
                 }
                 else
                 {
-                    Console.WriteLine($"Đổi mật khẩu thất bại: {result.ErrorMessage}");
+                    Console.WriteLine($"Đổi mật khẩu thất bại: {result.Message}");
                 }
             }
             catch (Exception ex)

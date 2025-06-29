@@ -116,7 +116,7 @@ namespace EsportsManager.UI.Controllers.Shared
         public AdminUIController CreateAdminController(UserProfileDto user)
         {
             var userManagementHandler = new UserManagementHandler(_userService, _achievementService, _tournamentService);
-            var tournamentManagementHandler = new AdminTournamentManagementHandler(_tournamentService);
+            var tournamentManagementHandler = new EsportsManager.UI.Controllers.Admin.Handlers.TournamentManagementHandler(user, _tournamentService, _teamService);
             var systemStatsHandler = new SystemStatsHandler(_userService, _tournamentService, _teamService);
             var donationReportHandler = new DonationReportHandler(_walletService, _userService);
             var votingResultsHandler = new VotingResultsHandler(_userService, _tournamentService, _votingService);

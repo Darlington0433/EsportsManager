@@ -401,7 +401,6 @@ namespace EsportsManager.BL.Services
                         Id = SafeGetInt32(row["TeamID"]),
                         Name = row["TeamName"]?.ToString() ?? string.Empty,
                         Description = row["Description"]?.ToString() ?? string.Empty,
-                        Description = row["Description"]?.ToString() ?? string.Empty,
                         Logo = row["LogoURL"]?.ToString(),
                         LeaderId = SafeGetInt32(row["TeamLeaderID"]),
                         LeaderName = row["TeamLeaderName"]?.ToString() ?? string.Empty,
@@ -660,58 +659,17 @@ namespace EsportsManager.BL.Services
         {
             try
             {
-                // Sử dụng stored procedure sp_ApproveRegistration
-                var dataTable = _dataContext.ExecuteStoredProcedure("sp_ApproveRegistration",
+                // Sử dụng stored procedure sp_ApproveTournamentRegistration
+                _dataContext.ExecuteNonQueryStoredProcedure("sp_ApproveTournamentRegistration",
                     _dataContext.CreateParameter("p_RegistrationID", registrationId));
-
-                return await Task.FromResult(dataTable.Rows.Count > 0);
+                return await Task.FromResult(true);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error approving registration {RegistrationId}", registrationId);
-                return false;
+                return await Task.FromResult(false);
             }
         }
-
-        /// <summary>
-        /// Lấy danh sách đăng ký đang chờ phê duyệt (admin only)
-        /// </summary>
-        public async Task<List<TournamentRegistrationDto>> GetPendingRegistrationsAsync()
-        {
-            try
-            {
-                var result = new List<TournamentRegistrationDto>();
-
-                // Sử dụng stored procedure sp_GetPendingRegistrations
-                var dataTable = _dataContext.ExecuteStoredProcedure("sp_GetPendingRegistrations");
-
-                foreach (DataRow row in dataTable.Rows)
-                {
-                    var registration = new TournamentRegistrationDto
-                    {
-                        Id = SafeGetInt32(row["RegistrationID"]),
-                        TournamentId = SafeGetInt32(row["TournamentID"]),
-                        TournamentName = row["TournamentName"]?.ToString() ?? string.Empty,
-                        TeamId = SafeGetInt32(row["TeamID"]),
-                        TeamName = row["TeamName"]?.ToString() ?? string.Empty,
-                        RegisteredAt = SafeGetDateTime(row["RegisteredAt"]),
-                        Status = row["Status"]?.ToString() ?? "Pending",
-                        Notes = row["Notes"]?.ToString()
-                    };
-
-                    result.Add(registration);
-                }
-
-                return await Task.FromResult(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting pending registrations");
-                return new List<TournamentRegistrationDto>();
-            }
-        }
-
-        // ========== ADMIN METHODS FOR TOURNAMENT REGISTRATION APPROVAL ==========
 
         /// <summary>
         /// Lấy danh sách đăng ký tournament đang chờ duyệt (Admin function)
@@ -721,10 +679,7 @@ namespace EsportsManager.BL.Services
             try
             {
                 var result = new List<TournamentRegistrationDto>();
-
-                // Sử dụng stored procedure sp_GetPendingTournamentRegistrations
                 var dataTable = _dataContext.ExecuteStoredProcedure("sp_GetPendingTournamentRegistrations");
-
                 foreach (DataRow row in dataTable.Rows)
                 {
                     var registration = new TournamentRegistrationDto
@@ -740,10 +695,8 @@ namespace EsportsManager.BL.Services
                         TeamMemberCount = Convert.ToInt32(row["MemberCount"]),
                         GameName = row["GameName"]?.ToString() ?? string.Empty
                     };
-
                     result.Add(registration);
                 }
-
                 return await Task.FromResult(result);
             }
             catch (Exception ex)
@@ -791,26 +744,6 @@ namespace EsportsManager.BL.Services
             {
                 _logger.LogError(ex, "Error getting registrations by status {Status}", status);
                 throw;
-            }
-        }
-
-        /// <summary>
-        /// Duyệt đăng ký tournament (Admin function)
-        /// </summary>
-        public async Task<bool> ApproveRegistrationAsync(int registrationId)
-        {
-            try
-            {
-                // Sử dụng stored procedure sp_ApproveTournamentRegistration
-                _dataContext.ExecuteNonQueryStoredProcedure("sp_ApproveTournamentRegistration",
-                    _dataContext.CreateParameter("p_RegistrationID", registrationId));
-
-                return await Task.FromResult(true);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error approving registration {RegistrationId}", registrationId);
-                return await Task.FromResult(false);
             }
         }
 

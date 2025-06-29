@@ -140,8 +140,7 @@ namespace EsportsManager.UI.Controllers.Viewer.Handlers
                 }
 
                 // Handle specific payment method input
-                string paymentDetails = GetPaymentDetails(selectedMethod, amount);
-                string paymentDetails = await GetPaymentDetailsAsync(selectedMethod, amount, borderLeft, cursorY + 3);
+                string paymentDetails = GetPaymentDetailsAsync(selectedMethod, amount, borderLeft, cursorY + 3);
                 if (string.IsNullOrEmpty(paymentDetails)) return;
 
                 cursorY += 5;
@@ -195,7 +194,14 @@ namespace EsportsManager.UI.Controllers.Viewer.Handlers
         }
 
         private string GetPaymentDetails(string method, decimal amount)
-        private async Task<string> GetPaymentDetailsAsync(string method, decimal amount, int borderLeft, int cursorY)
+        {
+            // TODO: Implement payment details logic or return a placeholder
+            return $"Phương thức: {method}, Số tiền: {amount:C}";
+        }
+
+        // tviet: Đã fix lỗi duplicate paymentDetails và chuẩn hóa async/await, đang tiếp tục fix các lỗi còn lại!
+
+        private string GetPaymentDetailsAsync(string method, decimal amount, int borderLeft, int cursorY)
         {
             try
             {
@@ -222,59 +228,38 @@ namespace EsportsManager.UI.Controllers.Viewer.Handlers
                     case "CreditCard":
                         Console.Write("\nNhập số thẻ (16 số): ");
                         var cardNumber = Console.ReadLine()?.Trim();
-
                         // Validate card number: must be exactly 16 digits
                         if (string.IsNullOrEmpty(cardNumber) || cardNumber.Length != 16 || !cardNumber.All(char.IsDigit))
                         {
                             ConsoleRenderingService.ShowMessageBox("Số thẻ phải có đúng 16 chữ số!", true, 2000);
                             return "";
                         }
-
-                        Console.SetCursorPosition(borderLeft + 2, cursorY++);
-                        Console.Write("Nhập số thẻ (16 số): ");
-                        var cardNumber = Console.ReadLine();
                         Console.SetCursorPosition(borderLeft + 2, cursorY++);
                         Console.Write("Nhập tên chủ thẻ: ");
                         var cardHolder = Console.ReadLine()?.Trim();
-
-                        var cardHolder = Console.ReadLine();
+                        if (string.IsNullOrEmpty(cardHolder))
+                        {
+                            ConsoleRenderingService.ShowMessageBox("Tên chủ thẻ không được để trống!", true, 2000);
+                            return "";
+                        }
                         Console.SetCursorPosition(borderLeft + 2, cursorY++);
                         Console.Write("Nhập MM/YY: ");
                         var expiry = Console.ReadLine()?.Trim();
-
                         // Validate MM/YY format
                         if (string.IsNullOrEmpty(expiry) || !Regex.IsMatch(expiry, @"^(0[1-9]|1[0-2])\/([0-9]{2})$"))
                         {
                             ConsoleRenderingService.ShowMessageBox("Định dạng MM/YY không hợp lệ! (VD: 12/25)", true, 2000);
                             return "";
                         }
-
                         Console.Write("Nhập CVV (3 số): ");
                         var cvv = Console.ReadLine()?.Trim();
-
                         // Validate CVV: must be exactly 3 digits
                         if (string.IsNullOrEmpty(cvv) || cvv.Length != 3 || !cvv.All(char.IsDigit))
                         {
                             ConsoleRenderingService.ShowMessageBox("CVV phải có đúng 3 chữ số!", true, 2000);
                             return "";
                         }
-
-                        if (string.IsNullOrEmpty(cardHolder))
-                        var expiry = Console.ReadLine();
-                        Console.SetCursorPosition(borderLeft + 2, cursorY++);
-                        Console.Write("Nhập CVV: ");
-                        var cvv = Console.ReadLine();
-                        
-                        if (string.IsNullOrEmpty(cardNumber) || string.IsNullOrEmpty(cardHolder) || 
-                            string.IsNullOrEmpty(expiry) || string.IsNullOrEmpty(cvv))
-                        {
-                            ConsoleRenderingService.ShowMessageBox("Tên chủ thẻ không được để trống!", true, 2000);
-                            Console.SetCursorPosition(borderLeft + 2, cursorY++);
-                            ConsoleRenderingService.ShowMessageBox("Thông tin thẻ không đầy đủ!", true, 2000);
-                            return "";
-                        }
-
-                        return $"Card: ****{cardNumber.Substring(cardNumber.Length - 4)}";
+                        return $"Số thẻ: {cardNumber}, Chủ thẻ: {cardHolder}, Hết hạn: {expiry}, CVV: {cvv}";
 
                     case "EWallet":
                         Console.SetCursorPosition(borderLeft + 2, cursorY++);
@@ -310,25 +295,28 @@ namespace EsportsManager.UI.Controllers.Viewer.Handlers
                 var transactions = await _walletService.GetTransactionHistoryAsync(_currentUser.Id);
                 if (transactions == null || !transactions.Any())
                 {
+                    int borderLeft = (Console.WindowWidth - 100) / 2;
+                    int borderTop = (Console.WindowHeight - 20) / 4;
+                    Console.SetCursorPosition(borderLeft + 2, borderTop + 2);
                     ConsoleRenderingService.ShowNotification("Chưa có giao dịch nào", ConsoleColor.Yellow);
+                    Console.SetCursorPosition(borderLeft + 2, borderTop + 3);
                     Console.WriteLine("\nNhấn Enter để tiếp tục...");
                     Console.ReadLine();
                     return;
                 }
 
-                int borderLeft = (Console.WindowWidth - 100) / 2;
-                int borderTop = (Console.WindowHeight - 20) / 4;
-
-                Console.SetCursorPosition(borderLeft + 2, borderTop + 2);
+                int borderLeft2 = (Console.WindowWidth - 100) / 2;
+                int borderTop2 = (Console.WindowHeight - 20) / 4;
+                int cursorY = borderTop2 + 2;
+                Console.SetCursorPosition(borderLeft2 + 2, cursorY++);
                 Console.ForegroundColor = ConsoleColor.White;
                 Console.WriteLine($"{"Ngày",-12} {"Loại",-15} {"Số tiền",-15} {"Trạng thái",-12} {"Ghi chú",-30}");
-                Console.SetCursorPosition(borderLeft + 2, borderTop + 3);
+                Console.SetCursorPosition(borderLeft2 + 2, cursorY++);
                 Console.WriteLine(new string('─', 90));
 
-                int currentRow = borderTop + 4;
                 foreach (var transaction in transactions.Take(12))
                 {
-                    Console.SetCursorPosition(borderLeft + 2, currentRow);
+                    Console.SetCursorPosition(borderLeft2 + 2, cursorY);
                     Console.ForegroundColor = transaction.TransactionType == "Deposit" ? ConsoleColor.Green : ConsoleColor.Yellow;
 
                     var row = string.Format("{0,-12} {1,-15} {2,-15} {3,-12} {4,-30}",
@@ -338,18 +326,21 @@ namespace EsportsManager.UI.Controllers.Viewer.Handlers
                         transaction.Status,
                         transaction.Note?.Length > 29 ? transaction.Note.Substring(0, 29) : transaction.Note ?? "");
                     Console.WriteLine(row);
-                    currentRow++;
+                    cursorY++;
                 }
 
                 Console.ResetColor();
-                Console.SetCursorPosition(borderLeft + 2, borderTop + 17);
+                Console.SetCursorPosition(borderLeft2 + 2, borderTop2 + 17);
                 Console.WriteLine($"Tổng cộng: {transactions.Count()} giao dịch");
-                Console.SetCursorPosition(borderLeft + 2, borderTop + 18);
+                Console.SetCursorPosition(borderLeft2 + 2, borderTop2 + 18);
                 Console.WriteLine("Nhấn Enter để tiếp tục...");
                 Console.ReadLine();
             }
             catch (Exception ex)
             {
+                int borderLeft = (Console.WindowWidth - 100) / 2;
+                int borderTop = (Console.WindowHeight - 20) / 4;
+                Console.SetCursorPosition(borderLeft + 2, borderTop + 18);
                 ConsoleRenderingService.ShowMessageBox($"❌ Lỗi: {ex.Message}", true, 3000);
             }
         }
@@ -407,41 +398,48 @@ namespace EsportsManager.UI.Controllers.Viewer.Handlers
                 var wallet = await _walletService.GetWalletByUserIdAsync(_currentUser.Id);
                 if (wallet == null)
                 {
+                    int borderLeft = (Console.WindowWidth - 80) / 2;
+                    int borderTop = (Console.WindowHeight - 15) / 4;
+                    Console.SetCursorPosition(borderLeft + 2, borderTop + 2);
                     ConsoleRenderingService.ShowNotification("Chưa có ví điện tử", ConsoleColor.Yellow);
                     return;
                 }
 
-                int borderLeft = (Console.WindowWidth - 80) / 2;
-                int borderTop = (Console.WindowHeight - 15) / 4;
+                int borderLeft2 = (Console.WindowWidth - 80) / 2;
+                int borderTop2 = (Console.WindowHeight - 15) / 4;
+                int cursorY = borderTop2 + 2;
 
-                Console.SetCursorPosition(borderLeft + 2, borderTop + 2);
+                Console.SetCursorPosition(borderLeft2 + 2, cursorY++);
                 Console.WriteLine($"💰 Số dư hiện tại: {wallet.Balance:N0} VND");
-                Console.SetCursorPosition(borderLeft + 2, borderTop + 3);
+                Console.SetCursorPosition(borderLeft2 + 2, cursorY++);
                 Console.WriteLine($"📈 Tổng đã nạp: {wallet.TotalReceived:N0} VND");
-                Console.SetCursorPosition(borderLeft + 2, borderTop + 4);
+                Console.SetCursorPosition(borderLeft2 + 2, cursorY++);
                 Console.WriteLine($"📉 Tổng đã chi: {wallet.TotalWithdrawn:N0} VND");
-                Console.SetCursorPosition(borderLeft + 2, borderTop + 5);
+                Console.SetCursorPosition(borderLeft2 + 2, cursorY++);
                 Console.WriteLine($"📅 Ngày tạo: {wallet.CreatedAt:dd/MM/yyyy HH:mm}");
-                Console.SetCursorPosition(borderLeft + 2, borderTop + 6);
+                Console.SetCursorPosition(borderLeft2 + 2, cursorY++);
                 Console.WriteLine($"🔄 Cập nhật cuối: {wallet.LastUpdatedAt?.ToString("dd/MM/yyyy HH:mm") ?? "Chưa có"}");
-                Console.SetCursorPosition(borderLeft + 2, borderTop + 7);
+                Console.SetCursorPosition(borderLeft2 + 2, cursorY++);
                 Console.WriteLine($"🔒 Trạng thái: {(wallet.IsLocked ? "🔒 Khóa" : "✅ Hoạt động")}");
 
-                Console.SetCursorPosition(borderLeft + 2, borderTop + 9);
+                Console.SetCursorPosition(borderLeft2 + 2, cursorY++);
                 Console.WriteLine("📋 Lưu ý về ví:");
-                Console.SetCursorPosition(borderLeft + 2, borderTop + 10);
+                Console.SetCursorPosition(borderLeft2 + 2, cursorY++);
                 Console.WriteLine("• Dùng để donate cho player yêu thích");
-                Console.SetCursorPosition(borderLeft + 2, borderTop + 11);
+                Console.SetCursorPosition(borderLeft2 + 2, cursorY++);
                 Console.WriteLine("• Phí nạp tiền: 0.5% trên tổng số tiền");
-                Console.SetCursorPosition(borderLeft + 2, borderTop + 12);
+                Console.SetCursorPosition(borderLeft2 + 2, cursorY++);
                 Console.WriteLine("• Bảo mật cao với mã hóa AES-256");
 
-                Console.SetCursorPosition(borderLeft + 2, borderTop + 13);
+                Console.SetCursorPosition(borderLeft2 + 2, cursorY++);
                 Console.WriteLine("Nhấn phím bất kỳ để tiếp tục...");
                 Console.ReadKey(true);
             }
             catch (Exception ex)
             {
+                int borderLeft = (Console.WindowWidth - 80) / 2;
+                int borderTop = (Console.WindowHeight - 15) / 4;
+                Console.SetCursorPosition(borderLeft + 2, borderTop + 13);
                 ConsoleRenderingService.ShowMessageBox($"❌ Lỗi: {ex.Message}", true, 3000);
             }
         }
@@ -463,7 +461,8 @@ namespace EsportsManager.UI.Controllers.Viewer.Handlers
             return $"TOP{DateTime.Now:yyyyMMddHHmmss}{new Random().Next(1000, 9999)}";
         }
 
-        private Task AddPaymentMethodAsync()
+        // --- Payment Method Management: Make all async, fix await usage ---
+        private async Task AddPaymentMethodAsync()
         {
             try
             {
@@ -481,7 +480,7 @@ namespace EsportsManager.UI.Controllers.Viewer.Handlers
                 };
 
                 int typeSelection = InteractiveMenuService.DisplayInteractiveMenu("CHỌN LOẠI THANH TOÁN", methodTypes);
-                if (typeSelection == -1) return Task.CompletedTask;
+                if (typeSelection == -1) return;
 
                 string methodType = typeSelection switch
                 {
@@ -549,10 +548,9 @@ namespace EsportsManager.UI.Controllers.Viewer.Handlers
                 Console.SetCursorPosition(borderLeft + 2, borderTop + 18);
                 ConsoleRenderingService.ShowMessageBox($"❌ Lỗi: {ex.Message}", false, 2000);
             }
-            return Task.CompletedTask;
         }
 
-        private Task ViewPaymentMethodsAsync()
+        private async Task ViewPaymentMethodsAsync()
         {
             try
             {
@@ -608,10 +606,9 @@ namespace EsportsManager.UI.Controllers.Viewer.Handlers
                 Console.SetCursorPosition(borderLeft + 2, borderTop + 22);
                 ConsoleRenderingService.ShowMessageBox($"❌ Lỗi: {ex.Message}", false, 2000);
             }
-            return Task.CompletedTask;
         }
 
-        private Task UpdatePaymentMethodAsync()
+        private async Task UpdatePaymentMethodAsync()
         {
             try
             {
@@ -635,17 +632,22 @@ namespace EsportsManager.UI.Controllers.Viewer.Handlers
 
                 if (methods.Length == 0)
                 {
+                    Console.SetCursorPosition(borderLeft + 2, cursorY++);
                     ConsoleRenderingService.ShowNotification("Chưa có phương thức thanh toán nào", ConsoleColor.Yellow);
+                    Console.SetCursorPosition(borderLeft + 2, cursorY++);
                     Console.WriteLine("\nNhấn Enter để tiếp tục...");
                     Console.ReadLine();
                     return;
                 }
 
                 int selection = InteractiveMenuService.DisplayInteractiveMenu("CHỌN PHƯƠNG THỨC CẬP NHẬT", methods);
-                if (selection == -1) return Task.CompletedTask;
+                if (selection == -1) return;
 
+                Console.SetCursorPosition(borderLeft + 2, cursorY++);
                 Console.WriteLine($"\n✏️ Cập nhật: {methods[selection]}");
+                Console.SetCursorPosition(borderLeft + 2, cursorY++);
                 Console.WriteLine("(Chức năng đang được phát triển...)");
+                Console.SetCursorPosition(borderLeft + 2, cursorY++);
                 Console.WriteLine("\nNhấn Enter để tiếp tục...");
                 Console.ReadLine();
                 Console.SetCursorPosition(borderLeft + 2, cursorY++);
@@ -675,10 +677,9 @@ namespace EsportsManager.UI.Controllers.Viewer.Handlers
                 Console.SetCursorPosition(borderLeft + 2, borderTop + 18);
                 ConsoleRenderingService.ShowMessageBox($"❌ Lỗi: {ex.Message}", false, 2000);
             }
-            return Task.CompletedTask;
         }
 
-        private Task DeletePaymentMethodAsync()
+        private async Task DeletePaymentMethodAsync()
         {
             try
             {
@@ -702,17 +703,16 @@ namespace EsportsManager.UI.Controllers.Viewer.Handlers
 
                 if (methods.Length == 0)
                 {
+                    Console.SetCursorPosition(borderLeft + 2, cursorY++);
                     ConsoleRenderingService.ShowNotification("Chưa có phương thức thanh toán nào", ConsoleColor.Yellow);
+                    Console.SetCursorPosition(borderLeft + 2, cursorY++);
                     Console.WriteLine("\nNhấn Enter để tiếp tục...");
                     Console.ReadLine();
                     return;
-                    Console.SetCursorPosition(borderLeft + 2, cursorY++);
-                    ConsoleRenderingService.ShowMessageBox("❌ Không có phương thức thanh toán nào để xóa.", false, 2000);
-                    return Task.CompletedTask;
                 }
 
                 int selection = InteractiveMenuService.DisplayInteractiveMenu("CHỌN PHƯƠNG THỨC XÓA", methods);
-                if (selection == -1) return Task.CompletedTask;
+                if (selection == -1) return;
 
                 Console.SetCursorPosition(borderLeft + 2, cursorY++);
                 Console.WriteLine($"🗑️ Xóa: {methods[selection]}");
@@ -738,7 +738,6 @@ namespace EsportsManager.UI.Controllers.Viewer.Handlers
                 Console.SetCursorPosition(borderLeft + 2, borderTop + 18);
                 ConsoleRenderingService.ShowMessageBox($"❌ Lỗi: {ex.Message}", false, 2000);
             }
-            return Task.CompletedTask;
         }
     }
 }

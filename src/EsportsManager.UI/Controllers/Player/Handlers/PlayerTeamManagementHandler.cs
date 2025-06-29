@@ -197,6 +197,7 @@ namespace EsportsManager.UI.Controllers.Player.Handlers
 
                 Console.SetCursorPosition(borderLeft + 2, cursorY++);
                 Console.Write($"Chọn team (1-{teams.Count()}): ");
+                Console.SetCursorPosition(borderLeft + 24, cursorY - 1);
                 if (int.TryParse(Console.ReadLine(), out int choice) && choice >= 1 && choice <= teams.Count())
                 {
                     var selectedTeam = teams.ElementAt(choice - 1);
@@ -261,6 +262,7 @@ namespace EsportsManager.UI.Controllers.Player.Handlers
                 Console.WriteLine($"Tổng cộng: {teams.Count()} team");
                 Console.SetCursorPosition(borderLeft2 + 2, cursorY++);
                 Console.WriteLine("Nhấn Enter để tiếp tục...");
+                Console.SetCursorPosition(borderLeft2 + 30, cursorY - 1);
                 Console.ReadLine();
             }
             catch (Exception ex)
@@ -345,16 +347,21 @@ namespace EsportsManager.UI.Controllers.Player.Handlers
 
                     if (otherMembers.Any())
                     {
+                        int memberListY = cursorY;
+                        Console.SetCursorPosition(borderLeft + 2, memberListY++);
                         Console.WriteLine($"⚠️  Bạn là leader của team '{team.Name}'.");
+                        Console.SetCursorPosition(borderLeft + 2, memberListY++);
                         Console.WriteLine("Để rời team, bạn cần chuyển giao quyền leader cho thành viên khác.");
-                        Console.WriteLine("\nDanh sách thành viên có thể làm leader mới:");
-
+                        Console.SetCursorPosition(borderLeft + 2, memberListY++);
+                        Console.WriteLine("Danh sách thành viên có thể làm leader mới:");
                         for (int i = 0; i < otherMembers.Count; i++)
                         {
+                            Console.SetCursorPosition(borderLeft + 4, memberListY++);
                             Console.WriteLine($"{i + 1}. {otherMembers[i].Username}");
                         }
-
-                        Console.Write($"\nChọn thành viên mới làm leader (1-{otherMembers.Count}) hoặc 0 để hủy: ");
+                        Console.SetCursorPosition(borderLeft + 2, memberListY++);
+                        Console.Write($"Chọn thành viên mới làm leader (1-{otherMembers.Count}) hoặc 0 để hủy: ");
+                        Console.SetCursorPosition(borderLeft + 54, memberListY - 1);
                         if (int.TryParse(Console.ReadLine(), out int choice))
                         {
                             if (choice == 0)
@@ -413,10 +420,14 @@ namespace EsportsManager.UI.Controllers.Player.Handlers
                     }
                     else
                     {
+                        int disbandY = cursorY;
+                        Console.SetCursorPosition(borderLeft + 2, disbandY++);
                         Console.WriteLine($"⚠️  Bạn là leader duy nhất của team '{team.Name}'.");
+                        Console.SetCursorPosition(borderLeft + 2, disbandY++);
                         Console.WriteLine("Bạn có thể giải tán team hoặc hủy thao tác.");
-                        Console.Write("\nNhập 'DISBAND' để giải tán team hoặc Enter để hủy: ");
-
+                        Console.SetCursorPosition(borderLeft + 2, disbandY++);
+                        Console.Write("Nhập 'DISBAND' để giải tán team hoặc Enter để hủy: ");
+                        Console.SetCursorPosition(borderLeft + 48, disbandY - 1);
                         var disbandConfirmation = Console.ReadLine()?.Trim();
                         if (disbandConfirmation?.ToUpper() == "DISBAND")
                         {
@@ -450,10 +461,13 @@ namespace EsportsManager.UI.Controllers.Player.Handlers
                 else
                 {
                     // Thành viên thường rời team
+                    Console.SetCursorPosition(borderLeft + 2, cursorY++);
                     Console.WriteLine($"⚠️  Bạn có chắc chắn muốn rời khỏi team '{team.Name}' không?");
+                    Console.SetCursorPosition(borderLeft + 2, cursorY++);
                     Console.WriteLine("Hành động này không thể hoàn tác.");
-                    Console.Write("\nXác nhận rời team (YES để xác nhận): ");
-
+                    Console.SetCursorPosition(borderLeft + 2, cursorY++);
+                    Console.Write("Xác nhận rời team (YES để xác nhận): ");
+                    Console.SetCursorPosition(borderLeft + 38, cursorY - 1);
                     var leaveConfirmation = Console.ReadLine()?.Trim();
                     if (leaveConfirmation?.ToUpper() == "YES")
                     {

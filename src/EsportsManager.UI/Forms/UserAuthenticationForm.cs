@@ -194,7 +194,7 @@ namespace EsportsManager.UI.Forms
             }
 
             // Vẽ hướng dẫn phím ở cuối form - căn giữa và cắt nếu quá dài
-            string helpText = "↑↓/Tab: Chọn   Enter: Nhập   Enter: Đăng nhập   Esc: Thoát";
+            string helpText = "↑↓/Tab: Chọn   Enter: Nhập/Đăng nhập   Esc: Thoát";
             int maxHelpWidth = formWidth - 4; // Để trong khung border
             // Tính vị trí căn giữa
             int helpX = left + ((formWidth - helpText.Length) / 2);

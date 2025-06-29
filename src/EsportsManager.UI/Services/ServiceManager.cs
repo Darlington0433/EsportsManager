@@ -52,7 +52,7 @@ public class ServiceManager
     {
         // Create handlers
         var userManagementHandler = new UserManagementHandler(_userService, _achievementService, _tournamentService);
-        var tournamentManagementHandler = new AdminTournamentManagementHandler(_tournamentService);
+        var tournamentManagementHandler = new EsportsManager.UI.Controllers.Admin.Handlers.TournamentManagementHandler(adminUser, _tournamentService, _teamService);
         var systemStatsHandler = new SystemStatsHandler(_userService, _tournamentService, _teamService);
         var donationReportHandler = new DonationReportHandler(_walletService, _userService);
         var votingResultsHandler = new VotingResultsHandler(_userService, _tournamentService, _votingService);

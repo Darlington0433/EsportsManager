@@ -99,7 +99,7 @@ public class AuthenticationResult : BusinessResult
         return new AuthenticationResult(true, userId, username, role);
     }
 
-    public new static AuthenticationResult Failure(string message)
+    public static AuthenticationResult Failure(string message)
     {
         return new AuthenticationResult(false, message: message);
     }
@@ -129,7 +129,7 @@ public class ValidationResult
     /// <summary>
     /// Constructor với trạng thái và danh sách lỗi
     /// </summary>
-    private ValidationResult(bool isValid, IEnumerable<string> errors = null)
+    private ValidationResult(bool isValid, IEnumerable<string>? errors = null)
     {
         IsValid = isValid;
         _errors = errors?.ToList() ?? new List<string>();

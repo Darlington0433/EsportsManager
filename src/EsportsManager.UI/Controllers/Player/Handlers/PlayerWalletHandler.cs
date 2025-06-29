@@ -72,49 +72,54 @@ public class PlayerWalletHandler
         try
         {
             Console.Clear();
-            ConsoleRenderingService.DrawBorder("SỐ DƯ VÍ QUYÊN GÓP", 60, 12);
+            int borderWidth = 60;
+            int borderHeight = 12;
+            ConsoleRenderingService.DrawBorder("SỐ DƯ VÍ QUYÊN GÓP", borderWidth, borderHeight);
+            int borderLeft = (Console.WindowWidth - borderWidth) / 2;
+            int borderTop = (Console.WindowHeight - borderHeight) / 4;
+            int cursorY = borderTop + 2;
 
             var wallet = await _walletService.GetWalletByUserIdAsync(_currentUser.Id);
 
             if (wallet != null)
             {
-                Console.WriteLine($"\n💰 Số dư hiện tại: {wallet.Balance:N0} VND");
+                Console.SetCursorPosition(borderLeft + 2, cursorY++);
+                Console.WriteLine($"💰 Số dư hiện tại: {wallet.Balance:N0} VND");
+                Console.SetCursorPosition(borderLeft + 2, cursorY++);
                 Console.WriteLine($"📅 Cập nhật lần cuối: {wallet.LastUpdatedAt?.ToString("dd/MM/yyyy HH:mm") ?? "Chưa có"}");
 
-                // Display recent donation summary using BL service
                 var summary = await _walletService.GetWalletStatsAsync(_currentUser.Id);
                 if (summary != null)
                 {
-                    Console.WriteLine($"\n📊 Thống kê giao dịch:");
-                    Console.WriteLine($"   - Tổng thu nhập: {summary.TotalIncome:N0} VND");
-                    Console.WriteLine($"   - Tổng chi tiêu: {summary.TotalExpense:N0} VND");
-                    Console.WriteLine($"   - Số giao dịch: {summary.TotalTransactions}");
+                    Console.SetCursorPosition(borderLeft + 2, cursorY++);
+                    Console.WriteLine($"📊 Thống kê giao dịch:");
+                    Console.SetCursorPosition(borderLeft + 4, cursorY++);
+                    Console.WriteLine($"- Tổng thu nhập: {summary.TotalIncome:N0} VND");
+                    Console.SetCursorPosition(borderLeft + 4, cursorY++);
+                    Console.WriteLine($"- Tổng chi tiêu: {summary.TotalExpense:N0} VND");
+                    Console.SetCursorPosition(borderLeft + 4, cursorY++);
+                    Console.WriteLine($"- Số giao dịch: {summary.TotalTransactions}");
                 }
             }
             else
             {
-                ConsoleRenderingService.ShowNotification(
-                    WalletConstants.Messages.WALLET_NOT_FOUND, ConsoleColor.Yellow);
+                Console.SetCursorPosition(borderLeft + 2, cursorY++);
+                ConsoleRenderingService.ShowNotification(WalletConstants.Messages.WALLET_NOT_FOUND, ConsoleColor.Yellow);
             }
 
+            Console.SetCursorPosition(borderLeft + 2, borderTop + borderHeight - 2);
             Console.WriteLine(WalletConstants.Messages.PRESS_ANY_KEY);
+            Console.SetCursorPosition(borderLeft + 30, borderTop + borderHeight - 2);
             Console.ReadKey(true);
         }
         catch (Exception ex)
         {
-            // Show detailed error for debugging
-            Console.WriteLine($"Chi tiết lỗi: {ex.Message}");
-            if (ex.InnerException != null)
-            {
-                Console.WriteLine($"Inner Exception: {ex.InnerException.Message}");
-            }
-            Console.WriteLine($"Stack Trace: {ex.StackTrace}");
-
-            // Log the current user ID for debugging
-            Console.WriteLine($"Current User ID: {_currentUser.Id}");
-
-            ConsoleRenderingService.ShowMessageBox(
-                $"Không thể tải thông tin ví. Lỗi: {ex.Message}", true, 5000);
+            int borderWidth = 60;
+            int borderHeight = 12;
+            int borderLeft = (Console.WindowWidth - borderWidth) / 2;
+            int borderTop = (Console.WindowHeight - borderHeight) / 4;
+            Console.SetCursorPosition(borderLeft + 2, borderTop + borderHeight - 2);
+            ConsoleRenderingService.ShowMessageBox($"Không thể tải thông tin ví. Lỗi: {ex.Message}", true, 5000);
         }
     }
 
@@ -126,28 +131,38 @@ public class PlayerWalletHandler
         try
         {
             Console.Clear();
-            ConsoleRenderingService.DrawBorder("LỊCH SỬ GIAO DỊCH", 80, 20);
+            int borderWidth = 80;
+            int borderHeight = 20;
+            ConsoleRenderingService.DrawBorder("LỊCH SỬ GIAO DỊCH", borderWidth, borderHeight);
+            int borderLeft = (Console.WindowWidth - borderWidth) / 2;
+            int borderTop = (Console.WindowHeight - borderHeight) / 4;
+            int cursorY = borderTop + 2;
 
             var transactions = await _walletService.GetTransactionHistoryAsync(_currentUser.Id);
 
             if (transactions == null || !transactions.Any())
             {
-                ConsoleRenderingService.ShowNotification(
-                    "Không có giao dịch nào!", ConsoleColor.Yellow);
+                Console.SetCursorPosition(borderLeft + 2, cursorY++);
+                ConsoleRenderingService.ShowNotification("Không có giao dịch nào!", ConsoleColor.Yellow);
             }
             else
             {
-                DisplayTransactionTable(transactions);
+                cursorY = DisplayTransactionTable(transactions, borderLeft, cursorY);
             }
 
+            Console.SetCursorPosition(borderLeft + 2, borderTop + borderHeight - 2);
             Console.WriteLine(WalletConstants.Messages.PRESS_ANY_KEY);
+            Console.SetCursorPosition(borderLeft + 30, borderTop + borderHeight - 2);
             Console.ReadKey(true);
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Chi tiết lỗi transaction history: {ex.Message}");
-            ConsoleRenderingService.ShowMessageBox(
-                $"Không thể tải lịch sử giao dịch. Lỗi: {ex.Message}", true, 3000);
+            int borderWidth = 80;
+            int borderHeight = 20;
+            int borderLeft = (Console.WindowWidth - borderWidth) / 2;
+            int borderTop = (Console.WindowHeight - borderHeight) / 4;
+            Console.SetCursorPosition(borderLeft + 2, borderTop + borderHeight - 2);
+            ConsoleRenderingService.ShowMessageBox($"Không thể tải lịch sử giao dịch. Lỗi: {ex.Message}", true, 3000);
         }
     }
 
@@ -336,15 +351,16 @@ public class PlayerWalletHandler
     /// <summary>
     /// Display transaction history in table format
     /// </summary>
-    private void DisplayTransactionTable(IEnumerable<TransactionDto> transactions)
+    private int DisplayTransactionTable(IEnumerable<TransactionDto> transactions, int borderLeft, int cursorY)
     {
+        Console.SetCursorPosition(borderLeft + 2, cursorY++);
         var header = string.Format("{0,-15} {1,-12} {2,-15} {3,-20} {4,-15}",
             "Ngày", "Loại", "Số tiền", "Từ/Đến", "Trạng thái");
-
         Console.WriteLine(header);
+        Console.SetCursorPosition(borderLeft + 2, cursorY++);
         Console.WriteLine(new string('─', 77));
 
-        foreach (var transaction in transactions.Take(10)) // Show last 10 transactions
+        foreach (var transaction in transactions.Take(10))
         {
             var typeDisplay = transaction.TransactionType switch
             {
@@ -353,7 +369,6 @@ public class PlayerWalletHandler
                 "TopUp" => "Nạp tiền",
                 _ => transaction.TransactionType
             };
-
             var statusDisplay = transaction.Status switch
             {
                 "Completed" => "Hoàn thành",
@@ -361,17 +376,12 @@ public class PlayerWalletHandler
                 "Failed" => "Thất bại",
                 _ => transaction.Status
             };
-
             var row = string.Format("{0,-15} {1,-12} {2,-15} {3,-20} {4,-15}",
                 transaction.CreatedAt.ToString("dd/MM/yyyy"),
                 typeDisplay,
                 $"{transaction.Amount:N0} VND",
-                transaction.Note?.Length > 20 ?
-                    transaction.Note.Substring(0, 17) + "..." :
-                    transaction.Note ?? "",
+                transaction.Note?.Length > 20 ? transaction.Note.Substring(0, 17) + "..." : transaction.Note ?? "",
                 statusDisplay);
-
-            // Color code based on transaction type
             var color = transaction.TransactionType switch
             {
                 "Donation" => ConsoleColor.Green,
@@ -379,15 +389,17 @@ public class PlayerWalletHandler
                 "TopUp" => ConsoleColor.Cyan,
                 _ => ConsoleColor.White
             };
-
+            Console.SetCursorPosition(borderLeft + 2, cursorY);
             Console.ForegroundColor = color;
             Console.WriteLine(row);
             Console.ResetColor();
+            cursorY++;
         }
-
         if (transactions.Count() > 10)
         {
-            Console.WriteLine($"\n... và {transactions.Count() - 10} giao dịch khác");
+            Console.SetCursorPosition(borderLeft + 2, cursorY++);
+            Console.WriteLine($"... và {transactions.Count() - 10} giao dịch khác");
         }
+        return cursorY;
     }
 }
