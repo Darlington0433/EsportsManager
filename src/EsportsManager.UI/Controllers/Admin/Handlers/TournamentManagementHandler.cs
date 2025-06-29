@@ -80,20 +80,16 @@ public class TournamentManagementHandler : BaseHandler
         {
             var tournaments = await _tournamentService.GetAllTournamentsAsync();
 
-            Console.Clear();
-            ConsoleRenderingService.DrawBorder("DANH SÁCH GIẢI ĐẤU", 120, 25);
-
             if (tournaments == null || !tournaments.Any())
             {
+                Console.Clear();
+                ConsoleRenderingService.DrawBorder("DANH SÁCH GIẢI ĐẤU", 80, 20);
                 ConsoleRenderingService.ShowNotification("Chưa có giải đấu nào trong hệ thống.", ConsoleColor.Yellow);
                 return;
             }
 
-            DisplayTournamentsTable(tournaments);
-
-            Console.WriteLine($"\nTổng cộng: {tournaments.Count} giải đấu");
-            Console.WriteLine("\nNhấn phím bất kỳ để tiếp tục...");
-            Console.ReadKey(true);
+            // DisplayTournamentsTableInBorder sẽ tự vẽ border với kích thước phù hợp
+            DisplayTournamentsTableInBorder(tournaments, 0, 0, 0);
         }
         catch (Exception ex)
         {
@@ -347,34 +343,118 @@ public class TournamentManagementHandler : BaseHandler
         return new string(' ', padLeft) + text + new string(' ', padRight);
     }
 
-    private void DisplayTournamentsTable(IEnumerable<TournamentInfoDto> tournaments)
+    private void DisplayTournamentsTableInBorder(IEnumerable<TournamentInfoDto> tournaments, int startX, int startY, int maxWidth)
     {
-        // Lấy vị trí content của border ngoài
-        int borderWidth = 120;
-        int borderHeight = 25;
-        var (left, top, contentWidth) = ConsoleRenderingService.GetBorderContentPosition(borderWidth, borderHeight);
-        // Định nghĩa format với độ rộng phù hợp cho ngày dd/MM/yyyy (10 ký tự)
-        string format = "{0,-4} {1,-28} {2,-14} {3,-12} {4,-12} {5,-18}";
-        var header = string.Format(format,
-            "ID", "Tên giải đấu", "Trạng thái", "Ngày bắt đầu", "Ngày kết thúc", "Tổng giải thưởng");
-        int width = header.Length;
-        Console.SetCursorPosition(left, Console.CursorTop + 1);
-        Console.WriteLine(header);
-        DrawSeparatorLine(left, Console.CursorTop, width);
-
-        foreach (var t in tournaments)
+        Console.Clear();
+        
+        // Đảm bảo kích thước border phù hợp với console
+        int windowWidth = Console.WindowWidth;
+        int borderWidth = Math.Min(windowWidth - 4, 120); // Đảm bảo border không vượt quá chiều rộng console
+        
+        // Tính toán độ rộng các cột
+        int usableWidth = borderWidth - 10; // Tăng padding để đảm bảo không tràn ra ngoài
+        int numCols = 7;
+        int numSeparators = numCols - 1;
+        int separatorWidth = 3; // " | "
+        int totalSeparator = numSeparators * separatorWidth;
+        int totalColWidth = usableWidth - totalSeparator;
+        
+        // Phân bổ độ rộng cho các cột một cách hợp lý
+        int[] colWidths = { 5, 30, 12, 15, 15, 15, 15 }; // Tăng độ rộng các cột để hiển thị đầy đủ
+        
+        // Đảm bảo tổng độ rộng không vượt quá không gian có sẵn
+        int sumCol = colWidths.Sum() + totalSeparator;
+        if (sumCol > usableWidth)
         {
-            var tournamentName = t.TournamentName.Length > 28 ? t.TournamentName.Substring(0, 28) : t.TournamentName;
-            var row = string.Format(format,
-                t.TournamentId,
-                tournamentName,
-                t.Status,
-                t.StartDate.ToString("dd/MM/yyyy"),
-                t.EndDate.ToString("dd/MM/yyyy"),
-                t.PrizePool.ToString("N0"));
-            Console.SetCursorPosition(left, Console.CursorTop);
-            Console.WriteLine(row);
+            // Giảm độ rộng các cột theo tỷ lệ
+            double ratio = (double)(usableWidth - totalSeparator) / colWidths.Sum();
+            for (int i = 0; i < colWidths.Length; i++)
+            {
+                colWidths[i] = Math.Max(5, (int)(colWidths[i] * ratio));
+            }
         }
+        
+        var headers = new[] { "ID", "Tên giải đấu", "Trạng thái", "Phí tham gia", "Ngày bắt đầu", "Ngày kết thúc", "Tổng thưởng" };
+        
+        // Tạo dữ liệu hàng với đầy đủ thông tin
+        var rows = tournaments.Select(t => new[] {
+            t.TournamentId.ToString(),
+            t.TournamentName,
+            t.Status,
+            t.EntryFee.ToString("N0"),
+            t.StartDate.ToString("dd/MM/yyyy"),
+            t.EndDate.ToString("dd/MM/yyyy"),
+            t.PrizePool.ToString("N0")
+        }).ToList();
+        
+        // Tính toán chiều cao border
+        int borderHeight = Math.Min(rows.Count + 8, 25); // Đảm bảo đủ chỗ cho nội dung và không quá cao
+        
+        // Vẽ border tiêu chuẩn không có đường kẻ dọc
+        ConsoleRenderingService.DrawBorder("DANH SÁCH GIẢI ĐẤU", borderWidth, borderHeight);
+        
+        // Tính vị trí để căn giữa
+        int borderLeft = (windowWidth - borderWidth) / 2;
+        int borderTop = (Console.WindowHeight - borderHeight) / 4;
+        
+        // Hiển thị tiêu đề các cột
+        Console.SetCursorPosition(borderLeft + 2, borderTop + 1);
+        Console.ForegroundColor = ConsoleColor.White;
+        
+        int colPos = 2;
+        for (int i = 0; i < headers.Length; i++)
+        {
+            string header = headers[i];
+            Console.SetCursorPosition(borderLeft + colPos, borderTop + 1);
+            Console.Write(header);
+            colPos += colWidths[i] + 3; // +3 cho dấu phân cách " | "
+        }
+        
+        // Vẽ đường kẻ ngang dưới header
+        Console.SetCursorPosition(borderLeft + 2, borderTop + 2);
+        Console.WriteLine(new string('═', borderWidth - 4));
+        
+        // Hiển thị dữ liệu các hàng
+        Console.ForegroundColor = ConsoleColor.Gray;
+        for (int rowIndex = 0; rowIndex < rows.Count; rowIndex++)
+        {
+            if (rowIndex >= borderHeight - 5) break; // Đảm bảo không vượt quá chiều cao border
+            
+            var row = rows[rowIndex];
+            colPos = 2;
+            
+            for (int colIndex = 0; colIndex < row.Length; colIndex++)
+            {
+                string cellValue = row[colIndex];
+                // Cắt bớt nội dung nếu quá dài
+                if (cellValue.Length > colWidths[colIndex])
+                {
+                    cellValue = cellValue.Substring(0, colWidths[colIndex] - 3) + "...";
+                }
+                
+                Console.SetCursorPosition(borderLeft + colPos, borderTop + 3 + rowIndex);
+                Console.Write(cellValue.PadRight(colWidths[colIndex]));
+                
+                // Thêm dấu phân cách giữa các cột
+                if (colIndex < row.Length - 1)
+                {
+                    Console.Write(" | ");
+                }
+                
+                colPos += colWidths[colIndex] + 3; // +3 cho dấu phân cách " | "
+            }
+        }
+        
+        // Hiển thị thông tin tổng số giải đấu
+        Console.ForegroundColor = ConsoleColor.Yellow;
+        Console.SetCursorPosition(borderLeft + 2, borderTop + borderHeight - 2);
+        Console.WriteLine($"Tổng cộng: {tournaments.Count()} giải đấu");
+        
+        // Hiển thị thông báo nhấn phím
+        Console.ResetColor();
+        Console.SetCursorPosition(borderLeft + borderWidth - 30, borderTop + borderHeight - 2);
+        Console.WriteLine("Nhấn phím bất kỳ để tiếp tục...");
+        Console.ReadKey(true);
     }
 
     private TournamentCreateDto? CollectTournamentData()

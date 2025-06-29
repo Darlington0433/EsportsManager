@@ -161,5 +161,24 @@ namespace EsportsManager.UI.Controllers.Player.Handlers
                 _ => "FEEDBACK"
             };
         }
+
+        private void DisplayFeedbackTableInBorder(IEnumerable<FeedbackDto> feedbacks, int startX, int startY, int maxWidth)
+        {
+            var headers = new[] { "ID", "Nội dung", "Ngày gửi", "Trạng thái" };
+            var rows = feedbacks.Select(f => new[] {
+                f.FeedbackId.ToString(),
+                f.Content.Length > 30 ? f.Content.Substring(0, 30) + "..." : f.Content,
+                f.CreatedAt.ToString("dd/MM/yyyy"),
+                f.Status
+            }).ToList();
+            int borderWidth = maxWidth;
+            int borderHeight = 14;
+            int[] colWidths = { 5, 32, 14, 12 }; // Tổng + phân cách <= borderWidth - 4
+            UIHelper.PrintTableInBorder(headers, rows, borderWidth, borderHeight, startX, startY, colWidths);
+            int infoY = startY + 2 + rows.Count + 2;
+            UIHelper.PrintPromptInBorder($"Tổng cộng: {feedbacks.Count()} phản hồi", startX, infoY, borderWidth - 4);
+            Console.SetCursorPosition(0, startY + borderHeight + 1);
+            Console.WriteLine("Nhấn phím bất kỳ để tiếp tục...");
+        }
     }
 }

@@ -2,6 +2,8 @@ using System;
 using System.Threading.Tasks;
 using EsportsManager.UI.Constants;
 using EsportsManager.UI.ConsoleUI.Utilities;
+using System.Linq;
+using System.Text;
 
 namespace EsportsManager.UI.Utilities;
 
@@ -177,5 +179,131 @@ public static class UIHelper
         }
 
         return input;
+    }
+
+    /// <summary>
+    /// In bảng dữ liệu trong border (header + rows), cho phép truyền colWidths để căn đều từng cột
+    /// </summary>
+    public static void PrintTableInBorder(
+        string[] headers,
+        List<string[]> rows,
+        int borderWidth,
+        int borderHeight,
+        int left,
+        int top,
+        int[]? colWidths = null)
+    {
+        int contentWidth = borderWidth - 10; // Tăng padding để đảm bảo không tràn ra ngoài
+        int colCount = headers.Length;
+        
+        // Nếu không truyền colWidths thì chia đều
+        if (colWidths == null || colWidths.Length != colCount)
+        {
+            colWidths = Enumerable.Repeat(contentWidth / colCount, colCount).ToArray();
+        }
+        
+        // Đảm bảo tổng độ rộng các cột không vượt quá contentWidth
+        int totalColWidth = colWidths.Sum() + ((colCount - 1) * 3); // Tính cả separator
+        if (totalColWidth > contentWidth)
+        {
+            // Giảm độ rộng các cột một cách tỷ lệ
+            double ratio = (double)(contentWidth - ((colCount - 1) * 3)) / colWidths.Sum();
+            for (int i = 0; i < colWidths.Length; i++)
+            {
+                colWidths[i] = Math.Max(3, (int)(colWidths[i] * ratio));
+            }
+        }
+        
+        int currentY = top + 2;
+
+        // In header với màu nổi bật
+        Console.SetCursorPosition(left + 2, currentY++);
+        Console.ForegroundColor = ConsoleColor.White;
+        
+        // Tạo dòng header
+        StringBuilder headerLine = new StringBuilder();
+        for (int i = 0; i < headers.Length; i++)
+        {
+            string headerText = headers[i];
+            if (headerText.Length > colWidths[i] - 1)
+            {
+                headerText = headerText.Substring(0, colWidths[i] - 3) + "...";
+            }
+            headerLine.Append(headerText.PadRight(colWidths[i]));
+            if (i < headers.Length - 1) headerLine.Append(" | ");
+        }
+        
+        // Đảm bảo headerLine không vượt quá contentWidth
+        string headerLineStr = headerLine.ToString();
+        if (headerLineStr.Length > contentWidth)
+        {
+            headerLineStr = headerLineStr.Substring(0, contentWidth);
+        }
+        Console.WriteLine(headerLineStr);
+
+        // Separator line với ký tự đặc biệt để tạo đường phân cách rõ ràng
+        Console.SetCursorPosition(left + 2, currentY++);
+        int sepLen = Math.Min(totalColWidth, contentWidth);
+        Console.WriteLine(new string('═', sepLen));
+        
+        // In từng dòng data với màu thường
+        Console.ForegroundColor = ConsoleColor.Gray;
+        foreach (var row in rows)
+        {
+            if (currentY >= top + borderHeight - 2) break; // Đảm bảo không vượt quá chiều cao border
+            
+            Console.SetCursorPosition(left + 2, currentY++);
+            StringBuilder rowLine = new StringBuilder();
+            
+            for (int i = 0; i < Math.Min(row.Length, colWidths.Length); i++)
+            {
+                string cellText = row[i] ?? "";
+                if (cellText.Length > colWidths[i] - 1)
+                {
+                    cellText = cellText.Substring(0, colWidths[i] - 3) + "...";
+                }
+                rowLine.Append(cellText.PadRight(colWidths[i]));
+                if (i < colWidths.Length - 1) rowLine.Append(" | ");
+            }
+            
+            // Đảm bảo rowLine không vượt quá contentWidth
+            string rowLineStr = rowLine.ToString();
+            if (rowLineStr.Length > contentWidth)
+            {
+                rowLineStr = rowLineStr.Substring(0, contentWidth);
+            }
+            Console.WriteLine(rowLineStr);
+        }
+        
+        // Separator line dưới cùng để tạo viền hoàn chỉnh
+        if (rows.Count > 0 && currentY < top + borderHeight - 2)
+        {
+            Console.SetCursorPosition(left + 2, currentY++);
+            Console.WriteLine(new string('─', sepLen));
+        }
+        
+        Console.ResetColor();
+    }
+
+    /// <summary>
+    /// In prompt hoặc thông báo trong border
+    /// </summary>
+    public static void PrintPromptInBorder(string message, int left, int y, int width)
+    {
+        Console.SetCursorPosition(left + 2, y);
+        Console.ForegroundColor = ConsoleColor.Yellow;
+        Console.WriteLine(message.PadRight(width));
+        Console.ResetColor();
+    }
+
+    /// <summary>
+    /// In thông báo màu trong border
+    /// </summary>
+    public static void PrintMessageInBorder(string message, int left, int y, int width, ConsoleColor color)
+    {
+        Console.SetCursorPosition(left, y);
+        Console.ForegroundColor = color;
+        Console.WriteLine(message.PadRight(width));
+        Console.ResetColor();
     }
 } 

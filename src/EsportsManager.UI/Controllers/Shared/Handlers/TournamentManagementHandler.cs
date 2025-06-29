@@ -38,14 +38,27 @@ namespace EsportsManager.UI.Controllers.Shared.Handlers
                     Console.Clear();
                     ConsoleRenderingService.DrawBorder("QUẢN LÝ GIẢI ĐẤU", 80, 15);
 
-                    Console.WriteLine("🏆 Chọn chức năng quản lý giải đấu:");
-                    Console.WriteLine("1. Xem giải đấu đã đăng ký");
-                    Console.WriteLine("2. Đăng ký giải đấu mới");
-                    Console.WriteLine("3. Xem thông tin chi tiết giải đấu");
-                    Console.WriteLine("4. Hủy đăng ký giải đấu");
-                    Console.WriteLine("0. Quay lại");
+                    int borderLeft = 2;
+                    int borderTop = 3;
+                    int currentLine = borderTop;
+                    int borderWidth = 80 - 4;
 
-                    Console.Write("\nNhập lựa chọn của bạn: ");
+                    string[] menuLines = new string[] {
+                        "🏆 Chọn chức năng quản lý giải đấu:",
+                        "1. Xem giải đấu đã đăng ký",
+                        "2. Đăng ký giải đấu mới",
+                        "3. Xem thông tin chi tiết giải đấu",
+                        "4. Hủy đăng ký giải đấu",
+                        "0. Quay lại"
+                    };
+                    foreach (var line in menuLines)
+                    {
+                        Console.SetCursorPosition(borderLeft, currentLine++);
+                        Console.WriteLine(line.PadRight(borderWidth));
+                    }
+                    Console.SetCursorPosition(borderLeft, currentLine++);
+                    string prompt = "Nhập lựa chọn của bạn: ";
+                    Console.Write(prompt.Length > borderWidth ? prompt.Substring(0, borderWidth) : prompt.PadRight(borderWidth));
                     var choice = Console.ReadLine();
 
                     switch (choice)
@@ -72,7 +85,8 @@ namespace EsportsManager.UI.Controllers.Shared.Handlers
 
                     if (keepRunning && choice != "0")
                     {
-                        Console.WriteLine("\nNhấn phím bất kỳ để tiếp tục...");
+                        Console.SetCursorPosition(borderLeft, currentLine++);
+                        Console.WriteLine("Nhấn phím bất kỳ để tiếp tục...".PadRight(borderWidth));
                         Console.ReadKey();
                     }
                 }
@@ -97,26 +111,40 @@ namespace EsportsManager.UI.Controllers.Shared.Handlers
 
             var tournaments = await _tournamentService.GetTeamTournamentsAsync(team.Id);
 
+            int borderLeft = 2;
+            int borderTop = 3;
+            int currentLine = borderTop;
+            int borderWidth = 80 - 4;
+
             if (tournaments.Count == 0)
             {
-                Console.WriteLine("🔍 Team của bạn chưa đăng ký tham gia giải đấu nào.");
+                Console.SetCursorPosition(borderLeft, currentLine++);
+                Console.WriteLine("🔍 Team của bạn chưa đăng ký tham gia giải đấu nào.".PadRight(borderWidth));
                 return;
             }
 
-            Console.WriteLine($"🏆 Team '{team.Name}' đã đăng ký {tournaments.Count} giải đấu:");
-            Console.WriteLine();
-
+            Console.SetCursorPosition(borderLeft, currentLine++);
+            string teamInfo = $"🏆 Team '{team.Name}' đã đăng ký {tournaments.Count} giải đấu:";
+            Console.WriteLine(teamInfo.Length > borderWidth ? teamInfo.Substring(0, borderWidth) : teamInfo.PadRight(borderWidth));
+            currentLine++;
             for (int i = 0; i < tournaments.Count; i++)
             {
                 var tournament = tournaments[i];
-                Console.WriteLine($"═══ Giải đấu {i + 1} ═══");
-                Console.WriteLine($"📋 Tên: {tournament.Name}");
-                Console.WriteLine($"🎮 Game: {tournament.GameName}");
-                Console.WriteLine($"📅 Thời gian: {tournament.StartDate:dd/MM/yyyy} - {tournament.EndDate:dd/MM/yyyy}");
-                Console.WriteLine($"💰 Phí tham gia: {tournament.EntryFee:N0} VND");
-                Console.WriteLine($"🏆 Giải thưởng: {tournament.PrizePool:N0} VND");
-                Console.WriteLine($"📊 Trạng thái: {tournament.Status}");
-                Console.WriteLine();
+                Console.SetCursorPosition(borderLeft, currentLine++);
+                Console.WriteLine($"═══ Giải đấu {i + 1} ═══".PadRight(borderWidth));
+                Console.SetCursorPosition(borderLeft, currentLine++);
+                Console.WriteLine($"📋 Tên: {tournament.Name}".PadRight(borderWidth));
+                Console.SetCursorPosition(borderLeft, currentLine++);
+                Console.WriteLine($"🎮 Game: {tournament.GameName}".PadRight(borderWidth));
+                Console.SetCursorPosition(borderLeft, currentLine++);
+                Console.WriteLine($"📅 Thời gian: {tournament.StartDate:dd/MM/yyyy} - {tournament.EndDate:dd/MM/yyyy}".PadRight(borderWidth));
+                Console.SetCursorPosition(borderLeft, currentLine++);
+                Console.WriteLine($"💰 Phí tham gia: {tournament.EntryFee:N0} VND".PadRight(borderWidth));
+                Console.SetCursorPosition(borderLeft, currentLine++);
+                Console.WriteLine($"🏆 Giải thưởng: {tournament.PrizePool:N0} VND".PadRight(borderWidth));
+                Console.SetCursorPosition(borderLeft, currentLine++);
+                Console.WriteLine($"📊 Trạng thái: {tournament.Status}".PadRight(borderWidth));
+                currentLine++;
             }
         }
 
@@ -140,36 +168,48 @@ namespace EsportsManager.UI.Controllers.Shared.Handlers
                 return;
             }
 
-            Console.WriteLine("🏆 Danh sách giải đấu có thể đăng ký:");
-            Console.WriteLine();
+            int borderLeft = 2;
+            int borderTop = 3;
+            int currentLine = borderTop;
+            int borderWidth = 80 - 4;
 
+            Console.SetCursorPosition(borderLeft, currentLine++);
+            Console.WriteLine("🏆 Danh sách giải đấu có thể đăng ký:".PadRight(borderWidth));
+            currentLine++;
             for (int i = 0; i < tournaments.Count; i++)
             {
                 var tournament = tournaments[i];
-                Console.WriteLine($"═══ Lựa chọn {i + 1} ═══");
-                Console.WriteLine($"📋 Tên: {tournament.Name}");
-                Console.WriteLine($"🎮 Game: {tournament.GameName}");
-                Console.WriteLine($"📅 Hạn đăng ký: {tournament.RegistrationDeadline:dd/MM/yyyy HH:mm}");
-                Console.WriteLine($"👥 Số team: {tournament.RegisteredTeams}/{tournament.MaxTeams}");
-                Console.WriteLine($"💰 Phí: {tournament.EntryFee:N0} VND");
-                Console.WriteLine($"🏆 Giải thưởng: {tournament.PrizePool:N0} VND");
-                Console.WriteLine();
+                Console.SetCursorPosition(borderLeft, currentLine++);
+                Console.WriteLine($"═══ Lựa chọn {i + 1} ═══".PadRight(borderWidth));
+                Console.SetCursorPosition(borderLeft, currentLine++);
+                Console.WriteLine($"📋 Tên: {tournament.Name}".PadRight(borderWidth));
+                Console.SetCursorPosition(borderLeft, currentLine++);
+                Console.WriteLine($"🎮 Game: {tournament.GameName}".PadRight(borderWidth));
+                Console.SetCursorPosition(borderLeft, currentLine++);
+                Console.WriteLine($"📅 Hạn đăng ký: {tournament.RegistrationDeadline:dd/MM/yyyy HH:mm}".PadRight(borderWidth));
+                Console.SetCursorPosition(borderLeft, currentLine++);
+                Console.WriteLine($"👥 Số team: {tournament.RegisteredTeams}/{tournament.MaxTeams}".PadRight(borderWidth));
+                Console.SetCursorPosition(borderLeft, currentLine++);
+                Console.WriteLine($"💰 Phí: {tournament.EntryFee:N0} VND".PadRight(borderWidth));
+                Console.SetCursorPosition(borderLeft, currentLine++);
+                Console.WriteLine($"🏆 Giải thưởng: {tournament.PrizePool:N0} VND".PadRight(borderWidth));
+                currentLine++;
             }
-
-            Console.Write($"Nhập số thứ tự giải đấu muốn tham gia (1-{tournaments.Count}, 0 để hủy): ");
+            Console.SetCursorPosition(borderLeft, currentLine++);
+            string prompt = $"Nhập số thứ tự giải đấu muốn tham gia (1-{tournaments.Count}, 0 để hủy): ";
+            Console.Write(prompt.Length > borderWidth ? prompt.Substring(0, borderWidth) : prompt.PadRight(borderWidth));
             if (int.TryParse(Console.ReadLine(), out int choice) && choice >= 1 && choice <= tournaments.Count)
             {
                 var selectedTournament = tournaments[choice - 1];
-
-                Console.WriteLine();
-                Console.WriteLine($"Bạn đã chọn: {selectedTournament.Name}");
+                currentLine++;
+                Console.SetCursorPosition(borderLeft, currentLine++);
+                Console.WriteLine($"Bạn đã chọn: {selectedTournament.Name}".PadRight(borderWidth));
+                Console.SetCursorPosition(borderLeft, currentLine++);
                 Console.Write("Xác nhận đăng ký? (y/n): ");
-
                 var confirm = Console.ReadLine()?.ToLower();
                 if (confirm == "y" || confirm == "yes")
                 {
                     bool success = await RegisterForTournamentAsync(selectedTournament.Id, team);
-
                     if (success)
                     {
                         ConsoleRenderingService.ShowMessageBox($"✅ Đã đăng ký team '{team.Name}' tham gia '{selectedTournament.Name}' thành công!", false, 3000);
@@ -181,7 +221,8 @@ namespace EsportsManager.UI.Controllers.Shared.Handlers
                 }
                 else
                 {
-                    Console.WriteLine("Đã hủy đăng ký.");
+                    Console.SetCursorPosition(borderLeft, currentLine++);
+                    Console.WriteLine("Đã hủy đăng ký.".PadRight(borderWidth));
                 }
             }
             else if (choice != 0)
@@ -197,19 +238,29 @@ namespace EsportsManager.UI.Controllers.Shared.Handlers
 
             var tournaments = await _tournamentService.GetAllTournamentsAsync();
 
+            int borderLeft = 2;
+            int borderTop = 3;
+            int currentLine = borderTop;
+            int borderWidth = 80 - 4;
+
             if (tournaments.Count == 0)
             {
-                Console.WriteLine("Không có giải đấu nào trong hệ thống.");
+                Console.SetCursorPosition(borderLeft, currentLine++);
+                Console.WriteLine("Không có giải đấu nào trong hệ thống.".PadRight(borderWidth));
                 return;
             }
 
-            Console.WriteLine("📋 Danh sách tất cả giải đấu:");
+            Console.SetCursorPosition(borderLeft, currentLine++);
+            Console.WriteLine("📋 Danh sách tất cả giải đấu:".PadRight(borderWidth));
             for (int i = 0; i < tournaments.Count; i++)
             {
-                Console.WriteLine($"{i + 1}. {tournaments[i].Name} - {tournaments[i].Status}");
+                Console.SetCursorPosition(borderLeft, currentLine++);
+                string line = $"{i + 1}. {tournaments[i].Name} - {tournaments[i].Status}";
+                Console.WriteLine(line.Length > borderWidth ? line.Substring(0, borderWidth) : line.PadRight(borderWidth));
             }
-
-            Console.Write($"\nNhập số thứ tự giải đấu để xem chi tiết (1-{tournaments.Count}): ");
+            Console.SetCursorPosition(borderLeft, currentLine++);
+            string prompt = $"Nhập số thứ tự giải đấu để xem chi tiết (1-{tournaments.Count}): ";
+            Console.Write(prompt.Length > borderWidth ? prompt.Substring(0, borderWidth) : prompt.PadRight(borderWidth));
             if (int.TryParse(Console.ReadLine(), out int choice) && choice >= 1 && choice <= tournaments.Count)
             {
                 var tournament = tournaments[choice - 1];
@@ -226,38 +277,54 @@ namespace EsportsManager.UI.Controllers.Shared.Handlers
             Console.Clear();
             ConsoleRenderingService.DrawBorder($"CHI TIẾT: {tournament.Name.ToUpper()}", 80, 20);
 
-            Console.WriteLine($"📋 Tên giải đấu: {tournament.Name}");
-            Console.WriteLine($"📝 Mô tả: {tournament.Description}");
-            Console.WriteLine($"🎮 Game: {tournament.GameName}");
-            Console.WriteLine($"📅 Thời gian bắt đầu: {tournament.StartDate:dd/MM/yyyy HH:mm}");
-            Console.WriteLine($"📅 Thời gian kết thúc: {tournament.EndDate:dd/MM/yyyy HH:mm}");
-            Console.WriteLine($"⏰ Hạn đăng ký: {tournament.RegistrationDeadline:dd/MM/yyyy HH:mm}");
-            Console.WriteLine($"👥 Số team tham gia: {tournament.RegisteredTeams}/{tournament.MaxTeams}");
-            Console.WriteLine($"💰 Phí tham gia: {tournament.EntryFee:N0} VND");
-            Console.WriteLine($"🏆 Tổng giải thưởng: {tournament.PrizePool:N0} VND");
-            Console.WriteLine($"📊 Trạng thái: {tournament.Status}");
-            Console.WriteLine();
+            int borderLeft = 2;
+            int borderTop = 3;
+            int currentLine = borderTop;
+            int borderWidth = 80 - 4;
 
-            // Hiển thị danh sách team đã đăng ký
+            string[] infoLines = new string[] {
+                $"📋 Tên giải đấu: {tournament.Name}",
+                $"📝 Mô tả: {tournament.Description}",
+                $"🎮 Game: {tournament.GameName}",
+                $"📅 Thời gian bắt đầu: {tournament.StartDate:dd/MM/yyyy HH:mm}",
+                $"📅 Thời gian kết thúc: {tournament.EndDate:dd/MM/yyyy HH:mm}",
+                $"⏰ Hạn đăng ký: {tournament.RegistrationDeadline:dd/MM/yyyy HH:mm}",
+                $"👥 Số team tham gia: {tournament.RegisteredTeams}/{tournament.MaxTeams}",
+                $"💰 Phí tham gia: {tournament.EntryFee:N0} VND",
+                $"🏆 Tổng giải thưởng: {tournament.PrizePool:N0} VND",
+                $"📊 Trạng thái: {tournament.Status}",
+                ""
+            };
+            foreach (var line in infoLines)
+            {
+                Console.SetCursorPosition(borderLeft, currentLine++);
+                Console.WriteLine(line.Length > borderWidth ? line.Substring(0, borderWidth) : line.PadRight(borderWidth));
+            }
             try
             {
                 var teams = await _tournamentService.GetTournamentTeamsAsync(tournament.Id);
                 if (teams.Count > 0)
                 {
-                    Console.WriteLine("👥 Danh sách team đã đăng ký:");
+                    Console.SetCursorPosition(borderLeft, currentLine++);
+                    Console.WriteLine("👥 Danh sách team đã đăng ký:".PadRight(borderWidth));
                     for (int i = 0; i < teams.Count; i++)
                     {
-                        Console.WriteLine($"  {i + 1}. {teams[i].Name} (Leader: {teams[i].LeaderName}, {teams[i].MemberCount} thành viên)");
+                        Console.SetCursorPosition(borderLeft, currentLine++);
+                        string teamLine = $"  {i + 1}. {teams[i].Name} (Leader: {teams[i].LeaderName}, {teams[i].MemberCount} thành viên)";
+                        Console.WriteLine(teamLine.Length > borderWidth ? teamLine.Substring(0, borderWidth) : teamLine.PadRight(borderWidth));
                     }
                 }
                 else
                 {
-                    Console.WriteLine("👥 Chưa có team nào đăng ký.");
+                    Console.SetCursorPosition(borderLeft, currentLine++);
+                    Console.WriteLine("👥 Chưa có team nào đăng ký.".PadRight(borderWidth));
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"⚠️ Không thể tải danh sách team: {ex.Message}");
+                Console.SetCursorPosition(borderLeft, currentLine++);
+                string err = $"⚠️ Không thể tải danh sách team: {ex.Message}";
+                Console.WriteLine(err.Length > borderWidth ? err.Substring(0, borderWidth) : err.PadRight(borderWidth));
             }
         }
 
@@ -275,37 +342,48 @@ namespace EsportsManager.UI.Controllers.Shared.Handlers
 
             var tournaments = await _tournamentService.GetTeamTournamentsAsync(team.Id);
 
+            int borderLeft = 2;
+            int borderTop = 3;
+            int currentLine = borderTop;
+            int borderWidth = 80 - 4;
+
             if (tournaments.Count == 0)
             {
-                Console.WriteLine("Team của bạn chưa đăng ký giải đấu nào.");
+                Console.SetCursorPosition(borderLeft, currentLine++);
+                Console.WriteLine("Team của bạn chưa đăng ký giải đấu nào.".PadRight(borderWidth));
                 return;
             }
 
-            Console.WriteLine($"🏆 Team '{team.Name}' đã đăng ký các giải đấu sau:");
-            Console.WriteLine();
-
+            Console.SetCursorPosition(borderLeft, currentLine++);
+            string teamInfo = $"🏆 Team '{team.Name}' đã đăng ký các giải đấu sau:";
+            Console.WriteLine(teamInfo.Length > borderWidth ? teamInfo.Substring(0, borderWidth) : teamInfo.PadRight(borderWidth));
+            currentLine++;
             for (int i = 0; i < tournaments.Count; i++)
             {
                 var tournament = tournaments[i];
-                Console.WriteLine($"{i + 1}. {tournament.Name} - {tournament.Status}");
-                Console.WriteLine($"   📅 {tournament.StartDate:dd/MM/yyyy} - {tournament.EndDate:dd/MM/yyyy}");
-                Console.WriteLine();
+                Console.SetCursorPosition(borderLeft, currentLine++);
+                string line1 = $"{i + 1}. {tournament.Name} - {tournament.Status}";
+                Console.WriteLine(line1.Length > borderWidth ? line1.Substring(0, borderWidth) : line1.PadRight(borderWidth));
+                Console.SetCursorPosition(borderLeft, currentLine++);
+                string line2 = $"   📅 {tournament.StartDate:dd/MM/yyyy} - {tournament.EndDate:dd/MM/yyyy}";
+                Console.WriteLine(line2.Length > borderWidth ? line2.Substring(0, borderWidth) : line2.PadRight(borderWidth));
+                currentLine++;
             }
-
-            Console.Write($"Nhập số thứ tự giải đấu muốn hủy đăng ký (1-{tournaments.Count}, 0 để hủy): ");
+            Console.SetCursorPosition(borderLeft, currentLine++);
+            string prompt = $"Nhập số thứ tự giải đấu muốn hủy đăng ký (1-{tournaments.Count}, 0 để hủy): ";
+            Console.Write(prompt.Length > borderWidth ? prompt.Substring(0, borderWidth) : prompt.PadRight(borderWidth));
             if (int.TryParse(Console.ReadLine(), out int choice) && choice >= 1 && choice <= tournaments.Count)
             {
                 var selectedTournament = tournaments[choice - 1];
-
-                Console.WriteLine();
-                Console.WriteLine($"Bạn đã chọn hủy đăng ký: {selectedTournament.Name}");
+                currentLine++;
+                Console.SetCursorPosition(borderLeft, currentLine++);
+                Console.WriteLine($"Bạn đã chọn hủy đăng ký: {selectedTournament.Name}".PadRight(borderWidth));
+                Console.SetCursorPosition(borderLeft, currentLine++);
                 Console.Write("Xác nhận hủy đăng ký? (y/n): ");
-
                 var confirm = Console.ReadLine()?.ToLower();
                 if (confirm == "y" || confirm == "yes")
                 {
                     bool success = await _tournamentService.UnregisterTeamFromTournamentAsync(selectedTournament.Id, team.Id);
-
                     if (success)
                     {
                         ConsoleRenderingService.ShowMessageBox($"✅ Đã hủy đăng ký team '{team.Name}' khỏi '{selectedTournament.Name}' thành công!", false, 3000);
@@ -317,7 +395,8 @@ namespace EsportsManager.UI.Controllers.Shared.Handlers
                 }
                 else
                 {
-                    Console.WriteLine("Đã hủy thao tác.");
+                    Console.SetCursorPosition(borderLeft, currentLine++);
+                    Console.WriteLine("Đã hủy thao tác.".PadRight(borderWidth));
                 }
             }
             else if (choice != 0)

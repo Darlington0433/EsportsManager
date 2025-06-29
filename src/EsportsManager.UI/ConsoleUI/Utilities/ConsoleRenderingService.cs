@@ -43,7 +43,9 @@ namespace EsportsManager.UI.ConsoleUI.Utilities
 
             // Chọn bộ ký tự border (đơn hoặc đôi)
             var border = useDoubleBorder ? DoubleBorder : SingleBorder;
-            Console.ForegroundColor = ConsoleColor.Green; // Màu xanh cho border            // Vẽ hàng trên của border
+            Console.ForegroundColor = ConsoleColor.Green; // Màu xanh cho border
+            
+            // Vẽ hàng trên của border
             SafeConsole.SetCursorPosition(left, top);
             Console.Write(border[0]); // Góc trên trái
 
@@ -71,14 +73,18 @@ namespace EsportsManager.UI.ConsoleUI.Utilities
                 // Không có title, vẽ đường kẻ ngang liên tục
                 Console.Write(new string(border[1], width - 2));
             }
-            Console.Write(border[2]); // Góc trên phải            // Vẽ các hàng giữa (body của border)
+            Console.Write(border[2]); // Góc trên phải
+            
+            // Vẽ các hàng giữa (body của border)
             for (int i = 1; i < height - 1; i++)
             {
                 SafeConsole.SetCursorPosition(left, top + i);
                 Console.Write(border[3]); // Đường dọc trái
                 Console.Write(new string(' ', width - 2)); // Khoảng trắng ở giữa
                 Console.Write(border[3]); // Đường dọc phải
-            }            // Vẽ hàng dưới của border
+            }
+            
+            // Vẽ hàng dưới của border
             SafeConsole.SetCursorPosition(left, top + height - 1);
             Console.Write(border[4]); // Góc dưới trái
             Console.Write(new string(border[1], width - 2)); // Đường kẻ ngang dưới
@@ -350,10 +356,19 @@ namespace EsportsManager.UI.ConsoleUI.Utilities
             // Tính toán vị trí để căn giữa border
             int windowWidth = Console.WindowWidth;
             int windowHeight = Console.WindowHeight;
+            
+            // Đảm bảo kích thước border phù hợp với console
+            width = Math.Min(width, windowWidth - 2);
+            height = Math.Min(height, windowHeight - 2);
+            
             int left = Math.Max(0, (windowWidth - width) / 2);
             int top = Math.Max(0, (windowHeight - height) / 4);
 
+            // Sử dụng border đôi với màu đậm hơn
+            var originalColor = Console.ForegroundColor;
+            Console.ForegroundColor = ConsoleColor.Green; // Màu xanh lá cho border
             DrawBorder(left, top, width, height, title, true);
+            Console.ForegroundColor = originalColor;
         }
 
         /// <summary>
@@ -398,6 +413,161 @@ namespace EsportsManager.UI.ConsoleUI.Utilities
                 Console.SetCursorPosition(borderLeft, borderTop + startLine + i);
                 Console.WriteLine(lines[i]);
             }
+        }
+
+        /// <summary>
+        /// Vẽ border đầy đủ với các đường kẻ ngang và dọc bên trong
+        /// </summary>
+        /// <param name="left">Vị trí cột bắt đầu của border</param>
+        /// <param name="top">Vị trí hàng bắt đầu của border</param>
+        /// <param name="width">Chiều rộng của border</param>
+        /// <param name="height">Chiều cao của border</param>
+        /// <param name="title">Tiêu đề hiển thị ở giữa border trên</param>
+        /// <param name="columnPositions">Vị trí các cột (tính từ left)</param>
+        /// <param name="headerRow">Vị trí dòng header (tính từ top)</param>
+        public static void DrawFullBorder(int left, int top, int width, int height, string? title = null, 
+            int[]? columnPositions = null, int headerRow = 2)
+        {
+            // Validate và điều chỉnh parameters
+            left = Math.Max(0, left);
+            top = Math.Max(0, top);
+            width = Math.Min(width, Console.WindowWidth - left);
+            height = Math.Min(height, Console.WindowHeight - top);
+            
+            if (width <= 2 || height <= 2) return;
+            
+            // Chọn bộ ký tự border đôi
+            var border = DoubleBorder;
+            Console.ForegroundColor = ConsoleColor.Green;
+            
+            // Các ký tự đặc biệt cho đường kẻ đầy đủ
+            char topT = '╦'; // T-junction pointing down
+            char bottomT = '╩'; // T-junction pointing up
+            char leftT = '╠'; // T-junction pointing right
+            char rightT = '╣'; // T-junction pointing left
+            char cross = '╬'; // 4-way junction
+            char horizontal = border[1]; // Horizontal line
+            char vertical = border[3]; // Vertical line
+            
+            // Vẽ khung viền ngoài
+            // Vẽ hàng trên
+            SafeConsole.SetCursorPosition(left, top);
+            Console.Write(border[0]); // Góc trên trái
+            
+            // Nếu có title, đặt title ở giữa hàng trên
+            if (!string.IsNullOrEmpty(title))
+            {
+                int titleSpace = width - 2;
+                int padding = Math.Max(0, (titleSpace - title.Length) / 2);
+                
+                Console.Write(new string(horizontal, Math.Max(0, padding - 1)));
+                Console.Write(' ');
+                
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.Write(title);
+                Console.ForegroundColor = ConsoleColor.Green;
+                
+                Console.Write(' ');
+                Console.Write(new string(horizontal, Math.Max(0, titleSpace - title.Length - padding - 1)));
+            }
+            else
+            {
+                Console.Write(new string(horizontal, width - 2));
+            }
+            
+            Console.Write(border[2]); // Góc trên phải
+            
+            // Vẽ các hàng giữa
+            for (int i = 1; i < height - 1; i++)
+            {
+                SafeConsole.SetCursorPosition(left, top + i);
+                
+                // Nếu là dòng header, vẽ đường kẻ ngang đặc biệt
+                if (i == headerRow)
+                {
+                    Console.Write(leftT); // T-junction bên trái
+                    
+                    if (columnPositions != null && columnPositions.Length > 0)
+                    {
+                        int lastPos = 0;
+                        foreach (int pos in columnPositions)
+                        {
+                            if (pos > 0 && pos < width - 1)
+                            {
+                                Console.Write(new string(horizontal, pos - lastPos - 1));
+                                Console.Write(cross); // Giao điểm
+                                lastPos = pos;
+                            }
+                        }
+                        Console.Write(new string(horizontal, width - lastPos - 2));
+                    }
+                    else
+                    {
+                        Console.Write(new string(horizontal, width - 2));
+                    }
+                    
+                    Console.Write(rightT); // T-junction bên phải
+                }
+                else
+                {
+                    // Vẽ đường dọc và khoảng trắng
+                    Console.Write(vertical);
+                    
+                    if (columnPositions != null && columnPositions.Length > 0 && i > headerRow)
+                    {
+                        int currentPos = 1; // Bắt đầu sau border trái
+                        foreach (int pos in columnPositions)
+                        {
+                            if (pos > 0 && pos < width - 1)
+                            {
+                                Console.Write(new string(' ', pos - currentPos));
+                                Console.Write(vertical);
+                                currentPos = pos + 1; // +1 cho ký tự vertical
+                            }
+                        }
+                        Console.Write(new string(' ', width - currentPos - 1));
+                    }
+                    else
+                    {
+                        Console.Write(new string(' ', width - 2));
+                    }
+                    
+                    Console.Write(vertical);
+                }
+            }
+            
+            // Vẽ hàng dưới
+            SafeConsole.SetCursorPosition(left, top + height - 1);
+            Console.Write(border[4]); // Góc dưới trái
+            Console.Write(new string(horizontal, width - 2)); // Đường kẻ ngang dưới
+            Console.Write(border[5]); // Góc dưới phải
+            
+            Console.ResetColor();
+        }
+
+        /// <summary>
+        /// Vẽ border đầy đủ với căn chỉnh tự động
+        /// </summary>
+        /// <param name="title">Tiêu đề của border</param>
+        /// <param name="width">Chiều rộng của border</param>
+        /// <param name="height">Chiều cao của border</param>
+        /// <param name="columnPositions">Vị trí các cột (tính từ left)</param>
+        /// <param name="headerRow">Vị trí dòng header (tính từ top)</param>
+        public static void DrawFullBorder(string title, int width, int height, int[]? columnPositions = null, int headerRow = 2)
+        {
+            // Tính toán vị trí để căn giữa border
+            int windowWidth = Console.WindowWidth;
+            int windowHeight = Console.WindowHeight;
+            
+            // Đảm bảo kích thước border phù hợp với console
+            width = Math.Min(width, windowWidth - 2);
+            height = Math.Min(height, windowHeight - 2);
+            
+            int left = Math.Max(0, (windowWidth - width) / 2);
+            int top = Math.Max(0, (windowHeight - height) / 4);
+            
+            // Vẽ border đầy đủ
+            DrawFullBorder(left, top, width, height, title, columnPositions, headerRow);
         }
     }
 }

@@ -1,6 +1,7 @@
 using EsportsManager.BL.DTOs;
 using EsportsManager.BL.Interfaces;
 using EsportsManager.UI.ConsoleUI.Utilities;
+using EsportsManager.UI.Utilities;
 
 namespace EsportsManager.UI.Controllers.Admin.Handlers;
 
@@ -56,61 +57,7 @@ public class TeamManagementHandler
         try
         {
             var result = await _teamService.GetAllTeamsAsync();
-            int borderWidth = 80;
-            int borderHeight = 20;
-            int maxRows = 10;
-            if (result == null || !result.Any())
-            {
-                Console.Clear();
-                ConsoleRenderingService.DrawBorder("DANH SÁCH TẤT CẢ ĐỘI", borderWidth, borderHeight);
-                var (contentLeft, contentTop, contentWidth) = ConsoleRenderingService.GetBorderContentPosition(borderWidth, borderHeight);
-                Console.SetCursorPosition(contentLeft, contentTop);
-                Console.ForegroundColor = ConsoleColor.Yellow;
-                Console.WriteLine("Không có đội nào trong hệ thống.".PadRight(contentWidth));
-                Console.ResetColor();
-                Console.SetCursorPosition(contentLeft, contentTop + 1);
-                Console.WriteLine("Nhấn phím bất kỳ để tiếp tục...".PadRight(contentWidth));
-                Console.ReadKey(true);
-                return;
-            }
-            Console.Clear();
-            ConsoleRenderingService.DrawBorder("DANH SÁCH TẤT CẢ ĐỘI", borderWidth, borderHeight);
-            var (left, top, width) = ConsoleRenderingService.GetBorderContentPosition(borderWidth, borderHeight);
-            // Header
-            Console.SetCursorPosition(left, top);
-            var header = string.Format("{0,-5} {1,-20} {2,-15} {3,-10} {4,-10}",
-                "ID", "Tên đội", "Leader", "Thành viên", "Trạng thái");
-            Console.ForegroundColor = ConsoleColor.White;
-            Console.WriteLine(header.Length > width ? header.Substring(0, width) : header.PadRight(width));
-            Console.SetCursorPosition(left, top + 1);
-            Console.WriteLine(new string('─', header.Length));
-            // Data rows
-            int displayCount = Math.Min(result.Count(), maxRows);
-            for (int i = 0; i < displayCount; i++)
-            {
-                var team = result[i];
-                Console.SetCursorPosition(left, top + 2 + i);
-                var statusColor = team.Status == "Active" ? ConsoleColor.Green :
-                                 team.Status == "Pending" ? ConsoleColor.Yellow : ConsoleColor.Red;
-                Console.ForegroundColor = statusColor;
-                var row = string.Format("{0,-5} {1,-20} {2,-15} {3,-10} {4,-10}",
-                    team.Id,
-                    team.Name.Length > 19 ? team.Name.Substring(0, 19) : team.Name,
-                    team.LeaderName?.Length > 14 ? team.LeaderName.Substring(0, 14) : team.LeaderName ?? "N/A",
-                    team.MemberCount,
-                    team.Status);
-                Console.WriteLine(row.Length > width ? row.Substring(0, width) : row.PadRight(width));
-            }
-            Console.ResetColor();
-            // Footer
-            int footerY = top + 2 + maxRows;
-            string totalInfo = $"Tổng cộng: {result.Count()} đội{(result.Count() > displayCount ? $" (hiển thị {displayCount})" : "")}";
-            if (totalInfo.Length > width) totalInfo = totalInfo.Substring(0, width);
-            Console.SetCursorPosition(left, footerY);
-            Console.WriteLine(totalInfo.PadRight(width));
-            Console.SetCursorPosition(left, footerY + 1);
-            Console.WriteLine("Nhấn phím bất kỳ để tiếp tục...".PadRight(width));
-            Console.ReadKey(true);
+            DisplayTeamsTableInBorder(result, 0, 0, Console.WindowWidth);
         }
         catch (Exception ex)
         {
@@ -130,61 +77,7 @@ public class TeamManagementHandler
                 return;
             }
             var result = await _teamService.SearchTeamsAsync(searchTerm);
-            int borderWidth = 80;
-            int borderHeight = 20;
-            int maxRows = 10;
-            if (result == null || !result.Any())
-            {
-                Console.Clear();
-                ConsoleRenderingService.DrawBorder($"KẾT QUẢ TÌM KIẾM: {searchTerm}", borderWidth, borderHeight);
-                var (contentLeft, contentTop, contentWidth) = ConsoleRenderingService.GetBorderContentPosition(borderWidth, borderHeight);
-                Console.SetCursorPosition(contentLeft, contentTop);
-                Console.ForegroundColor = ConsoleColor.Yellow;
-                Console.WriteLine("Không tìm thấy đội nào".PadRight(contentWidth));
-                Console.ResetColor();
-                Console.SetCursorPosition(contentLeft, contentTop + 1);
-                Console.WriteLine("Nhấn phím bất kỳ để tiếp tục...".PadRight(contentWidth));
-                Console.ReadKey(true);
-                return;
-            }
-            Console.Clear();
-            ConsoleRenderingService.DrawBorder($"KẾT QUẢ TÌM KIẾM: {searchTerm}", borderWidth, borderHeight);
-            var (left, top, width) = ConsoleRenderingService.GetBorderContentPosition(borderWidth, borderHeight);
-            // Header
-            Console.SetCursorPosition(left, top);
-            var header = string.Format("{0,-5} {1,-20} {2,-15} {3,-10} {4,-10}",
-                "ID", "Tên đội", "Leader", "Thành viên", "Trạng thái");
-            Console.ForegroundColor = ConsoleColor.White;
-            Console.WriteLine(header.Length > width ? header.Substring(0, width) : header.PadRight(width));
-            Console.SetCursorPosition(left, top + 1);
-            Console.WriteLine(new string('─', header.Length));
-            // Data rows
-            int displayCount = Math.Min(result.Count(), maxRows);
-            for (int i = 0; i < displayCount; i++)
-            {
-                var team = result[i];
-                Console.SetCursorPosition(left, top + 2 + i);
-                var statusColor = team.Status == "Active" ? ConsoleColor.Green :
-                                 team.Status == "Pending" ? ConsoleColor.Yellow : ConsoleColor.Red;
-                Console.ForegroundColor = statusColor;
-                var row = string.Format("{0,-5} {1,-20} {2,-15} {3,-10} {4,-10}",
-                    team.Id,
-                    team.Name.Length > 19 ? team.Name.Substring(0, 19) : team.Name,
-                    team.LeaderName?.Length > 14 ? team.LeaderName.Substring(0, 14) : team.LeaderName ?? "N/A",
-                    team.MemberCount,
-                    team.Status);
-                Console.WriteLine(row.Length > width ? row.Substring(0, width) : row.PadRight(width));
-            }
-            Console.ResetColor();
-            // Footer
-            int footerY = top + 2 + maxRows;
-            string totalInfo = $"Tìm thấy: {result.Count()} đội";
-            if (totalInfo.Length > width) totalInfo = totalInfo.Substring(0, width);
-            Console.SetCursorPosition(left, footerY);
-            Console.WriteLine(totalInfo.PadRight(width));
-            Console.SetCursorPosition(left, footerY + 1);
-            Console.WriteLine("Nhấn phím bất kỳ để tiếp tục...".PadRight(width));
-            Console.ReadKey(true);
+            DisplayTeamsTableInBorder(result, 0, 0, Console.WindowWidth);
         }
         catch (Exception ex)
         {
@@ -417,5 +310,25 @@ public class TeamManagementHandler
         Console.SetCursorPosition(0, lastLine);
         Console.WriteLine("Nhấn phím bất kỳ để tiếp tục...");
         Console.ReadKey(true);
+    }
+
+    private void DisplayTeamsTableInBorder(IEnumerable<TeamInfoDto> teams, int startX, int startY, int maxWidth)
+    {
+        var headers = new[] { "ID", "Tên đội", "Trưởng đội", "Số thành viên", "Ngày tạo" };
+        var rows = teams.Select(t => new[] {
+            t.Id.ToString(),
+            t.Name.Length > 18 ? t.Name.Substring(0, 18) : t.Name,
+            t.LeaderName.Length > 14 ? t.LeaderName.Substring(0, 14) : t.LeaderName,
+            t.MemberCount.ToString(),
+            t.CreatedAt.ToString("dd/MM/yyyy")
+        }).ToList();
+        int borderWidth = maxWidth;
+        int borderHeight = 16;
+        int[] colWidths = { 5, 20, 16, 10, 14 }; // Tổng + phân cách <= borderWidth - 4
+        UIHelper.PrintTableInBorder(headers, rows, borderWidth, borderHeight, startX, startY, colWidths);
+        int infoY = startY + 2 + rows.Count + 2;
+        UIHelper.PrintPromptInBorder($"Tổng cộng: {teams.Count()} đội", startX, infoY, borderWidth - 4);
+        Console.SetCursorPosition(0, startY + borderHeight + 1);
+        Console.WriteLine("Nhấn phím bất kỳ để tiếp tục...");
     }
 }

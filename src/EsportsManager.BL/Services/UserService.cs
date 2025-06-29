@@ -38,10 +38,10 @@ public class UserService : IUserService
             return BusinessResult<IEnumerable<UserDto>>.Success(userDtos);
         }
         catch (Exception ex)
-        {
+            {
             _logger.LogError(ex, "Lỗi khi lấy danh sách người dùng");
             return BusinessResult<IEnumerable<UserDto>>.Failure($"Lỗi khi lấy danh sách người dùng: {ex.Message}");
-        }
+            }
     }
 
     public async Task<BusinessResult> DeleteUserAsync(int userId)
@@ -56,9 +56,9 @@ public class UserService : IUserService
 
             await _usersRepository.DeleteAsync(userId);
             return BusinessResult.Success();
-        }
+            }
         catch (Exception ex)
-        {
+            {
             _logger.LogError(ex, "Lỗi khi xóa người dùng {UserId}", userId);
             return BusinessResult.Failure($"Lỗi khi xóa người dùng: {ex.Message}");
         }
@@ -105,10 +105,10 @@ public class UserService : IUserService
             return BusinessResult.Success();
         }
         catch (Exception ex)
-        {
+            {
             _logger.LogError(ex, "Lỗi khi cấm người dùng {UserId}", userId);
             return BusinessResult.Failure($"Lỗi khi cấm người dùng: {ex.Message}");
-        }
+            }
     }
 
     public async Task<Models.AuthenticationResult> RegisterAsync(RegisterDto registerDto)
@@ -409,12 +409,12 @@ public class UserService : IUserService
             });
 
             return BusinessResult<IEnumerable<UserDto>>.Success(userDtos);
-        }
+            }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Lỗi khi lấy danh sách người dùng theo vai trò {Role}", role);
             return BusinessResult<IEnumerable<UserDto>>.Failure($"Lỗi khi lấy danh sách người dùng: {ex.Message}");
-        }
+            }
     }
 
     public async Task<BusinessResult<IEnumerable<UserDto>>> GetActiveUsersAsync()
@@ -468,11 +468,11 @@ public class UserService : IUserService
         {
             _logger.LogError(ex, "Lỗi khi lấy thông tin profile người dùng {UserId}", userId);
             return BusinessResult<UserProfileDto>.Failure($"Lỗi khi lấy thông tin profile: {ex.Message}");
-        }
+            }
     }
 
     public async Task<BusinessResult<UserDto>> UpdateUserProfileAsync(int userId, UserDto userDto)
-    {
+            {
         try
         {
             var user = await _usersRepository.GetByIdAsync(userId);
@@ -485,9 +485,9 @@ public class UserService : IUserService
             if (!string.IsNullOrEmpty(userDto.Email) && userDto.Email != user.Email)
             {
                 if (await _usersRepository.GetByEmailAsync(userDto.Email) != null)
-                {
+            {
                     return BusinessResult<UserDto>.Failure("Email đã được sử dụng");
-                }
+            }
                 user.Email = userDto.Email;
             }
 
@@ -724,7 +724,7 @@ public class UserService : IUserService
         }
 
         if (string.IsNullOrWhiteSpace(createUserDto.Email))
-        {
+    {
             errors.Add("Email không được để trống");
         }
         else if (!InputValidator.IsValidEmail(createUserDto.Email))
@@ -786,7 +786,7 @@ public class UserService : IUserService
         if (string.IsNullOrWhiteSpace(email))
         {
             errors.Add("Email không được để trống");
-        }
+    }
         else if (!InputValidator.IsValidEmail(email))
         {
             errors.Add("Email không hợp lệ");
@@ -857,7 +857,7 @@ public class UserService : IUserService
         {
             _logger.LogError(ex, "Lỗi khi lấy số lượng người dùng đang hoạt động");
             return BusinessResult<int>.Failure($"Lỗi khi lấy số lượng người dùng: {ex.Message}");
-        }
+    }
     }
 
     public async Task<BusinessResult<IEnumerable<UserDto>>> GetPendingAccountsAsync()
@@ -903,7 +903,7 @@ public class UserService : IUserService
             return BusinessResult.Success();
         }
         catch (Exception ex)
-        {
+            {
             _logger.LogError(ex, "Lỗi khi duyệt tài khoản {UserId}", userId);
             return BusinessResult.Failure($"Lỗi khi duyệt tài khoản: {ex.Message}");
         }

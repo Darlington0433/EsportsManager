@@ -5,6 +5,7 @@ using EsportsManager.BL.DTOs;
 using EsportsManager.BL.Interfaces;
 using EsportsManager.UI.ConsoleUI.Utilities;
 using EsportsManager.UI.Controllers.Admin.Interfaces;
+using EsportsManager.UI.Utilities;
 
 namespace EsportsManager.UI.Controllers.Admin.Handlers;
 
@@ -272,7 +273,7 @@ public class DonationReportHandler : IDonationReportHandler
                 string filterInfo = GetFilterInfoString(filter);
                 if (!string.IsNullOrEmpty(filterInfo))
                 {
-                    Console.WriteLine($"� Bộ lọc hiện tại: {filterInfo}");
+                    Console.WriteLine($"🔍 Bộ lọc hiện tại: {filterInfo}");
                     Console.WriteLine();
                 }
 
@@ -864,5 +865,25 @@ public class DonationReportHandler : IDonationReportHandler
         Console.SetCursorPosition(0, lastLine);
         Console.WriteLine("Nhấn phím bất kỳ để tiếp tục...");
         Console.ReadKey(true);
+    }
+
+    private void DisplayDonationReportTableInBorder(IEnumerable<DonationReportDto> reports, int startX, int startY, int maxWidth)
+    {
+        var headers = new[] { "Tổng quyên góp", "Quyên góp tháng này", "Trung bình/đơn", "Top 3 người ủng hộ", "Top 3 người nhận" };
+        var rows = reports.Select(r => new[] {
+            r.TotalDonations.ToString("N0"),
+            r.DonationsThisMonth.ToString("N0"),
+            r.AverageDonationAmount.ToString("N0"),
+            string.Join(", ", r.TopDonors.Take(3)),
+            string.Join(", ", r.TopRecipients.Take(3))
+        }).ToList();
+        int borderWidth = maxWidth;
+        int borderHeight = 8 + rows.Count;
+        int[] colWidths = { 16, 18, 16, 28, 28 }; // Tổng + phân cách <= borderWidth - 4
+        UIHelper.PrintTableInBorder(headers, rows, borderWidth, borderHeight, startX, startY, colWidths);
+        int infoY = startY + 2 + rows.Count + 2;
+        UIHelper.PrintPromptInBorder($"Tổng cộng: {reports.Count()} báo cáo", startX, infoY, borderWidth - 4);
+        Console.SetCursorPosition(0, startY + borderHeight + 1);
+        Console.WriteLine("Nhấn phím bất kỳ để tiếp tục...");
     }
 }

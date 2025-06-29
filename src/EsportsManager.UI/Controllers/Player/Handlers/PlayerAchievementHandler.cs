@@ -5,6 +5,7 @@ using EsportsManager.BL.DTOs;
 using EsportsManager.BL.Interfaces;
 using EsportsManager.UI.ConsoleUI.Utilities;
 using EsportsManager.UI.Controllers.MenuHandlers;
+using EsportsManager.UI.Utilities;
 
 namespace EsportsManager.UI.Controllers.Player.Handlers
 {
@@ -36,21 +37,31 @@ namespace EsportsManager.UI.Controllers.Player.Handlers
             try
             {
                 Console.Clear();
-                ConsoleRenderingService.DrawBorder("THÀNH TÍCH CÁ NHÂN", 80, 20);
-                int borderLeft = (Console.WindowWidth - 80) / 2;
-                int borderTop = (Console.WindowHeight - 20) / 4;
-                int cursorY = borderTop + 2;
+                int borderWidth = 80;
+                int borderHeight = 20;
+                ConsoleRenderingService.DrawBorder("THÀNH TÍCH CÁ NHÂN", borderWidth, borderHeight);
+                int borderLeft = (Console.WindowWidth - borderWidth) / 2;
+                int borderTop = (Console.WindowHeight - borderHeight) / 4;
 
-                cursorY = await DisplayPlayerStatsAsync(borderLeft, cursorY);
-                cursorY = await DisplayTournamentHistoryAsync(borderLeft, cursorY);
-                cursorY = await DisplayAwardsAndRankingsAsync(borderLeft, cursorY);
-
-                // Đảm bảo mọi output đều nằm trong border, kể cả prompt cuối cùng
-                Console.ForegroundColor = ConsoleColor.Yellow;
-                Console.SetCursorPosition(borderLeft + 2, borderTop + 18);
-                Console.Write("Nhấn Enter để tiếp tục...");
-                Console.ResetColor();
-                Console.SetCursorPosition(borderLeft + 28, borderTop + 18); // Đặt con trỏ hợp lý để nhập
+                // Ví dụ: In bảng lịch sử giải đấu
+                var tournamentHistory = await _achievementService.GetPlayerTournamentHistoryAsync(_currentUser.Id);
+                if (tournamentHistory != null && tournamentHistory.Count > 0)
+                {
+                    var headers = new[] { "Tên giải đấu", "Kết quả", "Vị trí", "Tiền thưởng" };
+                    var rows = tournamentHistory.Select(t => new[] {
+                        t.TournamentName.Length > 24 ? t.TournamentName.Substring(0, 24) : t.TournamentName,
+                        t.Result,
+                        $"#{t.Position}",
+                        t.PrizeMoney > 0 ? $"{t.PrizeMoney:N0} VND" : "-"
+                    }).ToList();
+                    int[] colWidths = { 26, 12, 8, 18 }; // Tổng + phân cách <= borderWidth - 4
+                    UIHelper.PrintTableInBorder(headers, rows, borderWidth, borderHeight, borderLeft, borderTop, colWidths);
+                    int infoY = borderTop + 2 + rows.Count + 2;
+                    UIHelper.PrintPromptInBorder($"Tổng cộng: {tournamentHistory.Count} giải đấu", borderLeft, infoY, borderWidth - 4);
+                }
+                // Dòng tiếp tục để ngoài border
+                Console.SetCursorPosition(0, borderTop + borderHeight + 1);
+                Console.WriteLine("Nhấn phím bất kỳ để tiếp tục...");
                 Console.ReadLine();
             }
             catch (Exception ex)

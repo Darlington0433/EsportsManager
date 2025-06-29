@@ -147,7 +147,7 @@ public class PlayerWalletHandler
             }
             else
             {
-                cursorY = DisplayTransactionTable(transactions, borderLeft, cursorY);
+                DisplayTransactionHistoryInBorder(transactions, borderLeft, cursorY, borderWidth - 4);
             }
 
             Console.SetCursorPosition(borderLeft + 2, borderTop + borderHeight - 2);
@@ -174,55 +174,74 @@ public class PlayerWalletHandler
         try
         {
             Console.Clear();
-            ConsoleRenderingService.DrawBorder("RÚT TIỀN", 60, 15);
+            int borderWidth = 60;
+            int borderHeight = 15;
+            ConsoleRenderingService.DrawBorder("RÚT TIỀN", borderWidth, borderHeight);
+            int borderLeft = (Console.WindowWidth - borderWidth) / 2;
+            int borderTop = (Console.WindowHeight - borderHeight) / 4;
+            int cursorY = borderTop + 2;
 
             // Get current balance using BL service
             var wallet = await _walletService.GetWalletByUserIdAsync(_currentUser.Id);
             if (wallet == null)
             {
+                Console.SetCursorPosition(borderLeft + 2, cursorY++);
                 ConsoleRenderingService.ShowNotification(
                     WalletConstants.Messages.WALLET_NOT_FOUND, ConsoleColor.Red);
                 return;
             }
 
+            Console.SetCursorPosition(borderLeft + 2, cursorY++);
             Console.WriteLine($"💰 Số dư hiện tại: {wallet.Balance:N0} VND");
+            Console.SetCursorPosition(borderLeft + 2, cursorY++);
             Console.WriteLine($"💡 Số tiền tối thiểu để rút: {WalletConstants.MIN_WITHDRAWAL_AMOUNT:N0} VND");
 
             // Get withdrawal amount with BL validation
+            Console.SetCursorPosition(borderLeft + 2, cursorY++);
             Console.Write("Nhập số tiền muốn rút (VND): ");
+            Console.SetCursorPosition(borderLeft + 32, cursorY - 1);
             var amountInput = Console.ReadLine();
 
             var validation = WalletValidationService.ValidateWithdrawalAmount(amountInput, wallet.Balance);
             if (!validation.IsValid)
             {
+                Console.SetCursorPosition(borderLeft + 2, cursorY++);
                 ConsoleRenderingService.ShowNotification(validation.ErrorMessage, ConsoleColor.Red);
                 Thread.Sleep(2000);
                 return;
             }
 
             // Get withdrawal method
-            var withdrawalMethod = GetWithdrawalMethod();
+            var withdrawalMethod = GetWithdrawalMethod(borderLeft, ref cursorY);
             if (string.IsNullOrEmpty(withdrawalMethod))
             {
                 return; // User cancelled
             }
 
             // Get withdrawal details
-            var withdrawalDetails = GetWithdrawalDetails(withdrawalMethod);
+            var withdrawalDetails = GetWithdrawalDetails(withdrawalMethod, borderLeft, ref cursorY);
             if (string.IsNullOrEmpty(withdrawalDetails))
             {
                 return; // User cancelled or invalid input
             }
 
             // Confirm withdrawal
+            Console.SetCursorPosition(borderLeft + 2, cursorY++);
             Console.WriteLine($"\n📋 Xác nhận thông tin rút tiền:");
-            Console.WriteLine($"   Số tiền: {validation.ValidatedAmount:N0} VND");
-            Console.WriteLine($"   Phương thức: {withdrawalMethod}");
-            Console.WriteLine($"   Chi tiết: {withdrawalDetails}");
-            Console.WriteLine($"   Phí rút tiền: {WalletConstants.WITHDRAWAL_FEE:N0} VND");
-            Console.WriteLine($"   Số tiền thực nhận: {validation.ValidatedAmount - WalletConstants.WITHDRAWAL_FEE:N0} VND");
+            Console.SetCursorPosition(borderLeft + 4, cursorY++);
+            Console.WriteLine($"Số tiền: {validation.ValidatedAmount:N0} VND");
+            Console.SetCursorPosition(borderLeft + 4, cursorY++);
+            Console.WriteLine($"Phương thức: {withdrawalMethod}");
+            Console.SetCursorPosition(borderLeft + 4, cursorY++);
+            Console.WriteLine($"Chi tiết: {withdrawalDetails}");
+            Console.SetCursorPosition(borderLeft + 4, cursorY++);
+            Console.WriteLine($"Phí rút tiền: {WalletConstants.WITHDRAWAL_FEE:N0} VND");
+            Console.SetCursorPosition(borderLeft + 4, cursorY++);
+            Console.WriteLine($"Số tiền thực nhận: {validation.ValidatedAmount - WalletConstants.WITHDRAWAL_FEE:N0} VND");
 
-            Console.Write("\nXác nhận rút tiền? (y/n): ");
+            Console.SetCursorPosition(borderLeft + 2, cursorY++);
+            Console.Write("Xác nhận rút tiền? (y/n): ");
+            Console.SetCursorPosition(borderLeft + 28, cursorY - 1);
             var confirmation = Console.ReadLine()?.ToLower();
 
             if (confirmation == "y" || confirmation == "yes")
@@ -264,16 +283,18 @@ public class PlayerWalletHandler
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Chi tiết lỗi withdrawal: {ex.Message}");
+            int borderWidth = 60;
+            int borderHeight = 15;
+            int borderLeft = (Console.WindowWidth - borderWidth) / 2;
+            int borderTop = (Console.WindowHeight - borderHeight) / 4;
+            Console.SetCursorPosition(borderLeft + 2, borderTop + borderHeight - 2);
             ConsoleRenderingService.ShowMessageBox(
                 $"Không thể thực hiện rút tiền. Lỗi: {ex.Message}", true, 3000);
         }
     }
 
-    /// <summary>
-    /// Get withdrawal method from user
-    /// </summary>
-    private string GetWithdrawalMethod()
+    // Overload for border and cursorY
+    private string GetWithdrawalMethod(int borderLeft, ref int cursorY)
     {
         var methods = WalletConstants.WithdrawalMethods.OPTIONS;
         var methodOptions = methods.Select(m => m.Value).Concat(new[] { "❌ Hủy" }).ToArray();
@@ -284,29 +305,35 @@ public class PlayerWalletHandler
         if (methodSelection == -1 || methodSelection == methods.Count)
             return string.Empty;
 
+        cursorY += 2; // Tăng dòng cho giao diện
         return methods.ElementAt(methodSelection).Key;
     }
 
-    /// <summary>
-    /// Get withdrawal details based on method
-    /// </summary>
-    private string GetWithdrawalDetails(string method)
+    // Overload for border and cursorY
+    private string GetWithdrawalDetails(string method, int borderLeft, ref int cursorY)
     {
         try
         {
             switch (method)
             {
                 case "BankTransfer":
+                    Console.SetCursorPosition(borderLeft + 2, cursorY++);
                     Console.Write("Số tài khoản ngân hàng: ");
+                    Console.SetCursorPosition(borderLeft + 28, cursorY - 1);
                     var bankAccount = Console.ReadLine()?.Trim();
+                    Console.SetCursorPosition(borderLeft + 2, cursorY++);
                     Console.Write("Tên ngân hàng: ");
+                    Console.SetCursorPosition(borderLeft + 18, cursorY - 1);
                     var bankName = Console.ReadLine()?.Trim();
+                    Console.SetCursorPosition(borderLeft + 2, cursorY++);
                     Console.Write("Chủ tài khoản: ");
+                    Console.SetCursorPosition(borderLeft + 18, cursorY - 1);
                     var accountHolder = Console.ReadLine()?.Trim();
 
                     if (string.IsNullOrEmpty(bankAccount) || string.IsNullOrEmpty(bankName) ||
                         string.IsNullOrEmpty(accountHolder))
                     {
+                        Console.SetCursorPosition(borderLeft + 2, cursorY++);
                         ConsoleRenderingService.ShowNotification(
                             "Vui lòng nhập đầy đủ thông tin!", ConsoleColor.Red);
                         return string.Empty;
@@ -323,11 +350,14 @@ public class PlayerWalletHandler
                         return string.Empty;
 
                     var selectedEwallet = WalletConstants.EWalletProviders.OPTIONS.ElementAt(ewalletChoice);
+                    Console.SetCursorPosition(borderLeft + 2, cursorY++);
                     Console.Write($"Số điện thoại {selectedEwallet.Value}: ");
+                    Console.SetCursorPosition(borderLeft + 24, cursorY - 1);
                     var phone = Console.ReadLine()?.Trim();
 
                     if (string.IsNullOrEmpty(phone))
                     {
+                        Console.SetCursorPosition(borderLeft + 2, cursorY++);
                         ConsoleRenderingService.ShowNotification(
                             "Số điện thoại không được để trống!", ConsoleColor.Red);
                         return string.Empty;
@@ -351,55 +381,23 @@ public class PlayerWalletHandler
     /// <summary>
     /// Display transaction history in table format
     /// </summary>
-    private int DisplayTransactionTable(IEnumerable<TransactionDto> transactions, int borderLeft, int cursorY)
+    private void DisplayTransactionHistoryInBorder(IEnumerable<TransactionDto> transactions, int startX, int startY, int maxWidth)
     {
-        Console.SetCursorPosition(borderLeft + 2, cursorY++);
-        var header = string.Format("{0,-15} {1,-12} {2,-15} {3,-20} {4,-15}",
-            "Ngày", "Loại", "Số tiền", "Từ/Đến", "Trạng thái");
-        Console.WriteLine(header);
-        Console.SetCursorPosition(borderLeft + 2, cursorY++);
-        Console.WriteLine(new string('─', 77));
-
-        foreach (var transaction in transactions.Take(10))
-        {
-            var typeDisplay = transaction.TransactionType switch
-            {
-                "Donation" => "Quyên góp",
-                "Withdrawal" => "Rút tiền",
-                "TopUp" => "Nạp tiền",
-                _ => transaction.TransactionType
-            };
-            var statusDisplay = transaction.Status switch
-            {
-                "Completed" => "Hoàn thành",
-                "Pending" => "Chờ xử lý",
-                "Failed" => "Thất bại",
-                _ => transaction.Status
-            };
-            var row = string.Format("{0,-15} {1,-12} {2,-15} {3,-20} {4,-15}",
-                transaction.CreatedAt.ToString("dd/MM/yyyy"),
-                typeDisplay,
-                $"{transaction.Amount:N0} VND",
-                transaction.Note?.Length > 20 ? transaction.Note.Substring(0, 17) + "..." : transaction.Note ?? "",
-                statusDisplay);
-            var color = transaction.TransactionType switch
-            {
-                "Donation" => ConsoleColor.Green,
-                "Withdrawal" => ConsoleColor.Yellow,
-                "TopUp" => ConsoleColor.Cyan,
-                _ => ConsoleColor.White
-            };
-            Console.SetCursorPosition(borderLeft + 2, cursorY);
-            Console.ForegroundColor = color;
-            Console.WriteLine(row);
-            Console.ResetColor();
-            cursorY++;
-        }
-        if (transactions.Count() > 10)
-        {
-            Console.SetCursorPosition(borderLeft + 2, cursorY++);
-            Console.WriteLine($"... và {transactions.Count() - 10} giao dịch khác");
-        }
-        return cursorY;
+        var headers = new[] { "ID", "Loại", "Số tiền", "Thời gian", "Trạng thái" };
+        var rows = transactions.Select(t => new[] {
+            t.Id.ToString(),
+            t.TransactionType,
+            t.Amount.ToString("N0"),
+            t.CreatedAt.ToString("dd/MM/yyyy HH:mm"),
+            t.Status
+        }).ToList();
+        int borderWidth = maxWidth;
+        int borderHeight = 16;
+        int[] colWidths = { 5, 12, 14, 20, 12 }; // Tổng + phân cách <= borderWidth - 4
+        UIHelper.PrintTableInBorder(headers, rows, borderWidth, borderHeight, startX, startY, colWidths);
+        int infoY = startY + 2 + rows.Count + 2;
+        UIHelper.PrintPromptInBorder($"Tổng cộng: {transactions.Count()} giao dịch", startX, infoY, borderWidth - 4);
+        Console.SetCursorPosition(0, startY + borderHeight + 1);
+        Console.WriteLine("Nhấn phím bất kỳ để tiếp tục...");
     }
 }

@@ -2,6 +2,7 @@ using EsportsManager.BL.DTOs;
 using EsportsManager.BL.Interfaces;
 using EsportsManager.UI.ConsoleUI.Utilities;
 using EsportsManager.UI.Controllers.Admin.Interfaces;
+using EsportsManager.UI.Utilities;
 
 namespace EsportsManager.UI.Controllers.Admin.Handlers;
 
@@ -39,8 +40,8 @@ public class UserManagementHandler
                 Console.ResetColor();
                 Console.SetCursorPosition(borderLeft + 2, borderTop + 4);
                 Console.WriteLine("".PadRight(76)); // clear line in border
-                Console.SetCursorPosition(0, borderBottom + 2);
-                Console.WriteLine("Nhấn phím bất kỳ để tiếp tục...");
+                Console.SetCursorPosition(borderLeft + 2, borderBottom + 2);
+                Console.WriteLine("Nhấn phím bất kỳ để tiếp tục...".PadRight(76));
                 Console.ReadKey(true);
                 return;
             }
@@ -232,7 +233,7 @@ public class UserManagementHandler
                 Console.WriteLine("Không tìm thấy kết quả nào");
                 Console.ResetColor();
                 Console.SetCursorPosition(borderLeft + 2, borderBottom + 2);
-                Console.WriteLine("Nhấn phím bất kỳ để tiếp tục...");
+                Console.WriteLine("Nhấn phím bất kỳ để tiếp tục...".PadRight(76));
                 Console.ReadKey(true);
                 return;
             }
@@ -244,7 +245,7 @@ public class UserManagementHandler
             Console.WriteLine($"Tìm thấy: {filteredUsers.Count()} kết quả");
             PrintUserListShortcuts(borderLeft + 2, borderBottom + 2);
             Console.SetCursorPosition(borderLeft + 2, borderBottom + 3);
-            Console.WriteLine("Nhấn phím bất kỳ để tiếp tục...");
+            Console.WriteLine("Nhấn phím bất kỳ để tiếp tục...".PadRight(76));
             Console.ReadKey(true);
         }
         catch (Exception ex)
@@ -651,50 +652,24 @@ public class UserManagementHandler
 
     private void DisplayUsersTableInBorder(IEnumerable<UserDto> users, int startX, int startY, int maxWidth)
     {
-        // Header
-        Console.SetCursorPosition(startX, startY);
-        var header = string.Format("{0,-5} {1,-15} {2,-25} {3,-10} {4,-10}",
-            "ID", "Username", "Email", "Role", "Status");
-        Console.ForegroundColor = ConsoleColor.White;
-        Console.WriteLine(header);
-
-        // Separator line
-        Console.SetCursorPosition(startX, startY + 1);
-        Console.WriteLine(new string('─', Math.Min(70, maxWidth - 4)));
-
-        // Data rows
-        int currentRow = startY + 2;
-        int maxRows = 12; // Giới hạn số dòng hiển thị để vừa trong border
-        int displayedRows = 0;
-
-        foreach (var user in users)
-        {
-            if (displayedRows >= maxRows) break;
-
-            Console.SetCursorPosition(startX, currentRow);
-            var row = string.Format("{0,-5} {1,-15} {2,-25} {3,-10} {4,-10}",
-                user.Id,
-                user.Username.Length > 14 ? user.Username.Substring(0, 14) : user.Username,
-                (user.Email?.Length > 24 ? user.Email.Substring(0, 24) : user.Email) ?? "N/A",
-                user.Role,
-                user.Status);
-
-            Console.ForegroundColor = user.Status == "Active" ? ConsoleColor.Green : ConsoleColor.Red;
-            Console.WriteLine(row);
-
-            currentRow++;
-            displayedRows++;
-        }
-
-        // Nếu có nhiều dữ liệu hơn, hiển thị thông báo
-        if (users.Count() > maxRows)
-        {
-            Console.SetCursorPosition(startX, currentRow + 1);
-            Console.ForegroundColor = ConsoleColor.Yellow;
-            Console.WriteLine($"... và {users.Count() - maxRows} người dùng khác");
-        }
-
-        Console.ResetColor();
+        var headers = new[] { "ID", "Username", "Email", "Role", "Status" };
+        var rows = users.Select(u => new[] {
+            u.Id.ToString(),
+            u.Username,
+            u.Email ?? "",
+            u.Role,
+            u.Status
+        }).ToList();
+        int borderWidth = maxWidth;
+        int borderHeight = 18;
+        // Định nghĩa độ rộng từng cột cho vừa border
+        int[] colWidths = { 5, 15, 25, 10, 10 }; // Tổng + phân cách <= borderWidth - 4
+        UIHelper.PrintTableInBorder(headers, rows, borderWidth, borderHeight, startX, startY, colWidths);
+        int infoY = startY + 2 + rows.Count + 2;
+        UIHelper.PrintPromptInBorder($"Tổng cộng: {users.Count()} người dùng", startX, infoY, borderWidth - 4);
+        // Dòng tiếp tục để ngoài border
+        Console.SetCursorPosition(0, startY + borderHeight + 1);
+        Console.WriteLine("Nhấn phím bất kỳ để tiếp tục...");
     }
 
     // Thêm hàm in hướng dẫn/phím tắt dưới border

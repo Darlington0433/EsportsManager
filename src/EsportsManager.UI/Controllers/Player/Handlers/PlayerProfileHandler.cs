@@ -142,35 +142,50 @@ namespace EsportsManager.UI.Controllers.Player.Handlers
         {
             try
             {
-                Console.WriteLine("\n=== ĐỔI MẬT KHẨU ===");
+                int borderWidth = 60;
+                int borderHeight = 13;
+                Console.Clear();
+                ConsoleRenderingService.DrawBorder("ĐỔI MẬT KHẨU", borderWidth, borderHeight);
+                int borderLeft = (Console.WindowWidth - borderWidth) / 2;
+                int borderTop = (Console.WindowHeight - borderHeight) / 4;
+                int cursorY = borderTop + 2;
 
                 // Nhập mật khẩu hiện tại
+                Console.SetCursorPosition(borderLeft + 2, cursorY++);
                 Console.Write("Mật khẩu hiện tại: ");
+                Console.SetCursorPosition(borderLeft + 22, cursorY - 1);
                 string currentPassword = UnifiedInputService.ReadPassword() ?? "";
 
                 if (string.IsNullOrEmpty(currentPassword))
                 {
-                    Console.WriteLine("Mật khẩu hiện tại không được để trống!");
+                    Console.SetCursorPosition(borderLeft + 2, cursorY++);
+                    ConsoleRenderingService.ShowMessageBox("Mật khẩu hiện tại không được để trống!", true, 2000);
                     return;
                 }
 
                 // Nhập mật khẩu mới
+                Console.SetCursorPosition(borderLeft + 2, cursorY++);
                 Console.Write("Mật khẩu mới: ");
+                Console.SetCursorPosition(borderLeft + 16, cursorY - 1);
                 string newPassword = UnifiedInputService.ReadPassword() ?? "";
 
                 if (string.IsNullOrEmpty(newPassword))
                 {
-                    Console.WriteLine("Mật khẩu mới không được để trống!");
+                    Console.SetCursorPosition(borderLeft + 2, cursorY++);
+                    ConsoleRenderingService.ShowMessageBox("Mật khẩu mới không được để trống!", true, 2000);
                     return;
                 }
 
                 // Xác nhận mật khẩu mới
+                Console.SetCursorPosition(borderLeft + 2, cursorY++);
                 Console.Write("Xác nhận mật khẩu mới: ");
+                Console.SetCursorPosition(borderLeft + 26, cursorY - 1);
                 string confirmPassword = UnifiedInputService.ReadPassword() ?? "";
 
                 if (newPassword != confirmPassword)
                 {
-                    Console.WriteLine("Mật khẩu xác nhận không khớp!");
+                    Console.SetCursorPosition(borderLeft + 2, cursorY++);
+                    ConsoleRenderingService.ShowMessageBox("Mật khẩu xác nhận không khớp!", true, 2000);
                     return;
                 }
 
@@ -185,22 +200,34 @@ namespace EsportsManager.UI.Controllers.Player.Handlers
                 // Gọi service để đổi mật khẩu
                 var result = await _userService.UpdatePasswordAsync(_currentUser.Id, updatePasswordDto);
 
+                Console.SetCursorPosition(borderLeft + 2, cursorY++);
                 if (result.IsSuccess)
                 {
-                    Console.WriteLine("Đổi mật khẩu thành công!");
+                    ConsoleRenderingService.ShowMessageBox("Đổi mật khẩu thành công!", false, 3000);
                 }
                 else
                 {
-                    Console.WriteLine($"Đổi mật khẩu thất bại: {result.Message}");
+                    ConsoleRenderingService.ShowMessageBox($"Đổi mật khẩu thất bại: {result.Message}", true, 3000);
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Lỗi: {ex.Message}");
+                int borderWidth = 60;
+                int borderHeight = 13;
+                int borderLeft = (Console.WindowWidth - borderWidth) / 2;
+                int borderTop = (Console.WindowHeight - borderHeight) / 4;
+                Console.SetCursorPosition(borderLeft + 2, borderTop + borderHeight - 2);
+                ConsoleRenderingService.ShowMessageBox($"Lỗi: {ex.Message}", true, 3000);
             }
 
+            int borderWidth2 = 60;
+            int borderHeight2 = 13;
+            int borderLeft2 = (Console.WindowWidth - borderWidth2) / 2;
+            int borderTop2 = (Console.WindowHeight - borderHeight2) / 4;
+            Console.SetCursorPosition(borderLeft2 + 2, borderTop2 + borderHeight2 - 2);
             Console.WriteLine("Nhấn phím bất kỳ để tiếp tục...");
-            Console.ReadKey();
+            Console.SetCursorPosition(borderLeft2 + 30, borderTop2 + borderHeight2 - 2);
+            Console.ReadKey(true);
         }
 
         private async Task<UserDto?> GetPersonalInfoAsync()

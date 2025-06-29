@@ -180,6 +180,7 @@ public class SystemStatsHandler
         }
         Console.SetCursorPosition(left, row + 1);
         Console.WriteLine("Nhấn phím bất kỳ để tiếp tục...".PadRight(width));
+        Console.SetCursorPosition(left, row + 2);
         Console.ReadKey(true);
     }
 
