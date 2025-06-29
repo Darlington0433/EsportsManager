@@ -27,208 +27,6 @@ public class TournamentManagementHandler : BaseHandler
         ITeamService teamService) : base(currentUser)
     {
         _tournamentService = tournamentService;
-        _teamService = teamService;
-    }
-
-    /// <summary>
-    /// Xử lý tạo giải đấu mới
-    /// </summary>
-    public async Task CreateTournamentAsync()
-    {
-        await ExecuteOperationAsync(async () =>
-        {
-            DrawTitledBorder("TẠO GIẢI ĐẤU MỚI", UIConstants.Border.LARGE_WIDTH, UIConstants.Border.LARGE_HEIGHT);
-
-            var tournamentData = CollectTournamentDataAsync(); // now sync
-            if (tournamentData == null)
-            {
-                ShowWarningMessage("Đã hủy tạo giải đấu");
-                return;
-            }
-
-            try
-            {
-                var result = await _tournamentService.CreateTournamentAsync(tournamentData);
-                if (result != null && !string.IsNullOrEmpty(result.TournamentName))
-                {
-                    ShowSuccessMessage("Tạo giải đấu thành công!");
-                }
-                else
-                {
-                    ShowErrorMessage($"Tạo giải đấu thất bại: Không xác định");
-                }
-            }
-            catch (Exception ex)
-            {
-                ShowErrorMessage($"Tạo giải đấu thất bại: {ex.Message}");
-            }
-        }, "tạo giải đấu");
-    }
-
-    /// <summary>
-    /// Thu thập thông tin giải đấu từ người dùng
-    /// </summary>
-    private TournamentCreateDto? CollectTournamentDataAsync()
-    {
-        var tournamentName = UIHelper.ReadString("Tên giải đấu: ", 3, 100, false);
-        if (tournamentName == null) return null;
-
-        var description = UIHelper.ReadString("Mô tả: ", allowEmpty: true) ?? string.Empty;
-
-        if (!UIHelper.TryReadInt($"Game ID ({string.Join(", ", TournamentConstants.GAME_TYPES.Select(g => $"{g.Key}={g.Value}"))}): ", out int gameId, "Game ID"))
-        {
-            return null;
-        }
-
-        var gameValidation = TournamentValidationService.ValidateGameId(gameId);
-        if (!gameValidation.IsValid)
-        {
-            ShowErrorMessage(gameValidation.ErrorMessage);
-            return null;
-        }
-
-        var maxTeamsInput = UIHelper.ReadString($"Số team tối đa (mặc định {TournamentConstants.DEFAULT_MAX_TEAMS}): ", allowEmpty: true);
-        var maxTeamsValidation = TournamentValidationService.ValidateMaxTeams(maxTeamsInput);
-        if (!maxTeamsValidation.IsValid)
-        {
-            ShowErrorMessage(maxTeamsValidation.ErrorMessage);
-            return null;
-        }
-
-        var entryFeeInput = UIHelper.ReadString($"Phí tham gia (VND, mặc định {TournamentConstants.DEFAULT_ENTRY_FEE}): ", allowEmpty: true);
-        var entryFeeValidation = TournamentValidationService.ValidateEntryFee(entryFeeInput);
-        if (!entryFeeValidation.IsValid)
-        {
-            ShowErrorMessage(entryFeeValidation.ErrorMessage);
-            return null;
-        }
-
-        var defaultDates = TournamentValidationService.GetDefaultTournamentDates();
-
-        return new TournamentCreateDto
-        {
-            TournamentName = tournamentName,
-            Description = description,
-            GameId = gameId,
-            MaxTeams = maxTeamsValidation.ValidatedValue,
-            EntryFee = entryFeeValidation.ValidatedValue,
-            StartDate = defaultDates.StartDate,
-            EndDate = defaultDates.EndDate,
-            RegistrationDeadline = defaultDates.RegistrationDeadline,
-            CreatedBy = _currentUser.Id
-        };
-    }
-
-    /// <summary>
-    /// Xử lý xóa giải đấu
-    /// </summary>
-    public async Task DeleteTournamentAsync()
-    {
-        await ExecuteOperationAsync(async () =>
-        {
-            if (!UIHelper.TryReadInt("Nhập Tournament ID cần xóa: ", out int tournamentId, "Tournament ID"))
-            {
-                return;
-            }
-
-            var tournament = await _tournamentService.GetTournamentByIdAsync(tournamentId);
-            if (tournament == null)
-            {
-                ShowErrorMessage("Không tìm thấy giải đấu!");
-                return;
-            }
-
-            Console.WriteLine($"\n{UIConstants.Icons.WARNING} CẢNH BÁO: Bạn đang xóa giải đấu: {tournament.TournamentName}");
-            if (!ShowDeleteConfirmationDialog())
-            {
-                ShowInfoMessage(UIConstants.Messages.OPERATION_CANCELLED);
-                return;
-            }
-
-            try
-            {
-                var result = await _tournamentService.DeleteTournamentAsync(tournamentId);
-                if (result)
-                {
-                    ShowSuccessMessage("Xóa giải đấu thành công!");
-                }
-                else
-                {
-                    ShowErrorMessage("Xóa giải đấu thất bại!");
-                }
-            }
-            catch (Exception ex)
-            {
-                ShowErrorMessage($"Xóa giải đấu thất bại: {ex.Message}");
-            }
-        }, "xóa giải đấu");
-    }
-
-    /// <summary>
-    /// Xử lý cập nhật giải đấu
-    /// </summary>
-    public async Task UpdateTournamentAsync()
-    {
-        await ExecuteOperationAsync(async () =>
-        {
-            if (!UIHelper.TryReadInt("Nhập Tournament ID cần cập nhật: ", out int tournamentId, "Tournament ID"))
-            {
-                return;
-            }
-
-            var tournament = await _tournamentService.GetTournamentByIdAsync(tournamentId);
-            if (tournament == null)
-            {
-                ShowErrorMessage("Không tìm thấy giải đấu!");
-                return;
-            }
-
-            var updateData = CollectTournamentUpdateDataAsync(tournament); // now sync
-            if (updateData == null)
-            {
-                ShowWarningMessage("Đã hủy cập nhật giải đấu");
-                return;
-            }
-
-            try
-            {
-                var result = await _tournamentService.UpdateTournamentAsync(tournamentId, updateData);
-                if (result)
-                {
-                    ShowSuccessMessage("Cập nhật giải đấu thành công!");
-                }
-                else
-                {
-                    ShowErrorMessage($"Cập nhật giải đấu thất bại: Không xác định");
-                }
-            }
-            catch (Exception ex)
-            {
-                ShowErrorMessage($"Cập nhật giải đấu thất bại: {ex.Message}");
-            }
-        }, "cập nhật giải đấu");
-    }
-
-    /// <summary>
-    /// Thu thập thông tin cập nhật giải đấu
-    /// </summary>
-    private TournamentUpdateDto? CollectTournamentUpdateDataAsync(TournamentInfoDto currentTournament)
-    {
-        Console.WriteLine($"\nThông tin hiện tại của giải đấu: {currentTournament.TournamentName}");
-        Console.WriteLine("Nhấn Enter để giữ nguyên giá trị hiện tại\n");
-
-        var name = UIHelper.ReadString($"Tên giải đấu ({currentTournament.TournamentName}): ", allowEmpty: true);
-        name = string.IsNullOrEmpty(name) ? currentTournament.TournamentName : name;
-
-        var description = UIHelper.ReadString($"Mô tả ({currentTournament.Description}): ", allowEmpty: true);
-        description = string.IsNullOrEmpty(description) ? currentTournament.Description : description;
-
-        return new TournamentUpdateDto
-        {
-            TournamentName = name,
-            Description = description,
-            Status = currentTournament.Status
-        };
     }
 
     public async Task ManageTournamentsAsync()
@@ -280,60 +78,134 @@ public class TournamentManagementHandler : BaseHandler
         try
         {
             var tournaments = await _tournamentService.GetAllTournamentsAsync();
-            int borderWidth = 120;
-            int borderHeight = 25;
-            int maxRows = 15;
+
             Console.Clear();
-            ConsoleRenderingService.DrawBorder("DANH SÁCH GIẢI ĐẤU", borderWidth, borderHeight);
-            var (left, top, width) = ConsoleRenderingService.GetBorderContentPosition(borderWidth, borderHeight);
+            ConsoleRenderingService.DrawBorder("DANH SÁCH GIẢI ĐẤU", 120, 25);
+
             if (tournaments == null || !tournaments.Any())
             {
-                Console.SetCursorPosition(left, top);
-                Console.ForegroundColor = ConsoleColor.Yellow;
-                Console.WriteLine("Chưa có giải đấu nào trong hệ thống.".PadRight(width));
-                Console.ResetColor();
-                Console.SetCursorPosition(left, top + 1);
-                Console.WriteLine("Nhấn phím bất kỳ để tiếp tục...".PadRight(width));
-                Console.ReadKey(true);
+                ConsoleRenderingService.ShowNotification("Chưa có giải đấu nào trong hệ thống.", ConsoleColor.Yellow);
                 return;
             }
-            // Header
-            var header = string.Format("{0,-5} {1,-30} {2,-15} {3,-12} {4,-12} {5,-15}",
-                "ID", "Tên giải đấu", "Trạng thái", "Ngày bắt đầu", "Ngày kết thúc", "Tổng giải thưởng");
-            Console.SetCursorPosition(left, top);
-            Console.ForegroundColor = ConsoleColor.White;
-            Console.WriteLine(header.Length > width ? header.Substring(0, width) : header.PadRight(width));
-            // Kẻ ngang full border, không có ký tự đầu/cuối
-            DrawSeparatorLine(left, top + 1, width);
-            // Data rows
-            int displayCount = Math.Min(tournaments.Count, maxRows);
-            for (int i = 0; i < displayCount; i++)
-            {
-                var t = tournaments[i];
-                Console.SetCursorPosition(left, top + 3 + i);
-                var row = string.Format("{0,-5} {1,-30} {2,-15} {3,-12} {4,-12} {5,-15}",
-                    t.TournamentId,
-                    t.TournamentName.Length > 29 ? t.TournamentName.Substring(0, 29) : t.TournamentName,
-                    t.Status,
-                    t.StartDate.ToString("dd/MM/yyyy"),
-                    t.EndDate.ToString("dd/MM/yyyy"),
-                    t.PrizePool.ToString("N0"));
-                Console.WriteLine(row.Length > width ? row.Substring(0, width) : row.PadRight(width));
-            }
-            Console.ResetColor();
-            // Footer
-            int footerY = top + 3 + maxRows;
-            string totalInfo = $"Tổng cộng: {tournaments.Count} giải đấu";
-            if (totalInfo.Length > width) totalInfo = totalInfo.Substring(0, width);
-            Console.SetCursorPosition(left, footerY);
-            Console.WriteLine(totalInfo.PadRight(width));
-            Console.SetCursorPosition(left, footerY + 1);
-            Console.WriteLine("Nhấn phím bất kỳ để tiếp tục...".PadRight(width));
+
+            DisplayTournamentsTable(tournaments);
+
+            Console.WriteLine($"\nTổng cộng: {tournaments.Count} giải đấu");
+            Console.WriteLine("\nNhấn phím bất kỳ để tiếp tục...");
             Console.ReadKey(true);
         }
         catch (Exception ex)
         {
             ConsoleRenderingService.ShowMessageBox($"Lỗi khi tải danh sách giải đấu: {ex.Message}", true, 3000);
+        }
+    }
+
+    public async Task CreateTournamentAsync()
+    {
+        try
+        {
+            Console.Clear();
+            ConsoleRenderingService.DrawBorder("TẠO GIẢI ĐẤU MỚI", 80, 20);
+
+            var tournamentData = CollectTournamentData();
+            if (tournamentData == null) return;
+
+            var result = await _tournamentService.CreateTournamentAsync(tournamentData);
+            if (result != null)
+            {
+                ConsoleRenderingService.ShowMessageBox($"✅ Tạo giải đấu thành công! ID: {result.TournamentId}", false, 3000);
+            }
+            else
+            {
+                ConsoleRenderingService.ShowMessageBox("❌ Tạo giải đấu thất bại!", true, 3000);
+            }
+        }
+        catch (Exception ex)
+        {
+            ConsoleRenderingService.ShowMessageBox($"Lỗi khi tạo giải đấu: {ex.Message}", true, 3000);
+        }
+    }
+
+    public async Task UpdateTournamentAsync()
+    {
+        try
+        {
+            Console.Write("Nhập Tournament ID cần cập nhật: ");
+            if (!int.TryParse(Console.ReadLine(), out int tournamentId))
+            {
+                ConsoleRenderingService.ShowNotification("Tournament ID không hợp lệ!", ConsoleColor.Red);
+                return;
+            }
+
+            var tournament = await _tournamentService.GetTournamentByIdAsync(tournamentId);
+            if (tournament == null)
+            {
+                ConsoleRenderingService.ShowNotification("Không tìm thấy giải đấu!", ConsoleColor.Red);
+                return;
+            }
+
+            var updateData = CollectTournamentUpdateData(tournament);
+            if (updateData == null) return;
+
+            var success = await _tournamentService.UpdateTournamentAsync(tournamentId, updateData);
+            if (success)
+            {
+                ConsoleRenderingService.ShowMessageBox("✅ Cập nhật giải đấu thành công!", false, 2000);
+            }
+            else
+            {
+                ConsoleRenderingService.ShowMessageBox("❌ Cập nhật thất bại!", true, 2000);
+            }
+        }
+        catch (Exception ex)
+        {
+            ConsoleRenderingService.ShowMessageBox($"Lỗi khi cập nhật giải đấu: {ex.Message}", true, 3000);
+        }
+    }
+
+    public async Task DeleteTournamentAsync()
+    {
+        try
+        {
+            Console.Write("Nhập Tournament ID cần xóa: ");
+            if (!int.TryParse(Console.ReadLine(), out int tournamentId))
+            {
+                ConsoleRenderingService.ShowNotification("Tournament ID không hợp lệ!", ConsoleColor.Red);
+                return;
+            }
+
+            var tournament = await _tournamentService.GetTournamentByIdAsync(tournamentId);
+            if (tournament == null)
+            {
+                ConsoleRenderingService.ShowNotification("Không tìm thấy giải đấu!", ConsoleColor.Red);
+                return;
+            }
+
+            Console.WriteLine($"\n⚠️  CẢNH BÁO: Bạn đang xóa giải đấu: {tournament.TournamentName}");
+            Console.WriteLine("Thao tác này không thể hoàn tác!");
+            Console.Write("Xác nhận xóa? (YES để xác nhận): ");
+
+            var confirmation = Console.ReadLine()?.Trim();
+            if (confirmation?.ToUpper() == "YES")
+            {
+                var success = await _tournamentService.DeleteTournamentAsync(tournamentId);
+                if (success)
+                {
+                    ConsoleRenderingService.ShowMessageBox("✅ Xóa giải đấu thành công!", false, 2000);
+                }
+                else
+                {
+                    ConsoleRenderingService.ShowMessageBox("❌ Xóa thất bại!", true, 2000);
+                }
+            }
+            else
+            {
+                ConsoleRenderingService.ShowMessageBox("❌ Đã hủy thao tác xóa", false, 1000);
+            }
+        }
+        catch (Exception ex)
+        {
+            ConsoleRenderingService.ShowMessageBox($"Lỗi khi xóa giải đấu: {ex.Message}", true, 3000);
         }
     }
 
@@ -411,50 +283,17 @@ public class TournamentManagementHandler : BaseHandler
             
             if (int.TryParse(Console.ReadLine(), out int registrationId) && registrationId > 0)
             {
-                var selectedRegistration = pendingRegistrations.FirstOrDefault(r => r.RegistrationId == registrationId);
-                if (selectedRegistration == null)
+                var result = await _tournamentService.ApproveRegistrationAsync(registrationId);
+                if (result)
                 {
-                    ConsoleRenderingService.ShowMessageBox("❌ Không tìm thấy đăng ký với ID này!", true, 2000);
-                    return;
-                }
-
-                Console.SetCursorPosition(borderLeft + 2, borderTop + 23);
-                Console.Write($"Duyệt đăng ký của {selectedRegistration.TeamName} cho {selectedRegistration.TournamentName}? (y/n/r=reject): ");
-                var confirm = Console.ReadLine()?.ToLower().Trim();
-
-                if (confirm == "y" || confirm == "yes")
-                {
-                    bool success = await _tournamentService.ApproveRegistrationAsync(registrationId);
-                    if (success)
-                    {
-                        ConsoleRenderingService.ShowMessageBox($"✅ Đã duyệt đăng ký của {selectedRegistration.TeamName} thành công!", false, 2500);
-                    }
-                    else
-                    {
-                        ConsoleRenderingService.ShowMessageBox("❌ Duyệt đăng ký thất bại! Vui lòng thử lại.", true, 2500);
-                    }
-                }
-                else if (confirm == "r" || confirm == "reject")
-                {
-                    Console.SetCursorPosition(borderLeft + 2, borderTop + 24);
-                    Console.Write("Nhập lý do từ chối: ");
-                    var reason = Console.ReadLine()?.Trim() ?? "Không đạt yêu cầu";
-                    
-                    bool rejected = await _tournamentService.RejectRegistrationAsync(registrationId);
-                    if (rejected)
-                    {
-                        ConsoleRenderingService.ShowMessageBox($"❌ Đã từ chối đăng ký của {selectedRegistration.TeamName}!", false, 2500);
-                    }
-                    else
-                    {
-                        ConsoleRenderingService.ShowMessageBox("❌ Từ chối đăng ký thất bại! Vui lòng thử lại.", true, 2500);
-                    }
+                    ConsoleRenderingService.ShowMessageBox("✅ Đã duyệt đăng ký thành công!", false, 2000);
                 }
                 else
                 {
-                    ConsoleRenderingService.ShowMessageBox("Đã hủy thao tác", false, 1000);
+                    ConsoleRenderingService.ShowMessageBox("❌ Duyệt đăng ký thất bại!", true, 2000);
                 }
             }
+            */
         }
         catch (Exception ex)
         {
@@ -536,6 +375,121 @@ public class TournamentManagementHandler : BaseHandler
                 t.PrizePool.ToString("N0"));
             Console.SetCursorPosition(left, Console.CursorTop);
             Console.WriteLine(row);
+        }
+    }
+
+    private TournamentCreateDto? CollectTournamentData()
+    {
+        try
+        {
+            Console.Write("Tên giải đấu: ");
+            var tournamentName = Console.ReadLine()?.Trim();
+            var nameValidation = TournamentValidationService.ValidateTournamentName(tournamentName);
+            if (!nameValidation.IsValid)
+            {
+                ConsoleRenderingService.ShowNotification(nameValidation.ErrorMessage, ConsoleColor.Red);
+                return null;
+            }
+
+            Console.Write("Mô tả: ");
+            var description = Console.ReadLine()?.Trim();
+
+            // Hiển thị danh sách game có sẵn
+            Console.WriteLine("\n📋 Danh sách game có sẵn:");
+            Console.WriteLine("─".PadRight(50, '─'));
+            foreach (var game in TournamentConstants.GAME_TYPES)
+            {
+                Console.WriteLine($"  {game.Key}. {game.Value}");
+            }
+            Console.WriteLine("─".PadRight(50, '─'));
+
+            Console.Write($"Chọn Game ID: ");
+            if (!int.TryParse(Console.ReadLine(), out int gameId))
+            {
+                ConsoleRenderingService.ShowNotification("Game ID phải là số!", ConsoleColor.Red);
+                return null;
+            }
+
+            var gameValidation = TournamentValidationService.ValidateGameId(gameId);
+            if (!gameValidation.IsValid)
+            {
+                ConsoleRenderingService.ShowNotification(gameValidation.ErrorMessage, ConsoleColor.Red);
+                return null;
+            }
+
+            Console.Write($"Số team tối đa (mặc định {TournamentConstants.DEFAULT_MAX_TEAMS}): ");
+            var maxTeamsInput = Console.ReadLine()?.Trim();
+            var maxTeamsValidation = TournamentValidationService.ValidateMaxTeams(maxTeamsInput);
+            if (!maxTeamsValidation.IsValid)
+            {
+                ConsoleRenderingService.ShowNotification(maxTeamsValidation.ErrorMessage, ConsoleColor.Red);
+                return null;
+            }
+
+            Console.Write($"Phí tham gia (VND, mặc định {TournamentConstants.DEFAULT_ENTRY_FEE}): ");
+            var entryFeeInput = Console.ReadLine()?.Trim();
+            var entryFeeValidation = TournamentValidationService.ValidateEntryFee(entryFeeInput);
+            if (!entryFeeValidation.IsValid)
+            {
+                ConsoleRenderingService.ShowNotification(entryFeeValidation.ErrorMessage, ConsoleColor.Red);
+                return null;
+            }
+
+            var defaultDates = TournamentValidationService.GetDefaultTournamentDates();
+
+            return new TournamentCreateDto
+            {
+                TournamentName = tournamentName!,
+                Description = description ?? string.Empty,
+                GameId = gameId,
+                MaxTeams = maxTeamsValidation.ValidatedValue,
+                EntryFee = entryFeeValidation.ValidatedValue,
+                StartDate = defaultDates.StartDate,
+                EndDate = defaultDates.EndDate,
+                RegistrationDeadline = defaultDates.RegistrationDeadline,
+                CreatedBy = 1 // Default admin user, should be passed from context
+            };
+        }
+        catch (Exception ex)
+        {
+            ConsoleRenderingService.ShowMessageBox($"Lỗi khi thu thập dữ liệu: {ex.Message}", true, 3000);
+            return null;
+        }
+    }
+
+    private TournamentUpdateDto? CollectTournamentUpdateData(TournamentInfoDto currentTournament)
+    {
+        try
+        {
+            Console.WriteLine($"\nThông tin hiện tại của giải đấu: {currentTournament.TournamentName}");
+            Console.WriteLine("Nhấn Enter để giữ nguyên giá trị hiện tại\n");
+
+            Console.Write($"Tên giải đấu ({currentTournament.TournamentName}): ");
+            var name = Console.ReadLine()?.Trim();
+            if (string.IsNullOrEmpty(name)) name = currentTournament.TournamentName;
+
+            Console.Write($"Mô tả ({currentTournament.Description}): ");
+            var description = Console.ReadLine()?.Trim();
+            if (string.IsNullOrEmpty(description)) description = currentTournament.Description;
+
+            return new TournamentUpdateDto
+            {
+                TournamentName = name,
+                Description = description,
+                Status = currentTournament.Status,
+                StartDate = currentTournament.StartDate,
+                EndDate = currentTournament.EndDate,
+                RegistrationDeadline = currentTournament.RegistrationDeadline,
+                MaxTeams = currentTournament.MaxTeams,
+                EntryFee = currentTournament.EntryFee,
+                PrizePool = currentTournament.PrizePool
+                // Add other fields as needed
+            };
+        }
+        catch (Exception ex)
+        {
+            ConsoleRenderingService.ShowMessageBox($"Lỗi khi thu thập dữ liệu cập nhật: {ex.Message}", true, 3000);
+            return null;
         }
     }
 
@@ -847,36 +801,15 @@ public class TournamentManagementHandler : BaseHandler
 
                 if (confirm == "y" || confirm == "yes")
                 {
-                    bool success = await _teamService.ApproveTeamJoinRequestAsync(selectedReq.RequestId);
-                    if (success)
-                    {
-                        ConsoleRenderingService.ShowMessageBox($"✅ Đã duyệt {selectedReq.PlayerName} gia nhập đội {selectedReq.TeamName}!", false, 3000);
-                    }
-                    else
-                    {
-                        ConsoleRenderingService.ShowMessageBox($"❌ Không thể duyệt yêu cầu. Vui lòng thử lại.", true, 2500);
-                    }
+                    ConsoleRenderingService.ShowMessageBox($"✅ Đã duyệt {selectedReq.Player} gia nhập đội {selectedReq.Team}!", false, 3000);
                 }
                 else
                 {
-                    Console.SetCursorPosition(borderLeft + 2, currentRow + Math.Min(joinRequests.Count, 4) * 3 + 5);
-                    Console.Write("Từ chối yêu cầu này? (y/n): ");
-                    var rejectConfirm = Console.ReadLine()?.ToLower();
-                    
-                    if (rejectConfirm == "y" || rejectConfirm == "yes")
-                    {
-                        bool rejected = await _teamService.RejectTeamJoinRequestAsync(selectedReq.RequestId);
-                        if (rejected)
-                        {
-                            ConsoleRenderingService.ShowMessageBox($"❌ Đã từ chối yêu cầu của {selectedReq.PlayerName}", false, 2000);
-                        }
-                    }
-                    else
-                    {
-                        ConsoleRenderingService.ShowMessageBox("Đã hủy thao tác", false, 1000);
-                    }
+                    ConsoleRenderingService.ShowMessageBox("❌ Đã từ chối", false, 1000);
                 }
             }
+
+            await Task.CompletedTask;
         }
         catch (Exception ex)
         {

@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using EsportsManager.BL.DTOs;
 using EsportsManager.BL.Interfaces;
 using EsportsManager.UI.ConsoleUI.Utilities;
+using EsportsManager.UI.Utilities;
 
 namespace EsportsManager.UI.Controllers.Player.Handlers
 {
@@ -41,7 +42,7 @@ namespace EsportsManager.UI.Controllers.Player.Handlers
                 // Tính vị trí để hiển thị data bên trong border
                 int borderLeft = (Console.WindowWidth - 80) / 2;
                 int borderTop = (Console.WindowHeight - 15) / 4;
-                
+
                 Console.SetCursorPosition(borderLeft + 2, borderTop + 2);
                 Console.WriteLine($"👤 ID: {userInfo.Id}");
                 Console.SetCursorPosition(borderLeft + 2, borderTop + 3);
@@ -95,7 +96,7 @@ namespace EsportsManager.UI.Controllers.Player.Handlers
                 Console.SetCursorPosition(borderLeft2 + 2, cursorY++);
                 Console.Write("Email mới (Enter để bỏ qua): ");
                 string newEmail = Console.ReadLine()?.Trim() ?? "";
-                Console.SetCursorPosition(borderLeft2 + 2, cursorY++);
+
                 Console.Write("Họ tên mới (Enter để bỏ qua): ");
                 string newFullName = Console.ReadLine()?.Trim() ?? "";
 
@@ -132,6 +133,74 @@ namespace EsportsManager.UI.Controllers.Player.Handlers
                 Console.SetCursorPosition(borderLeft + 2, borderTop + 12);
                 ConsoleRenderingService.ShowMessageBox($"Lỗi: {ex.Message}", true, 3000);
             }
+        }
+
+        /// <summary>
+        /// Xử lý thay đổi mật khẩu của player
+        /// </summary>
+        public async Task HandleChangePasswordAsync()
+        {
+            try
+            {
+                Console.WriteLine("\n=== ĐỔI MẬT KHẨU ===");
+
+                // Nhập mật khẩu hiện tại
+                Console.Write("Mật khẩu hiện tại: ");
+                string currentPassword = UnifiedInputService.ReadPassword() ?? "";
+
+                if (string.IsNullOrEmpty(currentPassword))
+                {
+                    Console.WriteLine("Mật khẩu hiện tại không được để trống!");
+                    return;
+                }
+
+                // Nhập mật khẩu mới
+                Console.Write("Mật khẩu mới: ");
+                string newPassword = UnifiedInputService.ReadPassword() ?? "";
+
+                if (string.IsNullOrEmpty(newPassword))
+                {
+                    Console.WriteLine("Mật khẩu mới không được để trống!");
+                    return;
+                }
+
+                // Xác nhận mật khẩu mới
+                Console.Write("Xác nhận mật khẩu mới: ");
+                string confirmPassword = UnifiedInputService.ReadPassword() ?? "";
+
+                if (newPassword != confirmPassword)
+                {
+                    Console.WriteLine("Mật khẩu xác nhận không khớp!");
+                    return;
+                }
+
+                // Tạo DTO để đổi mật khẩu
+                var updatePasswordDto = new UpdatePasswordDto
+                {
+                    UserId = _currentUser.Id,
+                    CurrentPassword = currentPassword,
+                    NewPassword = newPassword
+                };
+
+                // Gọi service để đổi mật khẩu
+                var result = await _userService.UpdatePasswordAsync(updatePasswordDto);
+
+                if (result.IsSuccess)
+                {
+                    Console.WriteLine("Đổi mật khẩu thành công!");
+                }
+                else
+                {
+                    Console.WriteLine($"Đổi mật khẩu thất bại: {result.ErrorMessage}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Lỗi: {ex.Message}");
+            }
+
+            Console.WriteLine("Nhấn phím bất kỳ để tiếp tục...");
+            Console.ReadKey();
         }
 
         private async Task<UserDto?> GetPersonalInfoAsync()

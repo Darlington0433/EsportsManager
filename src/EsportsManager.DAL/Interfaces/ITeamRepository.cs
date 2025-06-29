@@ -24,6 +24,7 @@ namespace EsportsManager.DAL.Interfaces
         Task<List<Team>> SearchByNameAsync(string searchTerm);
         Task<List<Team>> GetByGameIdAsync(int gameId);
         Task<List<Team>> GetByCreatorAsync(int creatorId);
+        Task<List<Team>> GetAllAsync(); // Method để lấy tất cả team bao gồm pending
 
         // Team Member Operations
         Task<bool> AddMemberAsync(int teamId, int userId, bool isLeader = false, string? position = null);

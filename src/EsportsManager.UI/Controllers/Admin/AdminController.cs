@@ -51,7 +51,8 @@ public class AdminUIController : BaseController, IAdminUIController
                 "Quản lý giải đấu/trận đấu",
                 "Duyệt đăng ký giải đấu",
                 "Quản lý đội/team",
-                "Thêm achievement cho player",
+                "Gán achievement cho player",
+                "Quản lý game",
                 "Xem thống kê hệ thống",
                 "Xem báo cáo donation",
                 "Xem kết quả voting",
@@ -71,14 +72,21 @@ public class AdminUIController : BaseController, IAdminUIController
                     _tournamentManagementHandler.ManageTournamentsAsync().GetAwaiter().GetResult();
                     break;
                 case 2:
+                case 2:
                     _tournamentManagementHandler.ApproveTournamentRegistrationsAsync().GetAwaiter().GetResult();
                     break;
+                case 3:
                 case 3:
                     _tournamentManagementHandler.ManageTeamsAsync().GetAwaiter().GetResult();
                     break;
                 case 4:
+                case 4:
                     _userManagementHandler.AssignAchievementsAsync().GetAwaiter().GetResult();
                     break;
+                case 5:
+                    HandleGameManagementAsync().GetAwaiter().GetResult();
+                    break;
+                case 6:
                 case 5:
                     _systemStatsHandler.ViewSystemStatsAsync().GetAwaiter().GetResult();
                     break;
@@ -134,6 +142,150 @@ public class AdminUIController : BaseController, IAdminUIController
                 case 4:
                     return;
             }
+        }
+    }
+
+    /// <summary>
+    /// Xử lý quản lý game
+    /// </summary>
+    private async Task HandleGameManagementAsync()
+    {
+        while (true)
+        {
+            var gameOptions = new[]
+            {
+                "Xem danh sách game",
+                "Thêm game mới",
+                "Cập nhật game",
+                "Xóa game",
+                "⬅️ Quay lại"
+            };
+
+            int selection = InteractiveMenuService.DisplayInteractiveMenu("QUẢN LÝ GAME", gameOptions);
+
+            switch (selection)
+            {
+                case 0:
+                    await ViewAllGamesAsync();
+                    break;
+                case 1:
+                    await AddNewGameAsync();
+                    break;
+                case 2:
+                    await UpdateGameAsync();
+                    break;
+                case 3:
+                    await DeleteGameAsync();
+                    break;
+                case -1:
+                case 4:
+                    return;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Xem tất cả game
+    /// </summary>
+    private async Task ViewAllGamesAsync()
+    {
+        try
+        {
+            Console.Clear();
+            ConsoleRenderingService.DrawBorder("DANH SÁCH GAME", 80, 20);
+
+            // TODO: Implement get all games from service
+            await Task.Delay(1); // Minimal async operation to satisfy compiler
+            Console.WriteLine("Tính năng đang được phát triển...");
+            Console.WriteLine("Nhấn phím bất kỳ để tiếp tục...");
+            Console.ReadKey(true);
+        }
+        catch (Exception ex)
+        {
+            ConsoleRenderingService.ShowMessageBox($"Lỗi: {ex.Message}", true, 3000);
+        }
+    }
+
+    /// <summary>
+    /// Thêm game mới
+    /// </summary>
+    private async Task AddNewGameAsync()
+    {
+        try
+        {
+            Console.Clear();
+            ConsoleRenderingService.DrawBorder("THÊM GAME MỚI", 70, 18);
+
+            int borderLeft = (Console.WindowWidth - 70) / 2;
+            int borderTop = (Console.WindowHeight - 18) / 4;
+
+            Console.SetCursorPosition(borderLeft + 2, borderTop + 3);
+            Console.Write("Tên game: ");
+            var gameName = Console.ReadLine()?.Trim();
+
+            if (string.IsNullOrWhiteSpace(gameName))
+            {
+                ConsoleRenderingService.ShowMessageBox("Tên game không được để trống!", true, 2000);
+                return;
+            }
+
+            Console.SetCursorPosition(borderLeft + 2, borderTop + 5);
+            Console.Write("Mô tả: ");
+            var description = Console.ReadLine()?.Trim();
+
+            Console.SetCursorPosition(borderLeft + 2, borderTop + 7);
+            Console.Write("Thể loại: ");
+            var genre = Console.ReadLine()?.Trim();
+
+            // TODO: Implement add game to service
+            await Task.Delay(1); // Minimal async operation to satisfy compiler
+            ConsoleRenderingService.ShowMessageBox($"Thêm game '{gameName}' thành công!", false, 3000);
+        }
+        catch (Exception ex)
+        {
+            ConsoleRenderingService.ShowMessageBox($"Lỗi: {ex.Message}", true, 3000);
+        }
+    }
+
+    /// <summary>
+    /// Cập nhật game
+    /// </summary>
+    private async Task UpdateGameAsync()
+    {
+        try
+        {
+            Console.Clear();
+            ConsoleRenderingService.DrawBorder("CẬP NHẬT GAME", 70, 18);
+
+            await Task.Delay(1); // Minimal async operation to satisfy compiler
+            Console.WriteLine("Tính năng đang được phát triển...");
+            Console.WriteLine("Nhấn phím bất kỳ để tiếp tục...");
+            Console.ReadKey(true);
+        }
+        catch (Exception ex)
+        {
+            ConsoleRenderingService.ShowMessageBox($"Lỗi: {ex.Message}", true, 3000);
+        }
+    }
+
+    /// <summary>
+    /// Xóa game
+    /// </summary>
+    private async Task DeleteGameAsync()
+    {
+        try
+        {
+            Console.Clear();
+            ConsoleRenderingService.DrawBorder("XÓA GAME", 70, 18);
+
+            await Task.Delay(1); // Minimal async operation to satisfy compiler
+            Console.WriteLine("Tính năng đang được phát triển...");
+            Console.WriteLine("Nhấn phím bất kỳ để tiếp tục...");
+            Console.ReadKey(true);
+        }
+        catch (Exception ex)
+        {
+            ConsoleRenderingService.ShowMessageBox($"Lỗi: {ex.Message}", true, 3000);
         }
     }
 

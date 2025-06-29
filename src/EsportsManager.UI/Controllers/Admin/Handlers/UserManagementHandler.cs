@@ -9,11 +9,13 @@ public class UserManagementHandler
 {
     private readonly IUserService _userService;
     private readonly IAchievementService _achievementService;
+    private readonly ITournamentService _tournamentService;
 
-    public UserManagementHandler(IUserService userService, IAchievementService achievementService)
+    public UserManagementHandler(IUserService userService, IAchievementService achievementService, ITournamentService tournamentService)
     {
         _userService = userService;
         _achievementService = achievementService;
+        _tournamentService = tournamentService;
     }
 
     public async Task ShowAllUsersAsync()
@@ -550,6 +552,42 @@ public class UserManagementHandler
                 var confirmation = Console.ReadLine()?.ToLower();
                 if (confirmation == "y" || confirmation == "yes")
                 {
+                    // Kiểm tra việc tham gia giải đấu trước khi gán thành tích liên quan đến tournament
+                    var tournamentRelatedAchievements = new[]
+                    {
+                        "Tournament Winner",
+                        "Top 3 Finisher",
+                        "Most Valuable Player",
+                        "Best Team Player"
+                    };
+
+                    if (tournamentRelatedAchievements.Contains(selectedAchievement))
+                    {
+                        // Kiểm tra player đã tham gia giải đấu nào chưa
+                        var participationInfo = await _tournamentService.CheckPlayerTournamentParticipationAsync(selectedUser.Id);
+
+                        if (participationInfo.TournamentCount == 0)
+                        {
+                            ConsoleRenderingService.ShowMessageBox(
+                                $"❌ Không thể gán thành tích '{selectedAchievement}' cho Player {selectedUser.Username}!\n" +
+                                "🚫 Player này chưa tham gia giải đấu nào.\n" +
+                                "💡 Chỉ có thể gán thành tích liên quan đến tournament cho những player đã tham gia ít nhất 1 giải đấu.",
+                                true, 4000);
+                            return;
+                        }
+
+                        // Hiển thị thông tin tham gia để admin xác nhận
+                        Console.SetCursorPosition(borderLeft + 2, borderTop + 14 + achievementTypes.Length + 4);
+                        Console.WriteLine($"📊 Player đã tham gia {participationInfo.TournamentCount} giải đấu");
+                        Console.SetCursorPosition(borderLeft + 2, borderTop + 14 + achievementTypes.Length + 5);
+                        Console.WriteLine($"🏆 Đạt top 3: {participationInfo.TopThreeFinishes} lần");
+                        if (participationInfo.BestPosition > 0)
+                        {
+                            Console.SetCursorPosition(borderLeft + 2, borderTop + 14 + achievementTypes.Length + 6);
+                            Console.WriteLine($"🥇 Vị trí cao nhất: #{participationInfo.BestPosition}");
+                        }
+                    }
+
                     // Gán thành tích thực sự vào database
                     var currentUser = EsportsManager.UI.Services.UserSessionManager.CurrentUser;
                     int adminId = currentUser?.Id ?? 1; // Fallback to admin ID 1

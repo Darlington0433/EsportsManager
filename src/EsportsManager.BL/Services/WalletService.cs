@@ -619,29 +619,146 @@ namespace EsportsManager.BL.Services
             };
         }
 
-        // Not implemented methods for donation features
+        // Donation overview implementation using stored procedure
         public async Task<DonationOverviewDto> GetDonationOverviewAsync()
         {
-            await Task.CompletedTask;
-            throw new NotImplementedException("Donation overview not implemented in database-only mode");
+            try
+            {
+                var dataTable = _dataContext.ExecuteStoredProcedure("sp_GetDonationReport");
+
+                if (dataTable.Rows.Count == 0)
+                {
+                    return new DonationOverviewDto
+                    {
+                        TotalDonations = 0,
+                        TotalReceivers = 0,
+                        TotalDonators = 0,
+                        TotalDonationAmount = 0,
+                        LastUpdated = DateTime.Now,
+                        DonationByType = new Dictionary<string, decimal>()
+                    };
+                }
+
+                var row = dataTable.Rows[0];
+                return await Task.FromResult(new DonationOverviewDto
+                {
+                    TotalDonations = SafeGetInt32(row["TotalDonations"]),
+                    TotalReceivers = SafeGetInt32(row["TotalReceivers"]),
+                    TotalDonators = SafeGetInt32(row["TotalDonators"]),
+                    TotalDonationAmount = SafeGetDecimal(row["TotalAmount"]),
+                    LastUpdated = DateTime.Now,
+                    DonationByType = new Dictionary<string, decimal>
+                    {
+                        { "Player Support", SafeGetDecimal(row["TotalAmount"]) }
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting donation overview");
+                return new DonationOverviewDto
+                {
+                    TotalDonations = 0,
+                    TotalReceivers = 0,
+                    TotalDonators = 0,
+                    TotalDonationAmount = 0,
+                    LastUpdated = DateTime.Now,
+                    DonationByType = new Dictionary<string, decimal>()
+                };
+            }
         }
 
         public async Task<List<TopDonationUserDto>> GetTopDonationReceiversAsync(int limit = 10)
         {
-            await Task.CompletedTask;
-            throw new NotImplementedException("Top donation receivers not implemented in database-only mode");
+            try
+            {
+                var dataTable = _dataContext.ExecuteStoredProcedure("sp_GetTopDonationReceivers",
+                    _dataContext.CreateParameter("p_Limit", limit));
+
+                var result = new List<TopDonationUserDto>();
+                foreach (DataRow row in dataTable.Rows)
+                {
+                    result.Add(new TopDonationUserDto
+                    {
+                        UserId = SafeGetInt32(row["UserID"]),
+                        Username = row["Username"]?.ToString() ?? "Unknown",
+                        UserType = "Player",
+                        DonationCount = SafeGetInt32(row["DonationCount"]),
+                        TotalAmount = SafeGetDecimal(row["TotalAmount"]),
+                        FirstDonation = SafeGetDateTime(row["FirstDonation"]),
+                        LastDonation = SafeGetDateTime(row["LastDonation"])
+                    });
+                }
+                return await Task.FromResult(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting top donation receivers");
+                return new List<TopDonationUserDto>();
+            }
         }
 
         public async Task<List<TopDonationUserDto>> GetTopDonatorsAsync(int limit = 10)
         {
-            await Task.CompletedTask;
-            throw new NotImplementedException("Top donators not implemented in database-only mode");
+            try
+            {
+                var dataTable = _dataContext.ExecuteStoredProcedure("sp_GetTopDonators",
+                    _dataContext.CreateParameter("p_Limit", limit));
+
+                var result = new List<TopDonationUserDto>();
+                foreach (DataRow row in dataTable.Rows)
+                {
+                    result.Add(new TopDonationUserDto
+                    {
+                        UserId = SafeGetInt32(row["UserID"]),
+                        Username = row["Username"]?.ToString() ?? "Unknown",
+                        UserType = "Player",
+                        DonationCount = SafeGetInt32(row["DonationCount"]),
+                        TotalAmount = SafeGetDecimal(row["TotalAmount"]),
+                        FirstDonation = SafeGetDateTime(row["FirstDonation"]),
+                        LastDonation = SafeGetDateTime(row["LastDonation"])
+                    });
+                }
+                return await Task.FromResult(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting top donators");
+                return new List<TopDonationUserDto>();
+            }
         }
 
         public async Task<List<TransactionDto>> GetDonationHistoryAsync(DonationSearchFilterDto filter)
         {
-            await Task.CompletedTask;
-            throw new NotImplementedException("Donation history not implemented in database-only mode");
+            try
+            {
+                var dataTable = _dataContext.ExecuteStoredProcedure("sp_GetDonationHistory",
+                    _dataContext.CreateParameter("p_UserID", filter.UserId ?? (object)DBNull.Value),
+                    _dataContext.CreateParameter("p_FromDate", filter.FromDate ?? (object)DBNull.Value),
+                    _dataContext.CreateParameter("p_ToDate", filter.ToDate ?? (object)DBNull.Value),
+                    _dataContext.CreateParameter("p_PageNumber", filter.PageNumber),
+                    _dataContext.CreateParameter("p_PageSize", filter.PageSize));
+
+                var result = new List<TransactionDto>();
+                foreach (DataRow row in dataTable.Rows)
+                {
+                    result.Add(new TransactionDto
+                    {
+                        Id = SafeGetInt32(row["TransactionID"]),
+                        UserId = SafeGetInt32(row["UserID"]),
+                        Amount = SafeGetDecimal(row["Amount"]),
+                        TransactionType = row["TransactionType"]?.ToString() ?? "Donation",
+                        CreatedAt = SafeGetDateTime(row["CreatedAt"]),
+                        Status = row["Status"]?.ToString() ?? "Completed"
+                    });
+                }
+                return await Task.FromResult(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting donation history");
+                return new List<TransactionDto>();
+            }
         }
     }
 }
